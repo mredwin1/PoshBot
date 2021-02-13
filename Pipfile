@@ -12,7 +12,7 @@ django = "~=3.1.6"
 python_version = "3.8"
 
 [scripts]
-start = "python manage.py start"
+start = "python manage.py runserver"
 test = "python manage.py test"
 makemigrations = "python manage.py makemigrations"
 migrate = "python manage.py migrate"
