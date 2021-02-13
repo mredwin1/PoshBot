@@ -10,3 +10,11 @@ django = "~=3.1.6"
 
 [requires]
 python_version = "3.8"
+
+[scripts]
+start = "python manage.py start"
+test = "python manage.py test"
+makemigrations = "python manage.py makemigrations"
+migrate = "python manage.py migrate"
+collectstatic = "python manage.py collectstatic"
+createsuperuser = "python manage.py createsuperuser"
