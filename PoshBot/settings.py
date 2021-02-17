@@ -134,3 +134,4 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 # Custom User & Log In
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'
