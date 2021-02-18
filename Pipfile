@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 django = "~=3.1.6"
 django-crispy-forms = "~=1.11.0"
+mailslurp-client = "~=11.4.22"
+names = "~=0.3.0"
+gender-guesser = "~=0.4.0"
 
 [dev-packages]
 
@@ -15,6 +18,7 @@ python_version = "3.8"
 [scripts]
 start = "python manage.py runserver"
 test = "python manage.py test"
+shell = "python manage.py shell"
 makemigrations = "python manage.py makemigrations"
 migrate = "python manage.py migrate"
 collectstatic = "python manage.py collectstatic"
