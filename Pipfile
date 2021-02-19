@@ -11,6 +11,7 @@ names = "~=0.3.0"
 gender-guesser = "~=0.4.0"
 django-imagekit = "~=4.0.2"
 pillow = "~=8.1.0"
+requests = "~=2.25.1"
 
 [dev-packages]
 
