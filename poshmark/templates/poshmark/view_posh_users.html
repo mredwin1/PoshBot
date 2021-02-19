@@ -1,4 +1,5 @@
 {% extends "poshmark/base.html" %}
+{% load custom_filters %}
 {% block content %}
     <div class="row">
         <div class="col-11">
@@ -11,11 +12,33 @@
         </div>
     </div>
     <hr>
-    <div class="row">
-        <div class="col">
-            {% for posh_user in object_list %}
-                <h5>{{ posh_user.username }}</h5>
-            {% endfor %}
+    {% for posh_user in object_list %}
+    <div class="row mx-5 mb-2 p-2 border border-dark rounded">
+        <div class="col-2">
+            <div class="row h-100 align-items-center">
+                <div class="col">
+                    <img src="{{ posh_user.profile_picture.url }}" alt="" class="img-fluid border {{ posh_user.status|status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ posh_user.status|status_return }}" style="border-width: medium!important;">
+                </div>
+            </div>
+        </div>
+        <div class="col-9">
+            <div class="d-flex mb-2">
+                <p class="mr-5 mb-1"><b>Name:</b> {{ posh_user.get_full_name }}</p>
+                <p class="ml-5 mb-1"><b>Gender:</b> {{ posh_user.gender|gender_return }}</p>
+            </div>
+            <div class="d-flex mb-2">
+                <p class="mr-5 mb-1"><b>Username:</b> {{ posh_user.username }}</p>
+                <p class="mr-5 mb-1"><b>Password:</b> {{ posh_user.password }}</p>
+            </div>
+            <div class="mb-2">
+                <p class="mb-1"><b>Email:</b> {{ posh_user.email }}</p>
+            </div>
+        </div>
+        <div class="col-1">
+            <a href="{% url 'delete-posh-user' posh_user.id %}" type="button" class="close" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </a>
         </div>
     </div>
+    {% endfor %}
 {% endblock %}
