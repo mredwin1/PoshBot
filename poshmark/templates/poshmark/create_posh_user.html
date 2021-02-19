@@ -2,27 +2,9 @@
 {% load crispy_forms_filters %}
 {% load static %}
 {% block content %}
-    <script>
-        function generate_posh_user_info() {
-        let form = $('#PoshUserForm');
-        $.ajax({
-           url: form.data('generate-url'),
-           type: 'GET',
-           cache: false,
-           processData: false,
-           contentType: false,
-           success: function (data) {
-               $.each(data, function (key, value) {
-                   let id = '#id_'.concat(key);
-                   $(id).val(value)
-               })
-           },
-        });
-        return false;
-    }
-    </script>
+    <script src="{% static 'poshmark/JS/generate_posh_user_info.js' %}"></script>
     <div class="content-section">
-        <form method="POST" data-generate-info-url="{% url 'generate-posh-user-info' %}" id="PoshUserForm">
+        <form method="POST" data-generate-info-url="{% url 'generate-posh-user-info' %}" id="PoshUserForm" enctype="multipart/form-data">
             {% csrf_token %}
             <legend class="border-bottom mb-4">New Posh User</legend>
             <div class="form-group">
