@@ -7,6 +7,8 @@ import string
 
 from django.db import models
 from gender_guesser import detector as gender
+from imagekit.models import ProcessedImageField
+from imagekit.processors import ResizeToFill
 from mailslurp_client.exceptions import ApiException
 
 
@@ -36,6 +38,11 @@ class PoshUser(models.Model):
     username = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=20)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
+    profile_picture = ProcessedImageField(upload_to='profile_pictures',
+                                          processors=[ResizeToFill(320, 320)],
+                                          format='PNG',
+                                          options={'quality': 60},
+                                          blank=False)
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'

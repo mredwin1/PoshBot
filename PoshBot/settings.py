@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'poshmark.apps.PoshmarkConfig',
     'crispy_forms',
+    'imagekit'
 ]
 
 MIDDLEWARE = [
