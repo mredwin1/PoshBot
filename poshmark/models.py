@@ -39,6 +39,8 @@ class PoshUser(models.Model):
     last_name = models.CharField(max_length=30)
     email = models.EmailField(help_text="If alias is chosen up top then put the email you wish to mask here. Otherwise "
                                         "put the email you wish to create the Posh User with.")
+    masked_email = models.EmailField(default="")
+    alias_email_id = models.CharField(max_length=100, default="")
     username = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=20)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
