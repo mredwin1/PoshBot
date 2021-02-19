@@ -114,12 +114,19 @@ class PoshUser(models.Model):
             else:
                 return True
 
-                try:
-                    api_response = api_instance.create_alias(create_alias_options)
-                except ApiException as e:
-                    logging.error(f'Exception when calling AliasControllerApi->create_alias {e}\n')
+    def check_email_verified(self):
+        """Using the mailslurp client to check if an alias is verified"""
+        configuration = mailslurp_client.Configuration()
+        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
 
-                return api_response.email_address
+        with mailslurp_client.ApiClient(configuration) as api_client:
+            api_instance = mailslurp_client.AliasControllerApi(api_client)
+            if self.alias_email_id:
+                alias = api_instance.get_alias(self.alias_email_id)
+
+                return alias.is_verified
+            else:
+                return True
 
     @staticmethod
     def generate_username(first_name, last_name):
