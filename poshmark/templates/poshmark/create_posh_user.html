@@ -1,0 +1,35 @@
+{% extends "poshmark/base.html" %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% block content %}
+    <script src="{% static 'poshmark/JS/generate_posh_user_info.js' %}"></script>
+    <div class="content-section">
+        <form method="POST" data-generate-info-url="{% url 'generate-posh-user-info' %}" id="PoshUserForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <legend class="border-bottom mb-4">New Posh User</legend>
+            <div class="form-group">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-secondary active">
+                        <input type="radio" name="alias" id="option1" autocomplete="off" value="1" checked> Alias
+                    </label>
+                    <label class="btn btn-secondary">
+                        <input type="radio" name="alias" id="option2" autocomplete="off" value="0"> No Alias
+                    </label>
+                </div>
+                <button class="btn btn-outline-dark" type="button" onclick="generate_posh_user_info()">Generate Random Information</button>
+            </div>
+            <fieldset class="form-group">
+                {{ form.profile_picture|as_crispy_field }}
+                {{ form.first_name|as_crispy_field }}
+                {{ form.last_name|as_crispy_field }}
+                {{ form.email|as_crispy_field }}
+                {{ form.username|as_crispy_field }}
+                {{ form.password|as_crispy_field }}
+                {{ form.gender|as_crispy_field }}
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-dark" type="submit">Create</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
