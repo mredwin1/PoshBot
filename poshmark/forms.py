@@ -37,5 +37,6 @@ class CreatePoshUser(forms.ModelForm):
         else:
             new_user.email = self.cleaned_data['email']
             new_user.is_email_verified = True
+            new_user.status = '4'
 
         new_user.save()
