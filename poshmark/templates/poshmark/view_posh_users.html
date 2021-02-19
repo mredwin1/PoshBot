@@ -1,0 +1,21 @@
+{% extends "poshmark/base.html" %}
+{% block content %}
+    <div class="row">
+        <div class="col-11">
+            <h1 class="m-0">Posh Users</h1>
+        </div>
+        <div class="col-1">
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <a href="{% url 'add-posh-user' %}" class="btn btn-sm btn-dark text-white" title="New Posh User">+</a>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col">
+            {% for posh_user in object_list %}
+                <h5>{{ posh_user.username }}</h5>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
