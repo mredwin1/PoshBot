@@ -14,9 +14,12 @@ from mailslurp_client.exceptions import ApiException
 
 class PoshUser(models.Model):
     STATUS_CHOICES = [
-        ('', 'In Use'),
-        ('', 'Active'),
-        ('', 'Inactive'),
+        ('0', 'In Use'),
+        ('1', 'Active'),
+        ('2', 'Inactive'),
+        ('3', 'Waiting for alias email to be verified'),
+        ('4', 'Waiting to be registered'),
+        ('5', 'Registering'),
     ]
 
     GENDER_CHOICES = [
