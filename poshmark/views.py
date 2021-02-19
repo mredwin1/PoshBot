@@ -1,9 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic.list import ListView
-from django.views.generic.edit import CreateView
 
 from .models import PoshUser
 from .forms import CreatePoshUser
@@ -14,13 +13,24 @@ def home(request):
     return render(request, 'poshmark/home.html')
 
 
+def create_posh_user(request):
+    if request.method == 'GET':
+        form = CreatePoshUser()
+
+        return render(request, 'poshmark/create_posh_user.html', {'form': form})
+    else:
+        form = CreatePoshUser(data=request.POST, files=request.FILES)
+        print(form.errors)
+        if form.is_valid():
+            form.save()
+
+            return redirect('posh-users')
+        else:
+            return render(request, 'poshmark/create_posh_user.html', {'form': form})
+
+
 class PoshUserListView(ListView):
     model = PoshUser
-
-
-class PoshUserCreateView(CreateView):
-    model = PoshUser
-    form_class = CreatePoshUser
 
 
 class GeneratePoshUserInfo(View):
