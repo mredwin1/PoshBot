@@ -20,7 +20,6 @@ def create_posh_user(request):
         return render(request, 'poshmark/create_posh_user.html', {'form': form})
     else:
         form = CreatePoshUser(data=request.POST, files=request.FILES)
-        print(form.errors)
         if form.is_valid():
             form.save()
 

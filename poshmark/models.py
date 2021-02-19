@@ -3,6 +3,7 @@ import mailslurp_client
 import names
 import os
 import random
+import requests
 import string
 
 from django.db import models
@@ -130,7 +131,15 @@ class PoshUser(models.Model):
 
     @staticmethod
     def generate_username(first_name, last_name):
-        return f'{first_name.lower()}_{last_name.lower()}{random.randint(100, 999)}'
+        username = f'{first_name.lower()}_{last_name.lower()}'
+        random_int = random.randint(100, 999)
+        response = requests.get(f'https://poshmark.com/closet/{username}{random_int}')
+
+        while response.status_code == requests.codes.ok:
+            random_int = random.randint(100, 999)
+            response = requests.get(f'https://poshmark.com/closet/{username}{random_int}')
+
+        return f'{username}{random_int}'
 
     @staticmethod
     def generate_password():
