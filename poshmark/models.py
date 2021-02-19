@@ -45,7 +45,7 @@ class PoshUser(models.Model):
     password = models.CharField(max_length=20)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
     profile_picture = ProcessedImageField(upload_to='profile_pictures',
-                                          processors=[ResizeToFill(320, 320)],
+                                          processors=[ResizeToFill(200, 200)],
                                           format='PNG',
                                           options={'quality': 60},
                                           blank=False)
