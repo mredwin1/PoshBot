@@ -90,12 +90,12 @@ class PoshUser(models.Model):
 
     def delete_alias_email(self):
         """Using the mailslurp client it deletes it's alias email"""
-        configuration = mailslurp_client.Configuration()
-        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
+        if self.alias_email_id:
+            configuration = mailslurp_client.Configuration()
+            configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
 
-        with mailslurp_client.ApiClient(configuration) as api_client:
-            api_instance = mailslurp_client.AliasControllerApi(api_client)
-            if self.alias_email_id:
+            with mailslurp_client.ApiClient(configuration) as api_client:
+                api_instance = mailslurp_client.AliasControllerApi(api_client)
                 api_instance.delete_alias(self.alias_email_id)
 
     @staticmethod
