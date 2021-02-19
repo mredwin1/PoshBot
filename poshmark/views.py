@@ -29,6 +29,13 @@ def create_posh_user(request):
             return render(request, 'poshmark/create_posh_user.html', {'form': form})
 
 
+def delete_posh_user(request, posh_user_id):
+    posh_user = PoshUser.objects.get(id=posh_user_id)
+    posh_user.delete()
+
+    return redirect('posh-users')
+
+
 class PoshUserListView(ListView):
     model = PoshUser
 

@@ -22,5 +22,6 @@ urlpatterns = [
     path('posh-users/', posh_views.PoshUserListView.as_view(template_name='poshmark/view_posh_users.html'),
          name='posh-users'),
     path('add-posh-user/', posh_views.create_posh_user, name='add-posh-user'),
+    path('delete-posh-user/<int:posh_user_id>', posh_views.delete_posh_user, name='delete-posh-user'),
     path('generate-posh-user-info/', posh_views.GeneratePoshUserInfo.as_view(), name='generate-posh-user-info'),
 ]
