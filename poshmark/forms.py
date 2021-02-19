@@ -1,3 +1,5 @@
+import requests
+
 from django import forms
 from poshmark.models import PoshUser
 
@@ -17,6 +19,11 @@ class CreatePoshUser(forms.ModelForm):
 
             if not can_create_alias:
                 self.add_error('email', 'The limit of email aliases have been met, cannot create more.')
+
+        response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
+
+        if response.status_code == requests.codes.ok:
+            self.add_error('username', 'This username already exists, please pick another.')
 
     def save(self, commit=True):
         new_user = super(CreatePoshUser, self).save(commit=False)
