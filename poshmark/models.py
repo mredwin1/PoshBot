@@ -78,13 +78,41 @@ class PoshUser(models.Model):
 
         with mailslurp_client.ApiClient(configuration) as api_client:
             api_instance = mailslurp_client.AliasControllerApi(api_client)
+
+            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email, name=str(self.username))
+
+            try:
+                api_response = api_instance.create_alias(create_alias_options)
+            except ApiException as e:
+                logging.error(f'Exception when calling AliasControllerApi->create_alias {e}\n')
+
+            return api_response
+
+    def delete_alias_email(self):
+        """Using the mailslurp client it deletes it's alias email"""
+        configuration = mailslurp_client.Configuration()
+        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
+
+        with mailslurp_client.ApiClient(configuration) as api_client:
+            api_instance = mailslurp_client.AliasControllerApi(api_client)
+            if self.alias_email_id:
+                api_instance.delete_alias(self.alias_email_id)
+
+    @staticmethod
+    def check_alias_email():
+        """Using the mailslurp client it checks if we the account has anymore aliases to create"""
+        configuration = mailslurp_client.Configuration()
+        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
+
+        with mailslurp_client.ApiClient(configuration) as api_client:
+            api_instance = mailslurp_client.AliasControllerApi(api_client)
             number_of_aliases = api_instance.get_aliases().number_of_elements
             if number_of_aliases >= int(os.environ.get('MAX_ALIASES', '1')):
                 logging.warning(f'The limit of email aliases have been met - '
                                 f'Total Number of Aliases {number_of_aliases}')
-                return f'[ERROR] The limit of email aliases have been met - Total Number of Aliases {number_of_aliases}'
+                return False
             else:
-                create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email, name=str(self))
+                return True
 
                 try:
                     api_response = api_instance.create_alias(create_alias_options)
