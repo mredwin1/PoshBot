@@ -9,6 +9,8 @@ django-crispy-forms = "~=1.11.0"
 mailslurp-client = "~=11.4.22"
 names = "~=0.3.0"
 gender-guesser = "~=0.4.0"
+django-imagekit = "~=4.0.2"
+pillow = "~=8.1.0"
 
 [dev-packages]
 
