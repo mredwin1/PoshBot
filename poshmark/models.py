@@ -63,6 +63,16 @@ class PoshUser(models.Model):
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'
 
+    def get_gender(self):
+        """Returns gender string from code"""
+        genders = {
+            '2': 'Male',
+            '1': 'Female',
+            '0': 'Unspecified',
+        }
+
+        return genders[self.gender]
+
     def generate_sign_up_info(self):
         first_name = names.get_first_name()
         last_name = names.get_last_name()
