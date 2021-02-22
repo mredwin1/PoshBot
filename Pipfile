@@ -12,6 +12,12 @@ gender-guesser = "~=0.4.0"
 django-imagekit = "~=4.0.2"
 pillow = "~=8.1.0"
 requests = "~=2.25.1"
+selenium = "~=3.141.0"
+celery = "~=5.0.5"
+django-cleanup = "~=5.1.0"
+psycopg2-binary = "~=2.8.6"
+gunicorn = "~=20.0.4"
+redis = "~=3.5.3"
 
 [dev-packages]
 

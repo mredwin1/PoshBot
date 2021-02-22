@@ -21,6 +21,7 @@ class PoshUser(models.Model):
         ('3', 'Waiting for alias email to be verified'),
         ('4', 'Waiting to be registered'),
         ('5', 'Registering'),
+        ('6', 'Updating Profile'),
     ]
 
     GENDER_CHOICES = [
@@ -42,17 +43,35 @@ class PoshUser(models.Model):
                                         "put the email you wish to create the Posh User with.")
     masked_email = models.EmailField(default="", blank=True)
     alias_email_id = models.CharField(max_length=100, default="", blank=True)
-    username = models.CharField(max_length=20, unique=True)
-    password = models.CharField(max_length=20)
+    username = models.CharField(max_length=15, unique=True)
+    password = models.CharField(max_length=20,
+                                help_text='Must be at least 6 characters and must contain a number or symbol.')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
-    profile_picture = ProcessedImageField(upload_to='profile_pictures',
-                                          processors=[ResizeToFill(200, 200)],
-                                          format='PNG',
-                                          options={'quality': 60},
-                                          blank=False)
+    profile_picture = ProcessedImageField(
+        processors=[ResizeToFill(200, 200)],
+        format='PNG',
+        options={'quality': 60},
+        blank=False
+    )
+    header_picture = ProcessedImageField(
+        processors=[ResizeToFill(1200, 200)],
+        format='PNG',
+        options={'quality': 60},
+        blank=False
+    )
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'
+
+    def get_gender(self):
+        """Returns gender string from code"""
+        genders = {
+            '2': 'Male',
+            '1': 'Female',
+            '0': 'Unspecified',
+        }
+
+        return genders[self.gender]
 
     def generate_sign_up_info(self):
         first_name = names.get_first_name()
@@ -132,6 +151,11 @@ class PoshUser(models.Model):
     @staticmethod
     def generate_username(first_name, last_name):
         username = f'{first_name.lower()}_{last_name.lower()}'
+        username_length = len(username)
+
+        if username_length > 12:
+            username = username[:(12 - username_length)]
+
         random_int = random.randint(100, 999)
         response = requests.get(f'https://poshmark.com/closet/{username}{random_int}')
 

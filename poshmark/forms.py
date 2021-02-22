@@ -10,7 +10,8 @@ class CreatePoshUser(forms.ModelForm):
 
     class Meta:
         model = PoshUser
-        fields = ['profile_picture', 'first_name', 'last_name', 'email', 'username', 'password', 'gender']
+        fields = ['profile_picture', 'header_picture', 'first_name', 'last_name', 'email', 'username', 'password',
+                  'gender']
 
     def clean(self):
         if self.cleaned_data['alias'] == '1':
@@ -24,6 +25,18 @@ class CreatePoshUser(forms.ModelForm):
 
         if response.status_code == requests.codes.ok:
             self.add_error('username', 'This username already exists, please pick another.')
+
+        symbols = '[@_!#$%^&*()<>?/\|}{~:]'
+        password = self.cleaned_data['password']
+        meets_criteria = False
+
+        for character in password:
+            if character.isdigit() or character in symbols:
+                meets_criteria = True
+                break
+
+        if not meets_criteria or len(password) < 6:
+            self.add_error('password', 'Password does not meet requirements')
 
     def save(self, commit=True):
         new_user = super(CreatePoshUser, self).save(commit=False)

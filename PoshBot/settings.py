@@ -21,12 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'i05gg0nuv9mx7o2*yf43dr(9#nf#u+7%(f-&(d281ej4_&nq!#'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+if DEBUG:
+    ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', 'localhost', 'poshbot.localhost']
+else:
+    ALLOWED_HOSTS = [os.environ['DOMAIN'], f'www.{os.environ["DOMAIN"]}']
 
 
 # Application definition
@@ -42,7 +45,8 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'poshmark.apps.PoshmarkConfig',
     'crispy_forms',
-    'imagekit'
+    'imagekit',
+    'django_cleanup.apps.CleanupConfig',  # This always has to be last in order to discover all file fields properly
 ]
 
 MIDDLEWARE = [
@@ -107,9 +111,13 @@ LOGGING = {
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": 'django.db.backends.postgresql',
+        "NAME": os.environ['SQL_DATABASE'],
+        "USER": os.environ['SQL_USER'],
+        "PASSWORD": os.environ['SQL_PASSWORD'],
+        "HOST": os.environ['SQL_HOST'],
+        "PORT": os.environ['SQL_PORT'],
     }
 }
 
@@ -154,7 +162,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/shared_volume/media'
 
 # Crispy Forms
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -163,3 +171,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
+
+# Celery Settings
+CELERY_BROKER_URL = "redis://redis:6379"
+CELERY_RESULT_BACKEND = "redis://redis:6379"
