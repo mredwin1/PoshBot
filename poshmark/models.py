@@ -151,6 +151,11 @@ class PoshUser(models.Model):
     @staticmethod
     def generate_username(first_name, last_name):
         username = f'{first_name.lower()}_{last_name.lower()}'
+        username_length = len(username)
+
+        if username_length > 12:
+            username = username[:(12 - username_length)]
+
         random_int = random.randint(100, 999)
         response = requests.get(f'https://poshmark.com/closet/{username}{random_int}')
 
