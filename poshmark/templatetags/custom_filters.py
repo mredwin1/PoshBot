@@ -13,6 +13,7 @@ def status_return(status_code):
         '3': 'Waiting for alias email to be verified',
         '4': 'Waiting to be registered',
         '5': 'Registering',
+        '6': 'Updating Profile',
     }
 
     return status[status_code]
@@ -22,12 +23,13 @@ def status_return(status_code):
 def status_color_return(status_code):
     """Takes a status code and returns it's message"""
     statuses = {
-        '0': 'border-warning',
+        '0': 'border-dark',
         '1': 'border-success',
         '2': 'border-secondary',
-        '3': '.border-primary',
+        '3': 'border-primary',
         '4': 'border-warning',
         '5': 'border-info',
+        '6': 'border-danger',
     }
 
     return statuses[status_code]
