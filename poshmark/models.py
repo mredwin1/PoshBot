@@ -48,14 +48,12 @@ class PoshUser(models.Model):
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
     profile_picture = ProcessedImageField(
-        upload_to='profile_pictures',
         processors=[ResizeToFill(200, 200)],
         format='PNG',
         options={'quality': 60},
         blank=False
     )
     header_picture = ProcessedImageField(
-        upload_to='header_pictures',
         processors=[ResizeToFill(1200, 200)],
         format='PNG',
         options={'quality': 60},
