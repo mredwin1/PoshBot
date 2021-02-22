@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'poshmark.apps.PoshmarkConfig',
     'crispy_forms',
-    'imagekit'
+    'imagekit',
+    'django_cleanup.apps.CleanupConfig',  # This always has to be last in order to discover all file fields properly
 ]
 
 MIDDLEWARE = [
@@ -110,9 +111,13 @@ LOGGING = {
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": 'django.db.backends.postgresql',
+        "NAME": os.environ['SQL_DATABASE'],
+        "USER": os.environ['SQL_USER'],
+        "PASSWORD": os.environ['SQL_PASSWORD'],
+        "HOST": os.environ['SQL_HOST'],
+        "PORT": os.environ['SQL_PORT'],
     }
 }
 
@@ -157,7 +162,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/shared_volume/media'
 
 # Crispy Forms
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
