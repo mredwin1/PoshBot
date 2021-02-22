@@ -43,8 +43,9 @@ class PoshUser(models.Model):
                                         "put the email you wish to create the Posh User with.")
     masked_email = models.EmailField(default="", blank=True)
     alias_email_id = models.CharField(max_length=100, default="", blank=True)
-    username = models.CharField(max_length=20, unique=True)
-    password = models.CharField(max_length=20)
+    username = models.CharField(max_length=15, unique=True)
+    password = models.CharField(max_length=20,
+                                help_text='Must be at least 6 characters and must contain a number or symbol.')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
     profile_picture = ProcessedImageField(
         upload_to='profile_pictures',
