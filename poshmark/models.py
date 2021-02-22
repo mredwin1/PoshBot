@@ -21,6 +21,7 @@ class PoshUser(models.Model):
         ('3', 'Waiting for alias email to be verified'),
         ('4', 'Waiting to be registered'),
         ('5', 'Registering'),
+        ('6', 'Updating Profile'),
     ]
 
     GENDER_CHOICES = [
