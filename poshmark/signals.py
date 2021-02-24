@@ -8,13 +8,13 @@ from poshmark.models import PoshUser
 
 
 @receiver(post_delete, sender=PoshUser)
-def delete_alias_email(sender, instance, *args, **kwargs):
+def posh_user_deleted(sender, instance, *args, **kwargs):
     instance.delete_alias_email()
     logging.info(f'Alias email for {instance.username} deleted')
 
 
 @receiver(post_save, sender=PoshUser)
-def register_posh_user(sender, instance, created, *args, **kwargs):
+def posh_user_saved(sender, instance, created, *args, **kwargs):
     if created and not instance.is_registered:
         register_posh_user.delay(instance.id)
 
