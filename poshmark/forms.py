@@ -18,6 +18,13 @@ class CreatePoshUser(forms.ModelForm):
         super(CreatePoshUser, self).__init__(*args, **kwargs)
         self.request = request
 
+        self.fields['profile_picture'].required = False
+        self.fields['header_picture'].required = False
+        self.fields['first_name'].required = False
+        self.fields['last_name'].required = False
+        self.fields['email'].required = False
+        self.fields['gender'].required = False
+
     def clean(self):
         if not self.cleaned_data['is_registered']:
             if self.cleaned_data['alias']:
