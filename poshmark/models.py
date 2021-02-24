@@ -11,6 +11,7 @@ from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
 from mailslurp_client.exceptions import ApiException
+from users.models import User
 
 
 class PoshUser(models.Model):
@@ -31,7 +32,8 @@ class PoshUser(models.Model):
         ('0', 'Unspecified'),
     ]
 
-    is_active = models.BooleanField(default=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+
     is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
 
