@@ -60,9 +60,10 @@ class CreatePoshUser(forms.ModelForm):
             new_user.email = self.cleaned_data['email']
             new_user.is_email_verified = True
 
-            new_user.status = '4'
-
         if self.cleaned_data['is_registered']:
             new_user.is_registered = True
+            new_user.status = '1'
+        else:
+            new_user.status = '4'
 
         new_user.save()
