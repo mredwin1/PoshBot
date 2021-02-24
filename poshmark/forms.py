@@ -5,8 +5,9 @@ from poshmark.models import PoshUser
 
 
 class CreatePoshUser(forms.ModelForm):
-    alias_choices = [('1', 'Alias'), ('0', 'No Alias')]
-    alias = forms.CharField(max_length=10, label=None, widget=forms.RadioSelect(choices=alias_choices))
+    alias = forms.BooleanField(required=False, label='Create Alias')
+
+    is_registered = forms.BooleanField(required=False, label='User is Registered')
 
     class Meta:
         model = PoshUser
