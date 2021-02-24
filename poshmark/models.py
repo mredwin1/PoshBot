@@ -39,27 +39,28 @@ class PoshUser(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
 
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    email = models.EmailField(help_text="If alias is chosen up top then put the email you wish to mask here. Otherwise "
+    first_name = models.CharField(max_length=30, blank=True)
+    last_name = models.CharField(max_length=30, blank=True)
+    email = models.EmailField(blank=True,
+                              help_text="If alias is chosen up top then put the email you wish to mask here. Otherwise "
                                         "put the email you wish to create the Posh User with.")
     masked_email = models.EmailField(default="", blank=True)
     alias_email_id = models.CharField(max_length=100, default="", blank=True)
     username = models.CharField(max_length=15, unique=True)
     password = models.CharField(max_length=20,
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
-    gender = models.CharField(max_length=20, choices=GENDER_CHOICES)
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
     profile_picture = ProcessedImageField(
         processors=[ResizeToFill(200, 200)],
         format='PNG',
         options={'quality': 60},
-        blank=False
+        blank=True
     )
     header_picture = ProcessedImageField(
         processors=[ResizeToFill(1200, 200)],
         format='PNG',
         options={'quality': 60},
-        blank=False
+        blank=True
     )
 
     def get_full_name(self):
