@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
@@ -13,13 +14,14 @@ def home(request):
     return render(request, 'poshmark/home.html')
 
 
+@login_required
 def create_posh_user(request):
     if request.method == 'GET':
-        form = CreatePoshUser()
+        form = CreatePoshUser(request)
 
         return render(request, 'poshmark/create_posh_user.html', {'form': form})
     else:
-        form = CreatePoshUser(data=request.POST, files=request.FILES)
+        form = CreatePoshUser(data=request.POST, files=request.FILES, request=request)
         if form.is_valid():
             form.save()
 
@@ -28,6 +30,7 @@ def create_posh_user(request):
             return render(request, 'poshmark/create_posh_user.html', {'form': form})
 
 
+@login_required
 def delete_posh_user(request, posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
     posh_user.delete()
@@ -35,8 +38,16 @@ def delete_posh_user(request, posh_user_id):
     return redirect('posh-users')
 
 
-class PoshUserListView(ListView):
+class PoshUserListView(ListView, LoginRequiredMixin):
     model = PoshUser
+
+    def get_queryset(self):
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            posh_users = PoshUser.objects.all()
+        else:
+            posh_users = PoshUser.objects.filter(user=self.request.user)
+
+        return posh_users
 
 
 class GeneratePoshUserInfo(View):
