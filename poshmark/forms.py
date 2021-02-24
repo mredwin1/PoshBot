@@ -14,6 +14,10 @@ class CreatePoshUser(forms.ModelForm):
         fields = ['profile_picture', 'header_picture', 'first_name', 'last_name', 'email', 'username', 'password',
                   'gender']
 
+    def __init__(self, request, *args, **kwargs):
+        super(CreatePoshUser, self).__init__(*args, **kwargs)
+        self.request = request
+
     def clean(self):
         if not self.cleaned_data['is_registered']:
             if self.cleaned_data['alias']:
@@ -42,6 +46,8 @@ class CreatePoshUser(forms.ModelForm):
 
     def save(self, commit=True):
         new_user = super(CreatePoshUser, self).save(commit=False)
+
+        new_user.user = self.request.user
 
         if self.cleaned_data['alias'] and not self.cleaned_data['is_registered']:
             masked_email = self.cleaned_data['email']
