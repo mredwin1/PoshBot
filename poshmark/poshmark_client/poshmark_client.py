@@ -174,7 +174,7 @@ class PoshMarkClient:
 
                 return 'CAPTCHA'
 
-    def sign_up(self):
+    def register(self):
         if self.posh_user.is_signed_up:
             pass
         else:
@@ -240,7 +240,7 @@ class PoshMarkClient:
                 time.sleep(random.randint(1, 3))  # Sleep for realism
                 next_button = self.locate(By.XPATH, '//button[@type="submit"]')
                 next_button.click()
-                self.posh_user.is_signed_up = True
+                self.posh_user.is_registered = True
                 self.posh_user.save()
 
                 # Next Section - Select Brands (will not select brands)
