@@ -32,7 +32,7 @@ class PoshUser(models.Model):
     ]
 
     is_active = models.BooleanField(default=True)
-    is_signed_up = models.BooleanField(default=False)
+    is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)

@@ -5,8 +5,9 @@ from poshmark.models import PoshUser
 
 
 class CreatePoshUser(forms.ModelForm):
-    alias_choices = [('1', 'Alias'), ('0', 'No Alias')]
-    alias = forms.CharField(max_length=10, label=None, widget=forms.RadioSelect(choices=alias_choices))
+    alias = forms.BooleanField(required=False, label='Create Alias')
+
+    is_registered = forms.BooleanField(required=False, label='User is Registered')
 
     class Meta:
         model = PoshUser
@@ -14,12 +15,13 @@ class CreatePoshUser(forms.ModelForm):
                   'gender']
 
     def clean(self):
-        if self.cleaned_data['alias'] == '1':
-            tmp_user = PoshUser()
-            can_create_alias = tmp_user.check_alias_email()
+        if not self.cleaned_data['is_registered']:
+            if self.cleaned_data['alias']:
+                tmp_user = PoshUser()
+                can_create_alias = tmp_user.check_alias_email()
 
-            if not can_create_alias:
-                self.add_error('email', 'The limit of email aliases have been met, cannot create more.')
+                if not can_create_alias:
+                    self.add_error('email', 'The limit of email aliases have been met, cannot create more.')
 
         response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
 
@@ -41,7 +43,7 @@ class CreatePoshUser(forms.ModelForm):
     def save(self, commit=True):
         new_user = super(CreatePoshUser, self).save(commit=False)
 
-        if self.cleaned_data['alias'] == '1':
+        if self.cleaned_data['alias'] and not self.cleaned_data['is_registered']:
             masked_email = self.cleaned_data['email']
             alias = new_user.generate_email(masked_email)
             new_user.email = alias.email_address
@@ -54,9 +56,14 @@ class CreatePoshUser(forms.ModelForm):
             else:
                 new_user.status = '3'
 
-        else:
+        elif not self.cleaned_data['alias'] or not self.cleaned_data['is_registered']:
             new_user.email = self.cleaned_data['email']
             new_user.is_email_verified = True
+
+        if self.cleaned_data['is_registered']:
+            new_user.is_registered = True
+            new_user.status = '1'
+        else:
             new_user.status = '4'
 
         new_user.save()

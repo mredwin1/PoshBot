@@ -8,15 +8,11 @@
             {% csrf_token %}
             <legend class="border-bottom mb-4">New Posh User</legend>
             <div class="form-group">
-                <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-secondary active">
-                        <input type="radio" name="alias" id="option1" autocomplete="off" value="1" checked> Alias
-                    </label>
-                    <label class="btn btn-secondary">
-                        <input type="radio" name="alias" id="option2" autocomplete="off" value="0"> No Alias
-                    </label>
+                <div class="d-flex justify-content-between">
+                    {{ form.alias|as_crispy_field }}
+                    <button class="btn btn-outline-dark" type="button" onclick="generate_posh_user_info()">Generate Random Information</button>
+                    {{ form.is_registered|as_crispy_field }}
                 </div>
-                <button class="btn btn-outline-dark" type="button" onclick="generate_posh_user_info()">Generate Random Information</button>
             </div>
             <fieldset class="form-group">
                 {{ form.profile_picture|as_crispy_field }}
