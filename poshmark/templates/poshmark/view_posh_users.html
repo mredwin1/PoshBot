@@ -24,15 +24,15 @@
         </div>
         <div class="col-9">
             <div class="d-flex mb-2">
-                <p class="mr-5 mb-1"><b>Name:</b> {{ posh_user.get_full_name }}</p>
-                <p class="ml-5 mb-1"><b>Gender:</b> {{ posh_user.gender|gender_return }}</p>
+                {% if posh_user.first_name %}<p class="mr-5 mb-1"><b>Name:</b> {{ posh_user.get_full_name }}</p>{% endif %}
+                {% if posh_user.gender %}<p class="ml-5 mb-1"><b>Gender:</b> {{ posh_user.gender|gender_return }}</p>{% endif %}
             </div>
             <div class="d-flex mb-2">
-                <p class="mr-5 mb-1"><b>Username:</b> {{ posh_user.username }}</p>
+                {% if posh_user.username %}<p class="mr-5 mb-1"><b>Username:</b> {{ posh_user.username }}</p>{% endif %}
                 <p class="mr-5 mb-1"><b>Password:</b> {{ posh_user.password }}</p>
             </div>
             <div class="mb-2">
-                <p class="mb-1"><b>Email:</b> {{ posh_user.email }}</p>
+                {% if posh_user.email %}<p class="mb-1"><b>Email:</b> {{ posh_user.email }}</p>{% endif %}
             </div>
         </div>
         <div class="col-1">
