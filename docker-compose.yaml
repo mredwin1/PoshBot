@@ -19,16 +19,16 @@ services:
       # Explicitly tell Traefik to expose this container
       - "traefik.enable=true"
       # The domain the service will respond to
-      - "traefik.http.routers.dms.rule=Host(`${DOMAIN}`, `www.${DOMAIN}`)"
+      - "traefik.http.routers.poshbot.rule=Host(`${DOMAIN}`, `www.${DOMAIN}`)"
       # Allow request only from the predefined entry point named "websecure"
-      - "traefik.http.routers.dms.entrypoints=websecure"
+      - "traefik.http.routers.poshbot.entrypoints=websecure"
       # Tell it to listen to port 80 inside the Docker container
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       # Traefik will use the traefik_default docker network
       - "traefik.docker.network=traefik_default"
       # Automatic Certificate Generation
-      - "traefik.http.routers.dms.tls=true"
-      - "traefik.http.routers.dms.tls.certresolver=le"
+      - "traefik.http.routers.poshbot.tls=true"
+      - "traefik.http.routers.poshbot.tls.certresolver=le"
 
     # Bind volumes to enable hot-reloads.
     # e.g. when a file is changed in this folder, the change is
@@ -121,6 +121,31 @@ services:
     volumes:
       - shared_volume:/shared_volume
       - /dev/shm:/dev/shm
+  nginx:
+    image: ghcr.io/mredwin1/nginx:latest
+    container_name: nginx_poshbot
+    build:
+      context: ./nginx/
+      dockerfile: nginx.Dockerfile
+    restart: always
+    networks:
+      - traefik
+    labels:
+      # Explicitly tell Traefik to expose this container
+      - "traefik.enable=true"
+      # The domain the service will respond to
+      - "traefik.http.routers.nginx.rule=Host(`${DOMAIN}`, `www.${DOMAIN}`) && PathPrefix(`/media`)"
+#      # Allow request only from the predefined entry point named "websecure"
+#      - "traefik.http.routers.nginx.entrypoints=websecure"
+#      # Tell it to listen to port 80 inside the Docker container
+#      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+#      # Traefik will use the traefik_default docker network
+#      - "traefik.docker.network=traefik_default"
+#      # Automatic Certificate Generation
+#      - "traefik.http.routers.nginx.tls=true"
+#      - "traefik.http.routers.nginx.tls.certresolver=le"
+    volumes:
+      - /shared_volume:/shared_volume
 networks:
   internal:
   traefik:
