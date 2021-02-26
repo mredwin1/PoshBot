@@ -123,6 +123,13 @@ class PoshMarkClient:
             return False
         return True
 
+    def sleep(self, lower, upper=None):
+        seconds = random.randint(lower, upper) if upper else lower
+        word = 'second' if seconds == 1 else 'seconds'
+
+        self.logger.info(f'Sleeping for {seconds} {word}')
+        time.sleep(seconds)
+
     def check_for_errors(self):
         self.logger.info('Checking for errors')
         captcha_errors = [
@@ -192,14 +199,15 @@ class PoshMarkClient:
                 self.logger.info('Locating sign up button')
 
                 # Random wait for more realism
-                time.sleep(random.randint(1, 5))
+                self.sleep(1, 5)
 
                 # Pick one of the two signup buttons for more randomness and click it
                 sign_up_button_xpath = random.choice(['//*[@id="content"]/div/div[1]/div/div[2]/div/div/a',
                                                       '//*[@id="app"]/header/nav/div/div/a[2]'])
                 signup_button = self.locate(By.XPATH, sign_up_button_xpath)
                 signup_button.click()
-                time.sleep(random.randint(1, 4))
+                self.logger.info(f'Clicked sign up button - Current URL: {self.web_driver.current_url}')
+                self.sleep(1, 4)
 
                 # Get all fields for sign up
                 first_name_field = self.locate(By.ID, 'firstName')
@@ -212,17 +220,17 @@ class PoshMarkClient:
                 # Send keys and select gender
                 self.logger.info('Filling out form')
                 first_name_field.send_keys(self.posh_user.first_name)
-                time.sleep(random.randint(1, 2))
+                self.sleep(1, 2)
                 last_name_field.send_keys(self.posh_user.last_name)
-                time.sleep(random.randint(1, 2))
+                self.sleep(1, 2)
                 email_field.send_keys(self.posh_user.email)
-                time.sleep(random.randint(2, 5))
+                self.sleep(2, 5)
                 username_field.send_keys(self.posh_user.username)
-                time.sleep(random.randint(1, 2))
+                self.sleep(1, 5)
                 password_field.send_keys(self.posh_user.password)
-                time.sleep(random.randint(1, 2))
+                self.sleep(1, 2)
                 gender_field.click()
-                time.sleep(1)
+                self.sleep(1)
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
                 done_button = self.locate(By.XPATH, '//button[@type="submit"]')
 
@@ -230,7 +238,7 @@ class PoshMarkClient:
                     if element.text == self.posh_user.get_gender():
                         element.click()
 
-                time.sleep(random.randint(1, 3))
+                self.sleep(1, 3)
 
                 # Submit the form
                 done_button.click()
@@ -309,14 +317,14 @@ class PoshMarkClient:
         log_in_nav.click()
         self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
 
-        time.sleep(random.randint(1, 3))
+        self.sleep(1, 3)
         username_field = self.locate(By.ID, 'login_form_username_email')
         password_field = self.locate(By.ID, 'login_form_password')
 
         self.logger.info('Filling in form')
 
         username_field.send_keys(self.posh_user.username)
-        time.sleep(random.randint(1, 2))
+        self.sleep(1, 2)
         password_field.send_keys(self.posh_user.password)
         password_field.send_keys(Keys.RETURN)
         self.logger.info('Form submitted')
@@ -325,7 +333,7 @@ class PoshMarkClient:
 
         if error_code == 'CAPTCHA':
             password_field = self.locate(By.ID, 'login_form_password')
-            time.sleep(1)
+            self.sleep(1)
             password_field.send_keys(self.posh_user.password)
             password_field.send_keys(Keys.RETURN)
             self.logger.info('Form resubmitted')
@@ -353,7 +361,7 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
-            time.sleep(random.randint(1, 3))
+            self.sleep(1, 3)
 
             profile_dropdown = self.locate(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
             profile_dropdown.click()
