@@ -18,7 +18,9 @@
         <div class="col-2">
             <div class="row h-100 align-items-center">
                 <div class="col">
-                    <img src="{% if posh_user.profile_picture %}{{ posh_user.profile_picture.url }}{% else %}{% static '/poshmark/images/blank_profile_picture.jpg' %}{% endif %}" alt="" class="img-fluid border {{ posh_user.status|status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ posh_user.status|status_return }}" style="border-width: medium!important;">
+                    <a href="https://poshmark.com/closet/{{ posh_user.username }}" target="_blank">
+                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border {{ posh_user.status|status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ posh_user.status|status_return }}" style="border-width: medium!important;">
+                    </a>
                 </div>
             </div>
         </div>
