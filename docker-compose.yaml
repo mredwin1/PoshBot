@@ -36,7 +36,7 @@ services:
     volumes:
       - ./PoshBot/:/PoshBot/
       - ./poshmark/:/poshmark/
-      - ./media/:/shared_volume/media
+#      - ./media/:/shared_volume/media
       - /dev/shm:/dev/shm
       - shared_volume:/shared_volume
   db:
