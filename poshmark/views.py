@@ -57,4 +57,3 @@ class GeneratePoshUserInfo(View):
         data = new_user.generate_sign_up_info()
 
         return JsonResponse(data=data, status=200)
-
