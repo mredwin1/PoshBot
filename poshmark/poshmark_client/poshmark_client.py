@@ -238,8 +238,9 @@ class PoshMarkClient:
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
                 done_button = self.locate(By.XPATH, '//button[@type="submit"]')
 
+                gender = self.posh_user.get_gender()
                 for element in gender_options:
-                    if element.text == self.posh_user.get_gender():
+                    if element.text == gender:
                         element.click()
 
                 self.sleep(1, 3)
