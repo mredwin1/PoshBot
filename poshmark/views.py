@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic.list import ListView
 
-from .models import PoshUser
+from .models import PoshUser, Log, LogEntry
 from .forms import CreatePoshUser
 
 
@@ -50,10 +50,22 @@ class PoshUserListView(ListView, LoginRequiredMixin):
         return posh_users
 
 
-class GeneratePoshUserInfo(View):
+class GeneratePoshUserInfo(View, LoginRequiredMixin):
     @staticmethod
     def get(request, *args, **kwargs):
         new_user = PoshUser()
         data = new_user.generate_sign_up_info()
 
         return JsonResponse(data=data, status=200)
+
+
+class ActionLogListView(ListView, LoginRequiredMixin):
+    model = Log
+
+    def get_queryset(self):
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            posh_users = Log.objects.all()
+        else:
+            posh_users = PoshUser.objects.filter(user=self.request.user)
+
+        return posh_users
