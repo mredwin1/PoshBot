@@ -130,7 +130,7 @@ class PoshMarkClient:
         self.logger.info(f'Sleeping for {seconds} {word}')
         time.sleep(seconds)
 
-    def check_for_errors(self):
+    def check_for_errors(self, step=None):
         self.logger.info('Checking for errors')
         captcha_errors = [
             'Invalid captcha',
@@ -179,8 +179,12 @@ class PoshMarkClient:
                     word = 'attempt' if retries == 1 else 'attempts'
                     self.logger.info(f'2Captcha successfully solved captcha after {retries} {word}')
                     # Set the captcha response
-                    self.web_driver.execute_script(
-                        f'document.getElementById("g-recaptcha-response").innerHTML="{captcha_response}";')
+                    if step == 'registration':
+                        self.web_driver.execute_script(f'grecaptcha.getResponse = () => "{captcha_response}"')
+                        self.web_driver.execute_script('validateLoginCaptcha()')
+                    else:
+                        self.web_driver.execute_script(
+                            f'document.getElementById("g-recaptcha-response").innerHTML="{captcha_response}";')
 
                 return 'CAPTCHA'
 
@@ -234,8 +238,9 @@ class PoshMarkClient:
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
                 done_button = self.locate(By.XPATH, '//button[@type="submit"]')
 
+                gender = self.posh_user.get_gender()
                 for element in gender_options:
-                    if element.text == self.posh_user.get_gender():
+                    if element.text == gender:
                         element.click()
 
                 self.sleep(1, 3)
@@ -245,14 +250,14 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
-                error_code = self.check_for_errors()
+                error_code = self.check_for_errors('registration')
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
 
                 # Sleep for realism
-                self.sleep(1, 2)
+                self.sleep(5)
 
                 # Check if Posh User is now registered
                 response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
