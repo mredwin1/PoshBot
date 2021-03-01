@@ -257,7 +257,7 @@ class PoshMarkClient:
                     self.logger.info('Resubmitted form after entering captcha')
 
                 # Sleep for realism
-                self.sleep(1, 2)
+                self.sleep(5)
 
                 # Check if Posh User is now registered
                 response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
