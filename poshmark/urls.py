@@ -26,7 +26,7 @@ urlpatterns = [
     path('generate-posh-user-info/', posh_views.GeneratePoshUserInfo.as_view(), name='generate-posh-user-info'),
     path('view-action-logs/', posh_views.ActionLogListView.as_view(template_name='poshmark/view_action_logs.html'),
          name='view-action-logs'),
-    path('view-action-logs/details/<int:logger_id>',
+    path('view-action-logs/details/<int:logger_id>/',
          posh_views.LogEntryListView.as_view(template_name='poshmark/view_action_log_details.html'),
          name='view-action-log-details'),
     path('get-log-entries/<int:logger_id>/<str:datetime>/', posh_views.GetLogEntries.as_view(), name='get-log-entries'),
