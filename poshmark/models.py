@@ -227,8 +227,6 @@ class Log(models.Model):
             message=message
         )
 
-        self.log_entries += 1
-
         log_entry.save()
 
     def critical(self, message):
