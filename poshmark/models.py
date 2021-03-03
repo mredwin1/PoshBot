@@ -206,6 +206,7 @@ class Log(models.Model):
 
     logger_type = models.CharField(max_length=10, choices=REASON_CHOICES)
     posh_user = models.ForeignKey(PoshUser, on_delete=models.CASCADE)
+    created = models.DateTimeField(editable=False)
 
     @staticmethod
     def get_time():
@@ -237,6 +238,12 @@ class Log(models.Model):
 
     def debug(self, message):
         self.log(message, LogEntry.DEBUG)
+
+    def save(self, *args, **kwargs):
+        """On save, update timestamps"""
+        if not self.id:
+            self.created = timezone.now()
+        return super(Log, self).save(*args, **kwargs)
 
 
 class LogEntry(models.Model):
