@@ -6,7 +6,7 @@
     <script src="{% static 'poshmark/JS/view_action_log_details_utilities.js' %}"></script>
     <div class="row">
         <div class="col">
-            <h2 class="m-0">Action Logs for {{ object_list.0.logger.posh_user.username }} during {{ object_list.0.logger.posh_user.username }} process</h2>
+            <h2 class="m-0">Action Logs for {{ object_list.0.logger.posh_user.username }} during {{ object_list.0.logger.logger_type|logger_type_return }} process</h2>
         </div>
     </div>
     <hr>
