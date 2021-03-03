@@ -82,3 +82,15 @@ def level_color_return(level):
     }
 
     return colors[level]
+
+
+@register.filter
+def logger_type_return(logger_type):
+    """Takes a logger type code and returns it the type"""
+
+    logger_types = {
+        '0': 'Other',
+        '1': 'registration',
+        '2': 'campaign',
+    }
+    return logger_types[logger_type] if logger_type in logger_types.keys() else 'Other'
