@@ -1,12 +1,16 @@
+import datetime
+import pytz
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry
 from .forms import CreatePoshUser
+from poshmark.templatetags.custom_filters import log_entry_return
 
 
 @login_required
@@ -64,8 +68,37 @@ class ActionLogListView(ListView, LoginRequiredMixin):
 
     def get_queryset(self):
         if self.request.user.is_superuser or self.request.user.is_staff:
-            posh_users = Log.objects.all()
+            logs = Log.objects.all()
         else:
-            posh_users = PoshUser.objects.filter(user=self.request.user)
+            logs = Log.objects.filter(user=self.request.user)
 
-        return posh_users
+        return logs
+
+
+class LogEntryListView(ListView, LoginRequiredMixin):
+    model = LogEntry
+
+    def get_queryset(self):
+        log_entries = LogEntry.objects.filter(logger=self.kwargs['logger_id'])
+
+        return log_entries
+
+
+class GetLogEntries(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        timestamp_str = self.kwargs['datetime']
+        logger_id = self.kwargs["logger_id"]
+        timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d %I:%M:%S.%f %p').replace(tzinfo=pytz.utc)
+        log_entries = LogEntry.objects.filter(logger=logger_id, timestamp__gt=timestamp).order_by("timestamp")
+
+        if log_entries:
+            log_entry_messages = [log_entry_return(log_entry) for log_entry in log_entries]
+            last_timestamp = log_entries.last().timestamp.strftime('%Y-%m-%d %I:%M:%S.%f %p')
+            data = {
+                'log_entry_messages': log_entry_messages,
+                'new_url': reverse('get-log-entries', args=[logger_id, last_timestamp])
+            }
+        else:
+            data = {}
+
+        return JsonResponse(data=data, status=200)
