@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 
+from celery.schedules import crontab
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -176,3 +177,11 @@ LOGIN_URL = 'login'
 # Celery Settings
 CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
+
+# Periodic Tasks
+CELERY_BEAT_SCHEDULE = {
+    'log_cleanup': {
+        'task': 'poshmark.tasks.log_cleanup',
+        'schedule': crontab(minute=0, hour=0)
+    },
+}
