@@ -1,0 +1,97 @@
+{% extends "poshmark/base.html" %}
+{% load custom_filters %}
+{% load static %}
+{% load tz %}
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <h1 class="m-0">Action Logs</h1>
+        </div>
+    </div>
+    <ul class="nav nav-tabs mt-2" id="logTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="registration-tab" data-toggle="tab" href="#registration" role="tab" aria-controls="registration-logs" aria-selected="true">Registration</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="campaign-tab" data-toggle="tab" href="#campaign" role="tab" aria-controls="campaign-logs" aria-selected="false">Campaign</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="other-tab" data-toggle="tab" href="#other" role="tab" aria-controls="other-logs" aria-selected="false">Other</a>
+        </li>
+    </ul>
+    <div class="tab-content mt-3" id="logTabContent">
+        <div class="tab-pane fade show active" id="registration" role="tabpanel" aria-labelledby="registration-tab">
+            {% for log in object_list %}
+                {% if log.logger_type == '1' %}
+                    <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
+                        <div class="row mx-5 mb-2 p-2 border border-dark rounded">
+                            <div class="col-2">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-10">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="tab-pane fade" id="campaign" role="tabpanel" aria-labelledby="campaign-tab">
+            {% for log in object_list %}
+                {% if log.logger_type == '2' %}
+                    <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
+                        <div class="row mx-5 mb-2 p-2 border border-dark rounded">
+                            <div class="col-2">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-10">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="tab-pane fade" id="other" role="tabpanel" aria-labelledby="other-tab">
+            {% for log in object_list %}
+                {% if log.logger_type == '0' %}
+                    <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
+                        <div class="row mx-5 mb-2 p-2 border border-dark rounded">
+                            <div class="col-2">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-10">
+                                <div class="row h-100 align-items-center">
+                                    <div class="col">
+                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}
