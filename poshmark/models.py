@@ -214,6 +214,11 @@ class Log(models.Model):
 
     def log(self, message, log_level=None):
         timestamp = self.get_time()
+        log_entries = LogEntry.objects.filter(logger=self).order_by('timestamp')
+
+        if len(log_entries) >= 1000:
+            last_log = log_entries.first()
+            last_log.delete()
 
         log_entry = LogEntry(
             level=log_level if log_level else LogEntry.NOTSET,
@@ -221,6 +226,8 @@ class Log(models.Model):
             timestamp=timestamp,
             message=message
         )
+
+        self.log_entries += 1
 
         log_entry.save()
 
