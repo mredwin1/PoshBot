@@ -7,6 +7,7 @@ import requests
 import string
 
 from django.db import models
+from django.utils import timezone
 from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
@@ -194,3 +195,82 @@ class PoshUser(models.Model):
 
     def __str__(self):
         return f'Posh User - Username: {self.username}'
+
+
+class Log(models.Model):
+    REASON_CHOICES = [
+        ('0', 'Other'),
+        ('1', 'Registration'),
+        ('2', 'Campaign'),
+    ]
+
+    logger_type = models.CharField(max_length=10, choices=REASON_CHOICES)
+    posh_user = models.ForeignKey(PoshUser, on_delete=models.CASCADE)
+    created = models.DateTimeField(editable=False)
+
+    @staticmethod
+    def get_time():
+        return timezone.now()
+
+    def log(self, message, log_level=None):
+        timestamp = self.get_time()
+        log_entries = LogEntry.objects.filter(logger=self).order_by('timestamp')
+
+        if len(log_entries) >= 1000:
+            last_log = log_entries.first()
+            last_log.delete()
+
+        log_entry = LogEntry(
+            level=log_level if log_level else LogEntry.NOTSET,
+            logger=self,
+            timestamp=timestamp,
+            message=message
+        )
+
+        self.log_entries += 1
+
+        log_entry.save()
+
+    def critical(self, message):
+        self.log(message, LogEntry.CRITICAL)
+
+    def error(self, message):
+        self.log(message, LogEntry.ERROR)
+
+    def warning(self, message):
+        self.log(message, LogEntry.WARNING)
+
+    def info(self, message):
+        self.log(message, LogEntry.INFO)
+
+    def debug(self, message):
+        self.log(message, LogEntry.DEBUG)
+
+    def save(self, *args, **kwargs):
+        """On save, update timestamps"""
+        if not self.id:
+            self.created = timezone.now()
+        return super(Log, self).save(*args, **kwargs)
+
+
+class LogEntry(models.Model):
+    CRITICAL = 50
+    ERROR = 40
+    WARNING = 30
+    INFO = 20
+    DEBUG = 10
+    NOTSET = 0
+
+    LOG_LEVELS = [
+        (NOTSET, ''),
+        (DEBUG, 'DEBUG'),
+        (INFO, 'INFO'),
+        (WARNING, 'WARNING'),
+        (ERROR, 'ERROR'),
+        (CRITICAL, 'CRITICAL'),
+    ]
+
+    level = models.IntegerField()
+    logger = models.ForeignKey(Log, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField()
+    message = models.CharField(max_length=200)

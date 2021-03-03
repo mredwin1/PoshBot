@@ -1,4 +1,7 @@
+import pytz
+
 from django import template
+from poshmark.models import LogEntry
 
 register = template.Library()
 
@@ -45,3 +48,37 @@ def gender_return(status_code):
     }
 
     return status[status_code]
+
+
+@register.filter
+def log_entry_return(log_entry):
+    """Takes a log entry and returns a formatted message"""
+    log_levels = {
+        LogEntry.CRITICAL: 'CRITICAL',
+        LogEntry.ERROR: 'ERROR',
+        LogEntry.WARNING: 'WARNING',
+        LogEntry.INFO: 'INFO',
+        LogEntry.DEBUG: 'DEBUG',
+        LogEntry.NOTSET: 'NOTSET',
+    }
+    local_tz = pytz.timezone('US/Eastern')
+    timestamp = log_entry.timestamp
+    localized_timestamp = timestamp.astimezone(local_tz)
+    timestamp_str = localized_timestamp.strftime('%Y-%m-%d %I:%M:%S %p')
+
+    return f'{timestamp_str} [{log_levels[log_entry.level]}] {log_entry.message}'
+
+
+@register.filter
+def level_color_return(level):
+    """Takes a status code and returns it's message"""
+    colors = {
+        LogEntry.CRITICAL: 'text-danger',
+        LogEntry.ERROR: 'text-danger',
+        LogEntry.WARNING: 'text-warning',
+        LogEntry.INFO: 'text-dark',
+        LogEntry.DEBUG: 'text-dark',
+        LogEntry.NOTSET: 'text-dark',
+    }
+
+    return colors[level]
