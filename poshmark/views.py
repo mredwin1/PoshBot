@@ -8,8 +8,8 @@ from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.views.generic.list import ListView
 
-from .models import PoshUser, Log, LogEntry
-from .forms import CreatePoshUser
+from .models import PoshUser, Log, LogEntry, Listing
+from .forms import CreatePoshUser, CreateListing
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -32,6 +32,23 @@ def create_posh_user(request):
             return redirect('posh-users')
         else:
             return render(request, 'poshmark/create_posh_user.html', {'form': form})
+
+
+@login_required
+def create_listing(request):
+    if request.method == 'GET':
+        form = CreateListing(request)
+
+        return render(request, 'poshmark/create_listing.html', {'form': form})
+    else:
+        form = CreateListing(data=request.POST, files=request.FILES, request=request)
+
+        if form.is_valid():
+            form.save()
+
+            return redirect('view-listings')
+        else:
+            return render(request, 'poshmark/create_listing.html', {'form': form})
 
 
 @login_required
