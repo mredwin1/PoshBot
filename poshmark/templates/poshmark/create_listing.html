@@ -1,0 +1,80 @@
+{% extends "poshmark/base.html" %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" data-generate-info-url="{% url 'add-listing' %}" id="ListingForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <h1>Create Listing</h1>
+            <hr class="mb-5 mt-3">
+            <div class="form-group row px-2">
+                <label for="files" class="col-2 col-form-label">PICTURES</label>
+                <input type="file" id="files" name="files" class="form-control-file col-10" multiple required>
+            </div>
+            <hr>
+            <div class="form-group row px-2">
+                <label for="{{ form.title.id_for_label }}" class="col-2 col-form-label">TITLE</label>
+                <input type="text" id="{{ form.title.auto_id }}" value="{% if form.title.value %}{{ form.title.value }}{% endif %}" name="{{ form.title.name }}" class="form-control col-10" placeholder="What are you selling? (required)" maxlength="50" required>
+            </div>
+            <div class="form-group row px-2">
+                <label for="{{ form.description.id_for_label }}" class="col-2 col-form-label">DESCRIPTION</label>
+                <textarea id="{{ form.description.auto_id }}" name="{{ form.description.name }}" class="form-control col-10" placeholder="Describe it! (required)" style="resize: none; height: 150px" maxlength="500" required>{% if form.description.value %}{{ form.description.value }}{% endif %}</textarea>
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <label for="{{ form.main_category.id_for_label }}" class="col-3 col-form-label">MAIN CATEGORY</label>
+                <select name="{{ form.main_category.name }}" id="{{ form.main_category.auto_id }}" class="col-3 form-control" required>
+                    <option value="" disabled selected>Select a Category</option>
+                    <option value="Women">Women</option>
+                    <option value="Men">Men</option>
+                    <option value="Kids">Kids</option>
+                    <option value="Home">Home</option>
+                    <option value="Pets">Pets</option>
+                </select>
+                <label for="{{ form.secondary_category.id_for_label }}" class="col-3 col-form-label">SECONDARY CATEGORY</label>
+                <select name="{{ form.secondary_category.name }}" id="{{ form.secondary_category.auto_id }}" class="col-3 form-control" required>
+                    <option value="" disabled selected>Select a Category</option>
+                </select>
+            </div>
+            <div class="form-group row px-2">
+                <label for="{{ form.subcategory.id_for_label }}" class="col-3 col-form-label">SUBCATEGORY</label>
+                <select name="{{ form.subcategory.name }}" id="{{ form.subcategory.auto_id }}" class="col-3 form-control">
+                    <option value="" disabled selected>Select a Subcategory</option>
+                </select>
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <label for="{{ form.size.id_for_label }}" class="col-2 col-form-label">SIZE</label>
+                <input type="text" id="{{ form.size.auto_id }}" value="{% if form.size.value %}{{ form.size.value }}{% endif %}" name="{{ form.size.name }}" class="form-control col-10" placeholder="Size of the item? (required)" maxlength="50" required>
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <label for="{{ form.tags.id_for_label }}" class="col-2 col-form-label">NEW WITH TAGS</label>
+                <div class="col-1">
+                    <button type="button" class="btn btn-outline-dark btn-block" id="yes_button">YES</button>
+                </div>
+                <div class="col-1">
+                    <button type="button" class="btn btn-dark btn-block" id="no_button">NO</button>
+                </div>
+                <input type="hidden" value="{% if form.tags.value %}{{ form.tags.value }}{% else %}False{% endif %}" id="{{ form.tags.auto_id }}" name="{{ form.tags.name }}">
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <label for="{{ form.brand.id_for_label }}" class="col-2 col-form-label">BRAND</label>
+                <input type="text" id="{{ form.brand.auto_id }}" value="{% if form.brand.value %}{{ form.brand.value }}{% endif %}" name="{{ form.brand.name }}" class="form-control col-10" placeholder="Brand of the item? (required)" maxlength="50" required>
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <label for="{{ form.original_price.id_for_label }}" class="col-2 col-form-label">ORIGINAL PRICE</label>
+                <input type="text" id="{{ form.original_price.auto_id }}" value="{% if form.original_price.value %}{{ form.original_price.value }}{% endif %}" name="{{ form.original_price.name }}" class="form-control col-2" placeholder="*Required" maxlength="4" required>
+                <label for="{{ form.listing_price.id_for_label }}" class="col-2 col-form-label">LISTING PRICE</label>
+                <input type="text" id="{{ form.listing_price.auto_id }}" value="{% if form.listing_price.value %}{{ form.listing_price.value }}{% endif %}" name="{{ form.listing_price.name }}" class="form-control col-2" placeholder="*Required" maxlength="4" required>
+            </div>
+            <hr class="mt-5 mb-3">
+            <div class="form-group px-2">
+                <button class="btn btn-dark" type="submit">Create</button>
+            </div>
+        </form>
+        <script src="{% static 'poshmark/JS/create_listing_utilities.js' %}"></script>
+    </div>
+{% endblock %}

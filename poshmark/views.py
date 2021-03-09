@@ -8,8 +8,8 @@ from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.views.generic.list import ListView
 
-from .models import PoshUser, Log, LogEntry
-from .forms import CreatePoshUser
+from .models import PoshUser, Log, LogEntry, Listing
+from .forms import CreatePoshUser, CreateListing
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -35,6 +35,23 @@ def create_posh_user(request):
 
 
 @login_required
+def create_listing(request):
+    if request.method == 'GET':
+        form = CreateListing(request)
+
+        return render(request, 'poshmark/create_listing.html', {'form': form})
+    else:
+        form = CreateListing(data=request.POST, files=request.FILES, request=request)
+
+        if form.is_valid():
+            form.save()
+
+            return redirect('view-listings')
+        else:
+            return render(request, 'poshmark/create_listing.html', {'form': form})
+
+
+@login_required
 def delete_posh_user(request, posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
     posh_user.delete()
@@ -52,6 +69,36 @@ class PoshUserListView(ListView, LoginRequiredMixin):
             posh_users = PoshUser.objects.filter(user=self.request.user)
 
         return posh_users
+
+
+class ListingListView(ListView, LoginRequiredMixin):
+    model = Listing
+
+    def get_queryset(self):
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            listings = Listing.objects.all()
+        else:
+            listings = Listing.objects.filter(user=self.request.user)
+
+        organized_listings = []
+        limited_list = []
+        index = 1
+        count = 1
+        if len(listings) > 4:
+            for listing in listings:
+                limited_list.append(listing)
+                if count == 4 or index == len(listings):
+                    organized_listings.append(limited_list)
+                    limited_list = []
+                    count = 0
+                count += 1
+                index += 1
+        else:
+            for listing in listings:
+                limited_list.append(listing)
+            organized_listings.append(limited_list)
+
+        return organized_listings
 
 
 class GeneratePoshUserInfo(View, LoginRequiredMixin):

@@ -30,4 +30,10 @@ urlpatterns = [
          posh_views.LogEntryListView.as_view(template_name='poshmark/view_action_log_details.html'),
          name='view-action-log-details'),
     path('get-log-entries/<int:logger_id>/<str:datetime>/', posh_views.GetLogEntries.as_view(), name='get-log-entries'),
+    path(
+        'view-listings/',
+        posh_views.ListingListView.as_view(template_name='poshmark/view_listings.html'),
+        name='view-listings'
+    ),
+    path('add-listing/', posh_views.create_listing, name='add-listing')
     ]

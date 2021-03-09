@@ -197,6 +197,41 @@ class PoshUser(models.Model):
         return f'Posh User - Username: {self.username}'
 
 
+class Listing(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    title = models.CharField(max_length=50)
+    description = models.TextField()
+    category = models.CharField(max_length=30)
+    subcategory = models.CharField(max_length=30)
+    tags = models.BooleanField(default=False)
+    original_price = models.IntegerField()
+    listing_price = models.IntegerField()
+    size = models.CharField(max_length=20)
+    brand = models.CharField(max_length=30)
+    status = models.IntegerField(default=0)
+
+    def get_photos(self):
+        """Returns the paths for all the listing's photos"""
+        listing_photos = ListingPhotos.objects.filter(Listing=self)[:15]
+        listing_photo_paths = [listing_photo.path for listing_photo in listing_photos]
+
+        return listing_photo_paths
+
+    def __str__(self):
+        return self.title
+
+
+class ListingPhotos(models.Model):
+    photo = ProcessedImageField(
+        processors=[ResizeToFill(1000, 1000)],
+        format='PNG',
+        options={'quality': 60},
+        blank=True
+    )
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
+
+
 class Log(models.Model):
     REASON_CHOICES = [
         ('0', 'Other'),

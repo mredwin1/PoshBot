@@ -7,9 +7,10 @@ import traceback
 
 from pathlib import Path
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, InvalidArgumentException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -98,25 +99,42 @@ class PoshMarkClient:
         self.close()
 
     def open(self):
+        """Used to open the selenium web driver session"""
         self.web_driver = webdriver.Chrome('/poshmark/poshmark_client/chromedriver', options=self.web_driver_options)
         self.web_driver.implicitly_wait(10)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
     def close(self):
+        """Closes the selenium web driver session"""
         self.web_driver.quit()
 
     def locate(self, by, locator, location_type=None):
+        """Locates the first elements with the given By"""
         wait = WebDriverWait(self.web_driver, 10)
         if location_type:
             if location_type == 'visibility':
                 return wait.until(EC.visibility_of_element_located((by, locator)))
+            elif location_type == 'clickable':
+                return wait.until(EC.element_to_be_clickable((by, locator)))
             else:
                 return None
         else:
             return wait.until(EC.presence_of_element_located((by, locator)))
 
+    def locate_all(self, by, locator, location_type=None):
+        """Locates all web elements with the given By and returns a list of them"""
+        wait = WebDriverWait(self.web_driver, 10)
+        if location_type:
+            if location_type == 'visibility':
+                return wait.until(EC.visibility_of_all_elements_located((by, locator)))
+            else:
+                return None
+        else:
+            return wait.until(EC.presence_of_all_elements_located((by, locator)))
+
     def is_present(self, by, locator):
+        """Checks if a web element is present"""
         try:
             self.web_driver.find_element(by=by, value=locator)
         except NoSuchElementException:
@@ -124,6 +142,8 @@ class PoshMarkClient:
         return True
 
     def sleep(self, lower, upper=None):
+        """Will simply sleep and log the amount that is sleeping for, can also be randomized amount of time if given the
+        upper value"""
         seconds = random.randint(lower, upper) if upper else lower
         word = 'second' if seconds == 1 else 'seconds'
 
@@ -131,6 +151,7 @@ class PoshMarkClient:
         time.sleep(seconds)
 
     def check_for_errors(self, step=None):
+        """This will check for errors on the current page and handle them as necessary"""
         self.logger.info('Checking for errors')
         captcha_errors = [
             'Invalid captcha',
@@ -188,7 +209,49 @@ class PoshMarkClient:
 
                 return 'CAPTCHA'
 
+    def check_listing(self, listing_title):
+        """Will check if a listing exists on the user's closet. Without this listing it is"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Checking for "{listing_title}" listing')
+
+            self.go_to_closet()
+
+            if self.is_present(By.CLASS_NAME, 'tile__title'):
+                titles = self.locate_all(By.CLASS_NAME, 'tile__title')
+                for title in titles:
+                    if listing_title in title.text:
+                        self.posh_user.meet_posh = True
+                        self.posh_user.save()
+                        self.logger.info(f'"{listing_title}" listing found')
+                        return True
+
+            self.logger.error(f'"{listing_title}" listing not found')
+
+            return False
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def check_logged_in(self):
+        """Will go to poshmark.com to see if the PoshUser is logged in or not, the bot knows if they are logged in if it
+        can find the search bar which is only displayed in the feed page when someone is logged in"""
+        self.logger.info('Checking if user is signed in')
+        self.web_driver.get('https://poshmark.com')
+        result = self.is_present(By.ID, 'searchInput')
+        if result:
+            self.logger.info('User is logged in')
+        else:
+            self.logger.info('User is not logged in')
+
+        return result
+
     def register(self):
+        """Will register a given user to poshmark"""
         if self.posh_user.is_registered:
             pass
         else:
@@ -343,44 +406,51 @@ class PoshMarkClient:
             password_field.send_keys(Keys.RETURN)
             self.logger.info('Form resubmitted')
 
-    def check_logged_in(self):
-        """Will go to poshmark.com to see if the PoshUser is logged in or not, the bot knows if they are logged in if it
-        can find the search bar which is only displayed in the feed page when someone is logged in"""
-        self.logger.info('Checking if user is signed in')
-        self.web_driver.get('https://poshmark.com')
-        result = self.is_present(By.ID, 'searchInput')
-        if result:
-            self.logger.info('User is logged in')
-        else:
-            self.logger.info('User is not logged in')
+    def go_to_closet(self):
+        """Ensures the current url for the web driver is at users poshmark closet"""
+        previous_status = self.posh_user.status
+        try:
+            if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
+                self.logger.info(f"Going to {self.posh_user.username}'s closet")
 
-        return result
+                if not self.check_logged_in():
+                    self.log_in()
+
+                self.sleep(1, 3)
+
+                profile_dropdown = self.locate(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
+                profile_dropdown.click()
+
+                self.logger.info('Clicked profile dropdown')
+
+                self.sleep(1)
+
+                my_closet_button = self.locate(By.XPATH, f'//a[@href="/closet/{self.posh_user.username}"]')
+                my_closet_button.click()
+
+                self.logger.info('Clicked my closet button')
+
+                self.sleep(1, 3)
+            else:
+                self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
+                self.web_driver.refresh()
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
 
     def update_profile(self):
+        """Updates a user profile with their profile picture and header picture"""
         previous_status = self.posh_user.status
         try:
             self.logger.info('Updating Profile')
             self.posh_user.status = '6'
             self.posh_user.save()
 
-            if not self.check_logged_in():
-                self.log_in()
-
-            self.sleep(1, 3)
-
-            profile_dropdown = self.locate(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
-            profile_dropdown.click()
-
-            self.logger.info('Clicked profile dropdown')
-
-            self.sleep(1)
-
-            my_closet_button = self.locate(By.XPATH, f'//a[@href="/closet/{self.posh_user.username}"]')
-            my_closet_button.click()
-
-            self.logger.info('Clicked my closet button')
-
-            self.sleep(1, 3)
+            self.go_to_closet()
 
             edit_profile_button = self.locate(By.XPATH, '//a[@href="/user/edit-profile"]')
             edit_profile_button.click()
@@ -447,6 +517,274 @@ class PoshMarkClient:
             self.posh_user.save()
 
             self.logger.info('Posh User status changed to "Active"')
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def list_item(self, listing):
+        """Will list an item on poshmark for the user"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Listing the following item: {listing}')
+
+            if not self.check_logged_in():
+                self.log_in()
+
+            self.sleep(1, 3)
+
+            sell_button = self.locate(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
+            sell_button.click()
+
+            self.logger.info('Clicked "SELL ON POSHMARK" button')
+
+            self.sleep(1, 2)
+
+            # Set category and sub category
+            self.logger.info('Setting category')
+            category_dropdown = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[3]/div/div[2]/div[1]/div'
+            )
+            category_dropdown.click()
+
+            self.sleep(2)
+
+            space_index = listing.category.find(' ')
+            primary_category = listing.category[:space_index]
+            secondary_category = listing.category[space_index + 1:]
+            primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+            for category in primary_categories:
+                if category.text == primary_category:
+                    category.click()
+                    break
+
+            self.sleep(1, 3)
+
+            secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+            for category in secondary_categories[1:]:
+                if category.text == secondary_category:
+                    category.click()
+                    break
+
+            self.logger.info('Category set')
+
+            self.sleep(1)
+
+            self.logger.info('Setting subcategory')
+
+            subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
+            subcategories = subcategory_menu.find_elements_by_tag_name('a')
+
+            for subcategory in subcategories:
+                if subcategory.text == listing.subcategory:
+                    subcategory.click()
+                    break
+
+            self.logger.info('Subcategory set')
+
+            self.sleep(2)
+
+            # Set size (This must be done after the category has been selected)
+            self.logger.info('Setting size')
+            size_dropdown = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+            )
+            size_dropdown.click()
+            size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
+
+            for button in size_buttons:
+                if button.text == 'Custom':
+                    button.click()
+                    break
+
+            custom_size_input = self.locate(By.ID, 'customSizeInput0')
+            save_button = self.locate(
+                By.XPATH,
+                '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
+            )
+            done_button = self.locate(
+                By.XPATH,
+                '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
+            )
+            custom_size_input.send_keys(listing.size)
+            save_button.click()
+            done_button.click()
+
+            self.logger.info('Size set')
+
+            self.sleep(1, 2)
+
+            # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
+            # the rest, otherwise errors come up.
+            self.logger.info('Uploading photos')
+            listing_photos = listing.photos
+            upload_photos_field = self.locate(By.ID, 'img-file-input')
+            upload_photos_field.send_keys(listing_photos[0])
+
+            apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
+            apply_button.click()
+
+            self.sleep(1)
+
+            upload_photos_field = self.locate(By.ID, 'img-file-input')
+            if len(listing_photos) > 1:
+                for photo in listing_photos[1:]:
+                    upload_photos_field.clear()
+                    upload_photos_field.send_keys(photo)
+                    self.sleep(1)
+
+            self.logger.info('Photos uploaded')
+
+            # Get all necessary fields
+            self.logger.info('Putting in the rest of the field')
+            title_field = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
+            )
+            description_field = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
+            )
+
+            original_price_field = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/input'
+            )
+            listing_price_field = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/div[1]/input'
+            )
+
+            # Send all the information to their respected fields
+            title_field.send_keys(listing.title)
+            self.sleep(1, 2)
+
+            for part in listing.description.split('\n'):
+                description_field.send_keys(part)
+                ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
+                    Keys.ENTER).perform()
+
+            self.sleep(1, 2)
+            original_price_field.send_keys(str(listing.original_price))
+            self.sleep(1, 2)
+            listing_price_field.send_keys(str(listing.listing_price))
+            self.sleep(1, 2)
+
+            if listing.tags:
+                tags_button = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]', 'clickable'
+                )
+                self.web_driver.execute_script("arguments[0].click();", tags_button)
+
+            self.sleep(1, 3)
+
+            next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
+            next_button.click()
+
+            list_item_button = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div[2]/button'
+            )
+            list_item_button.click()
+
+            self.logger.info('Item listed successfully with no brand')
+
+            while listing.status != 2:
+                if self.update_listing_brand(listing):
+                    self.sleep(1, 3)
+                else:
+                    break
+
+            self.sleep(2, 3)
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def update_listing_brand(self, listing):
+        """Will update the brand on a listing"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Updating the brand on following item: {listing}')
+
+            self.go_to_closet()
+
+            if self.check_listing(listing.title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing.title:
+                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                        listing_button.click()
+
+                        self.sleep(1, 2)
+
+                        edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
+                        edit_listing_button.click()
+
+                        brand_field = self.locate(
+                            By.XPATH,
+                            '//*[@id="content"]/div/div[1]/div[2]/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                        )
+                        brand_field.clear()
+                        if listing.status == 1:
+                            brand_field.send_keys('Saks Fifth Avenue')
+                            listing.status += 1
+                            listing.save()
+                            self.sleep(1, 2)
+                        elif listing.status == 2:
+                            brand_field.send_keys(listing.brand)
+                            listing.status += 1
+                            listing.save()
+                            self.sleep(1, 2)
+            else:
+                self.logger.error('Could not update listing - It does not exist')
+                return False
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def share_item(self, listing):
+        """Will share an item in the closet"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Sharing the following item: {listing}')
+
+            if self.posh_user.meet_posh:
+                self.go_to_closet()
+                some_listing_present = self.is_present(By.CLASS_NAME, 'card--small')
+                if some_listing_present and not self.posh_user.error_during_listing:
+                    if self.check_listing(listing.title):
+                        listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                        for listed_item in listed_items:
+                            title = listed_item.find_element_by_class_name('tile__title')
+                            if title.text == listing.title:
+                                share_button = listed_item.find_element_by_class_name('social-action-bar__share')
+                                share_button.click()
+                                self.sleep(1)
+                                to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
+                                to_followers_button.click()
+                    else:
+                        self.list_item(listing)
+                elif not some_listing_present and self.posh_user.error_during_listing:
+                    self.logger.critical('Could not list item. User seems to be inactive.')
+                    self.logger.info('Setting status of user to "Inactive"')
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
+                else:
+                    self.logger.warning('No listings for this user. User Inactive? - Listing item to test')
+                    self.list_item(listing)
+                    self.posh_user.error_during_listing = True
+                    self.posh_user.save()
+
+            else:
+                self.logger.warning('"Meet your Posher" listing still has not been posted. Checking now...')
+                self.check_listing('Meet your Posher')
+
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')

@@ -1,0 +1,32 @@
+{% extends "poshmark/base.html" %}
+{% load static %}
+{% block content %}
+    <div class="row">
+        <div class="col-11">
+            <h1 class="m-0">Listings</h1>
+        </div>
+        <div class="col-1">
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <a href="{% url 'add-listing' %}" class="btn btn-sm btn-dark text-white" title="New Listing">+</a>
+            </div>
+        </div>
+    </div>
+    <hr>
+    {% for group_listing in object_list %}
+        <div class="row p-2">
+            {% for listing in group_listing %}
+                <div class="col-3">
+                    <div class="card">
+                        <img class="card-img-top" src="{% static 'poshmark/images/listing.jpg' %}" alt="Listing Image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ listing.title }}</h5>
+                            <p class="card-text mb-1"><b><small class="font-weight-bold">${{ listing.listing_price }}</small></b> <s><small class="text-muted">${{ listing.original_price }}</small></s></p>
+                            <p class="card-text"><small class="text-muted">{{ listing.size }}</small></p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}
