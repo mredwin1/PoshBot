@@ -71,6 +71,36 @@ class PoshUserListView(ListView, LoginRequiredMixin):
         return posh_users
 
 
+class ListingListView(ListView, LoginRequiredMixin):
+    model = Listing
+
+    def get_queryset(self):
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            listings = Listing.objects.all()
+        else:
+            listings = Listing.objects.filter(user=self.request.user)
+
+        organized_listings = []
+        limited_list = []
+        index = 1
+        count = 1
+        if len(listings) > 4:
+            for listing in listings:
+                limited_list.append(listing)
+                if count == 4 or index == len(listings):
+                    organized_listings.append(limited_list)
+                    limited_list = []
+                    count = 0
+                count += 1
+                index += 1
+        else:
+            for listing in listings:
+                limited_list.append(listing)
+            organized_listings.append(limited_list)
+
+        return organized_listings
+
+
 class GeneratePoshUserInfo(View, LoginRequiredMixin):
     @staticmethod
     def get(request, *args, **kwargs):
