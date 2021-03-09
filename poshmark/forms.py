@@ -1,7 +1,11 @@
+import random
 import requests
+import string
 
 from django import forms
-from poshmark.models import PoshUser
+from django.core.files import File
+from io import BytesIO
+from poshmark.models import PoshUser, Listing, ListingPhotos
 
 
 class CreatePoshUser(forms.ModelForm):
@@ -80,3 +84,50 @@ class CreatePoshUser(forms.ModelForm):
             new_user.status = '4'
 
         new_user.save()
+
+
+class CreateListing(forms.Form):
+    categories_select = [
+        ('Women', 'Women'),
+        ('Men', 'Men'),
+        ('Kids', 'Kids'),
+        ('Home', 'Home'),
+        ('Pets', 'Pets'),
+    ]
+
+    title = forms.CharField()
+    description = forms.CharField()
+    main_category = forms.CharField()
+    secondary_category = forms.CharField()
+    subcategory = forms.CharField()
+    size = forms.CharField()
+    tags = forms.BooleanField(widget=forms.HiddenInput())
+    brand = forms.CharField()
+    original_price = forms.IntegerField()
+    listing_price = forms.IntegerField()
+
+    def __init__(self, request, *args, **kwargs):
+        super(CreateListing, self).__init__(*args, **kwargs)
+        self.request = request
+        
+    def save(self):
+        new_listing = Listing(
+            title=self.cleaned_data['title'],
+            description=self.cleaned_data['description'],
+            category=f"{self.cleaned_data['main_category']} {self.cleaned_data['secondary_category']}",
+            subcategory=self.cleaned_data['subcategory'],
+            size=self.cleaned_data['size'],
+            brand=self.cleaned_data['brand'],
+            tags=True if self.cleaned_data['tags'] == 'true' else False,
+            original_price=int(self.cleaned_data['original_price']),
+            listing_price=int(self.cleaned_data['listing_price']),
+            user=self.request.user,
+        )
+
+        new_listing.save()
+
+        letters = string.ascii_lowercase
+
+        for file_content in self.files.values():
+            listing_photo = ListingPhotos(listing=new_listing)
+            listing_photo.photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", file_content, save=True)
