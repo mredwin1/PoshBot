@@ -4,7 +4,7 @@ import pytz
 from django.utils import timezone
 from celery import shared_task
 
-from .models import PoshUser, Log, Campaign
+from .models import PoshUser, Log, Campaign, Listing
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 
@@ -42,11 +42,15 @@ def basic_campaign(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type='2', posh_user=posh_user)
+    listings = Listing.objects.filter(campaign__id=campaign_id)
 
+    campaign.status = '1'
+    campaign.save()
     logger.save()
 
     with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
         while now < now.replace(hour=23, minute=50) and now.strftime('%I %p') in campaign.times:
-            for listing in campaign.listings:
+            for listing in listings:
                 client.share_item(listing)
+                client.sleep(campaign.delay)

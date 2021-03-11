@@ -7,7 +7,6 @@ setInterval(function get_log_entries() {
        processData: false,
        contentType: false,
        success: function (data) {
-          console.log(data);
            if (Object.keys(data).length > 0) {
                let new_url = data.new_url;
                let messages = data.log_entry_messages;

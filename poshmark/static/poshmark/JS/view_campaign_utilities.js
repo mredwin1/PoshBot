@@ -11,7 +11,6 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function (data) {
-                console.log(data);
                 if (data.task_id) {
                     start_button.prop('disabled', true);
                     stop_button.prop('disabled', false);
@@ -22,7 +21,7 @@ $(document).ready(function () {
     });
     $('.stop').click(function () {
         let stop_button = $(this);
-        let start_button = start_button.parent().parent().children().eq(0).children().eq(0);
+        let start_button = stop_button.parent().parent().children().eq(0).children().eq(0);
         let stop_url = start_button.data('stop-url');
 
         $.ajax({

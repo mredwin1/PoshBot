@@ -198,6 +198,3 @@ class CreateCampaign(forms.Form):
 
         for listing in self.cleaned_data['listings']:
             new_campaign.listings.add(listing)
-
-        import logging
-        logging.info(new_campaign.listings)

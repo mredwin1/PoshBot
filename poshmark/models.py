@@ -37,6 +37,8 @@ class PoshUser(models.Model):
 
     is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
+    meet_posh = models.BooleanField(default=False)
+    error_during_listing = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
 
@@ -213,8 +215,8 @@ class Listing(models.Model):
 
     def get_photos(self):
         """Returns the paths for all the listing's photos"""
-        listing_photos = ListingPhotos.objects.filter(Listing=self)[:15]
-        listing_photo_paths = [listing_photo.path for listing_photo in listing_photos]
+        listing_photos = ListingPhotos.objects.filter(listing=self)
+        listing_photo_paths = [listing_photo.photo.path for listing_photo in listing_photos]
 
         return listing_photo_paths
 
@@ -327,4 +329,4 @@ class LogEntry(models.Model):
     level = models.IntegerField()
     logger = models.ForeignKey(Log, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
-    message = models.CharField(max_length=200)
+    message = models.TextField()

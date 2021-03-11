@@ -59,7 +59,7 @@
                             <div class="col-10">
                                 <div class="row h-100 align-items-center">
                                     <div class="col">
-                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }}</h6>
+                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
                                     </div>
                                 </div>
                             </div>
@@ -83,7 +83,7 @@
                             <div class="col-10">
                                 <div class="row h-100 align-items-center">
                                     <div class="col">
-                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }}</h6>
+                                        <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
                                     </div>
                                 </div>
                             </div>

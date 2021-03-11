@@ -226,7 +226,7 @@ class PoshMarkClient:
                         self.logger.info(f'"{listing_title}" listing found')
                         return True
 
-            self.logger.error(f'"{listing_title}" listing not found')
+            self.logger.warning(f'"{listing_title}" listing not found')
 
             return False
 
@@ -753,6 +753,8 @@ class PoshMarkClient:
         previous_status = self.posh_user.status
         try:
             self.logger.info(f'Sharing the following item: {listing.title}')
+
+            self.logger.info(self.posh_user)
 
             if self.posh_user.meet_posh:
                 self.go_to_closet()

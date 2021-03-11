@@ -12,6 +12,9 @@ ENV PIP_NO_CACHE_DIR=false \
 # Update
 RUN apt-get update
 
+# Fix missing packages
+RUN apt-get update --fix-missing
+
 # Install apt-utils
 RUN apt-get install -y apt-utils
 
