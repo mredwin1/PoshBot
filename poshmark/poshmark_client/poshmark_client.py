@@ -726,21 +726,38 @@ class PoshMarkClient:
                         edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
                         edit_listing_button.click()
 
+                        self.sleep(1)
+
                         brand_field = self.locate(
                             By.XPATH,
                             '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
                         )
                         brand_field.clear()
-                        if listing.status == 1:
+
+                        if listing.status == 0:
                             brand_field.send_keys('Saks Fifth Avenue')
                             listing.status += 1
                             listing.save()
                             self.sleep(1, 2)
-                        elif listing.status == 2:
+                        elif listing.status == 1:
                             brand_field.send_keys(listing.brand)
                             listing.status += 1
                             listing.save()
                             self.sleep(1, 2)
+
+                        update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
+                        update_button.click()
+
+                        self.sleep(1)
+
+                        list_item_button = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[3]/div[2]/div[2]/div[2]/button'
+                        )
+                        list_item_button.click()
+
+                        self.sleep(5)
+
+                        break
             else:
                 self.logger.error('Could not update listing - It does not exist')
 
