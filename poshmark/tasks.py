@@ -39,7 +39,7 @@ def register_posh_user(posh_user_id):
 
 @shared_task
 def basic_campaign(campaign_id):
-    campaign = Campaign.objects.get(campaign_id)
+    campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type='2', posh_user=posh_user)
 
