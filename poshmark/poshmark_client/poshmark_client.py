@@ -724,7 +724,7 @@ class PoshMarkClient:
 
                         brand_field = self.locate(
                             By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div[2]/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                            '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
                         )
                         brand_field.clear()
                         if listing.status == 1:
