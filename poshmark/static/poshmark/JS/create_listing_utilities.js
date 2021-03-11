@@ -165,135 +165,91 @@ $(document).ready(function () {
 
         } else if (category === 'Kids Shirts & Tops') {
             choices = ['Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None', 'Tank Tops',
+                'Sweatshirts & Hoodies', 'Tank Tops',
                 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None']
 
         } else if (category === 'Kids Shoes') {
             choices = ['Baby & Walker', 'Boots', 'Dress Shoes', 'Moccasins', 'Rain & Snow Boots',
-                'Sandals & Flip Flops', 'Slippers', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Sneakers', 'Water Shoes', 'None']
+                'Sandals & Flip Flops', 'Slippers', 'Sneakers', 'Water Shoes', 'None']
 
         } else if (category === 'Kids Swim') {
-            choices = ['Bikinis', 'Coverups', 'One Piece', 'Rashguards', 'Swim Trunks', 'None', 'Blouses',
-                'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops',
-                'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None']
+            choices = ['Bikinis', 'Coverups', 'One Piece', 'Rashguards', 'Swim Trunks', 'None']
 
         } else if (category === 'Kids Costumes') {
-            choices = ['Dance', 'Halloween', 'Seasonal', 'Superhero', 'Theater', 'None', 'Blouses',
-                'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops',
-                'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None']
+            choices = ['Dance', 'Halloween', 'Seasonal', 'Superhero', 'Theater', 'None']
 
-        } else if (category === 'Kids Bath, Skin, & Hair') {
-            choices = ['Bath & Body', 'Hair Care', 'Moisturizer', 'Suncare', 'Tools', 'None', 'Blouses',
-                'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops',
-                'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None']
+        } else if (category === 'Kids Bath, Skin & Hair') {
+            choices = ['Bath & Body', 'Hair Care', 'Moisturizer', 'Suncare', 'Tools', 'None']
 
         } else if (category === 'Kids Toys') {
             choices = ['Action Figures & Playsets', 'Building Sets & Blocks', 'Cars & Vehicles', 'Dolls & Accessories',
-                'Learning Toys', 'Puzzles & Games', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Stuffed Animals', 'Trading Cards', 'None']
+                'Learning Toys', 'Puzzles & Games', 'Stuffed Animals', 'Trading Cards', 'None']
 
         } else if (category === 'Kids Other') {
             choices = ['None']
 
         } else if (category === 'Home Accents') {
-            choices = ['Accent Pillows', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Baskets & Bins', 'Candles & Holders', 'Coffee Table Books', 'Curtains & Drapes', 'Decor', 'Door Mats',
+            choices = ['Accent Pillows', 'Baskets & Bins', 'Candles & Holders', 'Coffee Table Books', 'Curtains & Drapes', 'Decor', 'Door Mats',
                 'Faux Florals', 'Furniture Covers', 'Lanterns', 'Picture Frames', 'Vases', 'None']
 
         } else if (category === 'Home Bath') {
-            choices = ['Bath Accessories', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Bath Storage', 'Bath Towels', 'Beach Towels', 'Hand Towels', 'Mats', 'Shower Curtains',
+            choices = ['Bath Accessories', 'Bath Storage', 'Bath Towels', 'Beach Towels', 'Hand Towels', 'Mats', 'Shower Curtains',
                 'Vanity Mirrors', 'Vanity Trays', 'Wash Cloths', 'None']
 
         } else if (category === 'Home Bedding') {
-            choices = ['Blankets & Throws', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Comforters', 'Duvet Covers', 'Mattress Covers', 'Pillows', 'Quilts', 'Sheets', 'None']
+            choices = ['Blankets & Throws', 'Comforters', 'Duvet Covers', 'Mattress Covers', 'Pillows', 'Quilts', 'Sheets', 'None']
 
         } else if (category === 'Home Dinning') {
-            choices = ['Bar Accessories', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None', 'Dinnerware',
+            choices = ['Bar Accessories', 'Dinnerware',
                 'Drinkware', 'Flatware', 'Mugs', 'Serveware', 'Serving Utensils', 'Table Linens',
                 'Water Bottles & Thermoses', 'None']
 
         } else if (category === 'Home Games') {
-            choices = ['Board Games', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None', 'Card Games',
-                'Outdoor Games', 'Puzzles', 'None']
+            choices = ['Card Games', 'Outdoor Games', 'Puzzles', 'None']
 
         } else if (category === 'Home Holiday') {
             choices = ['Garland', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Holiday Blankets & Throws', 'Holiday Decor', 'Holiday Pillows', 'Ornaments', 'String Lights',
-                'Wreaths', 'None']
+                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None']
 
         } else if (category === 'Home Kitchen') {
-            choices = ['BBQ & Grilling Tools', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Bakeware', 'Coffee & Tea Accessories', 'Cookbooks', 'Cooking Utensils', 'Cookware', 'Food Storage',
+            choices = ['BBQ & Grilling Tools', 'Bakeware', 'Coffee & Tea Accessories', 'Cookbooks', 'Cooking Utensils', 'Cookware', 'Food Storage',
                 'Kitchen Linens', 'Kitchen Tools', 'Knives & Cutlery', 'None']
 
         } else if (category === 'Home Office') {
-            choices = ['Arts & Crafts', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Binders & Folders', 'Calendars', 'Labels & Label Makers', 'Notebooks & Journals', 'Pencil Cases',
+            choices = ['Arts & Crafts', 'Binders & Folders', 'Calendars', 'Labels & Label Makers', 'Notebooks & Journals', 'Pencil Cases',
                 'Planners', 'Shipping Supplies', 'Stationery', 'None']
 
         } else if (category === 'Home Party Supplies') {
-            choices = ['Cake Candles', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Cake Toppers', 'Cards & Invitations', 'Decorations', 'Disposable Tableware', 'Favors', 'Gift Wrap',
+            choices = ['Cake Candles', 'Cake Toppers', 'Cards & Invitations', 'Decorations', 'Disposable Tableware', 'Favors', 'Gift Wrap',
                 'Hats', 'Party Lights', 'None']
 
         } else if (category === 'Home Storage & Organization') {
-            choices = ['Closet Accessories', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Drawer Liners', 'Garment Bags', 'Jewelry Organizers', 'Makeup Organizers', 'Storage', 'None']
+            choices = ['Closet Accessories', 'Drawer Liners', 'Garment Bags', 'Jewelry Organizers', 'Makeup Organizers', 'Storage', 'None']
 
         } else if (category === 'Home Wall Art') {
-            choices = ['Art & Decals', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None', 'Clocks',
-                'Display Shelves', 'Hooks', 'Mirrors', 'Tapestries', 'Wallpaper', 'None']
+            choices = ['Art & Decals', 'Clocks', 'Display Shelves', 'Hooks', 'Mirrors', 'Tapestries', 'Wallpaper', 'None']
 
         } else if (category === 'Home Other') {
             choices = ['None']
         } else if (category === 'Pets Dog') {
-            choices = ['Bedding & Blankets', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Bowls & Feeders', 'Carriers & Travel', 'Clothing & Accessories', 'Collars, Leashes & Harnesses',
+            choices = ['Bedding & Blankets', 'Bowls & Feeders', 'Carriers & Travel', 'Clothing & Accessories', 'Collars, Leashes & Harnesses',
                 'Grooming', 'Housebreaking', 'Toys', 'None']
 
         } else if (category === 'Pets Cat') {
-            choices = ['Beds', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Bowls & Feeders', 'Carriers & Travel', 'Clothing & Accessories', 'Collars, Leashes  & Harnesses',
+            choices = ['Beds', 'Bowls & Feeders', 'Carriers & Travel', 'Clothing & Accessories', 'Collars, Leashes  & Harnesses',
                 'Grooming', 'Scratchers', 'Toys', 'None']
 
         } else if (category === 'Pets Bird') {
-            choices = ['Cages & Covers', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Feeders & Waterers', 'Perches & Swings', 'Toys', 'None']
+            choices = ['Cages & Covers', 'Feeders & Waterers', 'Perches & Swings', 'Toys', 'None']
 
         } else if (category === 'Pets Fish') {
-            choices = ['Aquarium Kits', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Cleaning & Maintenance', 'Decor & Accessories', 'None']
+            choices = ['Aquarium Kits', 'Cleaning & Maintenance', 'Decor & Accessories', 'None']
 
         } else if (category === 'Pets Reptile') {
-            choices = ['Cleaning & Maintenance', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos',
-                'Sweaters', 'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Habitats', 'Habitat Accessories', 'Heating & Lights', 'None']
+            choices = ['Cleaning & Maintenance', 'Habitats', 'Habitat Accessories', 'Heating & Lights', 'None']
 
         } else if (category === 'Pets Small Pets') {
-            choices = ['Bedding', 'Blouses', 'Button Down Shirts', 'Camisoles', 'Jerseys', 'Polos', 'Sweaters',
-                'Sweatshirts & Hoodies', 'Tank Tops', 'Tees - Long Sleeve', 'Tees - Short Sleeve', 'None',
-                'Bowls & Feeders', 'Cages & Habitats', 'Carriers', 'Grooming', 'Habitat Accessories', 'Toys', 'None']
+            choices = ['Bedding', 'Bowls & Feeders', 'Cages & Habitats', 'Carriers', 'Grooming', 'Habitat Accessories', 'Toys', 'None']
 
         } else if (category === 'Pets Other') {
             choices = ['None']

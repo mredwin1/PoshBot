@@ -1,11 +1,11 @@
+import datetime
+import pytz
 import random
 import requests
 import string
 
 from django import forms
-from django.core.files import File
-from io import BytesIO
-from poshmark.models import PoshUser, Listing, ListingPhotos
+from poshmark.models import PoshUser, Listing, ListingPhotos, Campaign
 
 
 class CreatePoshUser(forms.ModelForm):
@@ -99,9 +99,9 @@ class CreateListing(forms.Form):
     description = forms.CharField()
     main_category = forms.CharField()
     secondary_category = forms.CharField()
-    subcategory = forms.CharField()
+    subcategory = forms.CharField(required=False)
     size = forms.CharField()
-    tags = forms.BooleanField(widget=forms.HiddenInput())
+    tags = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     brand = forms.CharField()
     original_price = forms.IntegerField()
     listing_price = forms.IntegerField()
@@ -131,3 +131,73 @@ class CreateListing(forms.Form):
         for file_content in self.files.values():
             listing_photo = ListingPhotos(listing=new_listing)
             listing_photo.photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", file_content, save=True)
+
+
+class CreateCampaign(forms.Form):
+    title = forms.CharField()
+    times = forms.CharField(widget=forms.HiddenInput())
+    listings = forms.CharField(widget=forms.HiddenInput())
+    posh_user = forms.CharField()
+    delay = forms.IntegerField()
+    auto_run = forms.BooleanField(required=False)
+    generate_users = forms.BooleanField(required=False)
+
+    def __init__(self, request, *args, **kwargs):
+        super(CreateCampaign, self).__init__(*args, **kwargs)
+        self.request = request
+
+    def clean(self):
+        super(CreateCampaign, self).clean()
+
+        posh_user_field = 'posh_user'
+        posh_user = self.cleaned_data[posh_user_field]
+        separator_index = posh_user.find(' | ')
+        posh_user_id = posh_user[separator_index + 3:] if separator_index != -1 else ''
+
+        if posh_user_id:
+            self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
+        else:
+            self.add_error(posh_user_field, 'This posh user does not exist.')
+
+        times_field = 'times'
+        times = self.cleaned_data[times_field].split(',')
+        local_tz = pytz.timezone('US/Eastern')
+        datetimes = []
+
+        for time in times:
+            local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
+            utc_time = (local_time.astimezone(datetime.timezone.utc) + datetime.timedelta(hours=1)).strftime('%I %p')
+            datetimes.append(utc_time)
+
+        self.cleaned_data[times_field] = ','.join(datetimes)
+
+        listings_field = 'listings'
+        listing_ids = self.cleaned_data[listings_field].split(',')
+        listing_objects = []
+
+        for id in listing_ids:
+            listing_objects.append(Listing.objects.get(id=int(id)))
+
+        self.cleaned_data[listings_field] = listing_objects
+
+        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+
+    def save(self):
+        new_campaign = Campaign(
+            user=self.request.user,
+            posh_user=self.cleaned_data['posh_user'],
+            title=self.cleaned_data['title'],
+            status='2',
+            times=self.cleaned_data['times'],
+            delay=self.cleaned_data['delay'],
+            auto_run=self.cleaned_data['auto_run'],
+            generate_users=self.cleaned_data['generate_users']
+        )
+
+        new_campaign.save()
+
+        for listing in self.cleaned_data['listings']:
+            new_campaign.listings.add(listing)
+
+        import logging
+        logging.info(new_campaign.listings)

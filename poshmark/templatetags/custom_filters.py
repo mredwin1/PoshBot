@@ -1,6 +1,7 @@
 import pytz
 
 from django import template
+from django.template.defaultfilters import stringfilter
 from poshmark.models import LogEntry
 
 register = template.Library()
@@ -82,6 +83,46 @@ def level_color_return(level):
     }
 
     return colors[level]
+
+
+@register.filter
+@stringfilter
+def split(value, sep):
+    """Takes a string and splits it into a list by spe"""
+    return value.split(sep)
+
+
+@register.filter
+@stringfilter
+def campaign_status_return(value):
+    """Takes a string which is a campaign status code and returns a readable format"""
+    statuses = {
+        '1': 'RUNNING',
+        '2': 'IDLE',
+    }
+
+    return statuses[value]
+
+
+@register.filter
+@stringfilter
+def campaign_color_return(value):
+    """Takes a string which is a campaign status code and returns a class for text color"""
+    statuses = {
+        '1': 'text-success',
+        '2': 'text-warning',
+    }
+
+    return statuses[value]
+
+
+@register.filter
+def time_return(value, period):
+    """Takes a time as int and adds the period to it(AM or PM)"""
+    period = 'AM' if period == '0' or period == '1' else 'PM'
+    value = 12 if value == 0 else value
+
+    return f'{value} {period}'
 
 
 @register.filter

@@ -232,6 +232,27 @@ class ListingPhotos(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
 
 
+class Campaign(models.Model):
+    STATUS_CHOICES = [
+        ('1', 'Running'),
+        ('2', 'Idle'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
+    listings = models.ManyToManyField(Listing)
+
+    title = models.CharField(max_length=30)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES)
+    times = models.CharField(max_length=255)
+    task_id = models.CharField(max_length=255)
+
+    delay = models.IntegerField()
+
+    auto_run = models.BooleanField(default=False)
+    generate_users = models.BooleanField(default=False)
+
+
 class Log(models.Model):
     REASON_CHOICES = [
         ('0', 'Other'),
