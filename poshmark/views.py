@@ -8,9 +8,11 @@ from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.views.generic.list import ListView
 
-from .models import PoshUser, Log, LogEntry, Listing
-from .forms import CreatePoshUser, CreateListing
+from .models import PoshUser, Log, LogEntry, Listing, Campaign
+from .forms import CreatePoshUser, CreateListing, CreateCampaign
+from .tasks import basic_campaign
 from poshmark.templatetags.custom_filters import log_entry_return
+from PoshBot.celery import app
 
 
 @login_required
@@ -49,6 +51,22 @@ def create_listing(request):
             return redirect('view-listings')
         else:
             return render(request, 'poshmark/create_listing.html', {'form': form})
+
+
+@login_required
+def create_campaign(request):
+    if request.method == 'GET':
+        form = CreateCampaign(request)
+
+        return render(request, 'poshmark/create_campaign.html', {'form': form})
+    else:
+        form = CreateCampaign(data=request.POST, files=request.FILES, request=request)
+        if form.is_valid():
+            form.save()
+
+            return redirect('view-campaigns')
+        else:
+            return render(request, 'poshmark/create_campaign.html', {'form': form})
 
 
 @login_required
@@ -149,3 +167,77 @@ class GetLogEntries(View, LoginRequiredMixin):
             data = {}
 
         return JsonResponse(data=data, status=200)
+
+
+class SearchUserNames(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        search = self.request.GET.get('q')
+        posh_users = PoshUser.objects.filter(username__icontains=search)
+
+        user_names = [f'{posh_user.username} | {posh_user.id}' for posh_user in posh_users]
+
+        return JsonResponse(user_names, status=200, safe=False)
+
+
+class SearchListings(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        search = self.request.GET.get('q')
+        listings = Listing.objects.filter(title__icontains=search)
+
+        all_listings = [f'{listing.title} | {listing.id}' for listing in listings]
+
+        return JsonResponse(all_listings, status=200, safe=False)
+
+
+class StopCampaign(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        campaign_id = self.kwargs['campaign_id']
+        campaign = Campaign.objects.get(id=campaign_id)
+
+        test = app.control.revoke(campaign.task_id, terminate=True)
+
+        return JsonResponse(data={'revoked': test}, status=200, safe=False)
+
+
+class StartCampaign(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        campaign_id = self.kwargs['campaign_id']
+
+        task = basic_campaign.delay(campaign_id)
+
+        campaign = Campaign.objects.get(id=campaign_id)
+        campaign.task_id = task.task_id
+
+        campaign.save()
+
+        return JsonResponse(data={'task_id': task.task_id}, status=200, safe=False)
+
+
+class CampaignListView(ListView, LoginRequiredMixin):
+    model = Campaign
+
+    def get_queryset(self):
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            campaigns = Campaign.objects.all()
+        else:
+            campaigns = Campaign.objects.filter(user=self.request.user)
+
+        organized_campaigns = []
+        limited_list = []
+        index = 1
+        count = 1
+        if len(campaigns) > 4:
+            for campaign in campaigns:
+                limited_list.append(campaign)
+                if count == 4 or index == len(campaigns):
+                    organized_campaigns.append(limited_list)
+                    limited_list = []
+                    count = 0
+                count += 1
+                index += 1
+        else:
+            for campaign in campaigns:
+                limited_list.append(campaign)
+            organized_campaigns.append(limited_list)
+        
+        return organized_campaigns

@@ -1,0 +1,50 @@
+{% extends "poshmark/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block content %}
+    <script src="{% static 'poshmark/JS/view_campaign_utilities.js' %}"></script>
+    <div class="row">
+        <div class="col-11">
+            <h1 class="m-0">Campaigns</h1>
+        </div>
+        <div class="col-1">
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" title="New Campaign">+</a>
+            </div>
+        </div>
+    </div>
+    <hr>
+    {% for group_campaign in object_list %}
+        <div class="row p-2">
+            {% for campaign in group_campaign %}
+                <div class="col-3">
+                    <div class="card">
+                        <div class="card-header bg-transparent ">
+                            <div class="d-inline-flex">
+                                <div class="mr-2 font-weight-bold">
+                                    STATUS:
+                                </div>
+                                <div class="{{ campaign.status|campaign_color_return }}">
+                                    {{ campaign.status|campaign_status_return }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ campaign.title }}</h5>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="row">
+                                <div class="col">
+                                    <button type="button" class="btn btn-dark btn-block start" data-start-url="{% url 'start-campaign' campaign.id %}" {% if campaign.status == '1' %}disabled{% endif %}>Start</button>
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="btn btn-dark btn-block stop" data-stop-url="" {% if campaign.status == '2' %}disabled{% endif %}>Stop</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% endblock %}

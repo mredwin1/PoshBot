@@ -528,7 +528,7 @@ class PoshMarkClient:
         """Will list an item on poshmark for the user"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Listing the following item: {listing}')
+            self.logger.info(f'Listing the following item: {listing.title}')
 
             if not self.check_logged_in():
                 self.log_in()
@@ -619,7 +619,7 @@ class PoshMarkClient:
             # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
             # the rest, otherwise errors come up.
             self.logger.info('Uploading photos')
-            listing_photos = listing.photos
+            listing_photos = listing.get_photos()
             upload_photos_field = self.locate(By.ID, 'img-file-input')
             upload_photos_field.send_keys(listing_photos[0])
 
@@ -705,7 +705,7 @@ class PoshMarkClient:
         """Will update the brand on a listing"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Updating the brand on following item: {listing}')
+            self.logger.info(f'Updating the brand on following item: {listing.title}')
 
             self.go_to_closet()
 
@@ -752,7 +752,7 @@ class PoshMarkClient:
         """Will share an item in the closet"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Sharing the following item: {listing}')
+            self.logger.info(f'Sharing the following item: {listing.title}')
 
             if self.posh_user.meet_posh:
                 self.go_to_closet()

@@ -9,6 +9,7 @@
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css" rel="stylesheet">
 
         <!-- Font Awesome Icons -->
         <script src="https://kit.fontawesome.com/09db1f97d7.js" crossorigin="anonymous"></script>
@@ -29,6 +30,15 @@
         {% endif %}
     </head>
     <body>
+        <style>
+            .errorlist {
+                list-style-type: none;
+                padding: 0;
+                margin: 0;
+                color: red;
+                font-size: smaller;
+            }
+        </style>
         <script>
             $(function () {
                 $('[data-toggle="tooltip"]').tooltip()
@@ -74,7 +84,7 @@
                                 <a class="nav-link" href="{% url 'view-listings' %}">Listings</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#">Campaigns</a>
+                                <a class="nav-link" href="{% url 'view-campaigns' %}">Campaigns</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'view-action-logs' %}">Action Logs</a>
@@ -152,5 +162,7 @@
         <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
     </body>
 </html>
