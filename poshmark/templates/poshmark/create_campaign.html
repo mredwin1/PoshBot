@@ -1,0 +1,100 @@
+{% extends "poshmark/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load crispy_forms_utils %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" data-generate-info-url="{% url 'add-campaign' %}" id="CampaignForm">
+            {% csrf_token %}
+            <h1>Create Campaign</h1>
+            <hr class="mb-5 mt-3">
+            <div class="form-group row justify-content-end px-2 mb-4">
+                <div class="col-3">
+                    <label for="{{ form.auto_run.id_for_label }}" class="pr-2">AUTO-RUN</label>
+                    <input type="checkbox" checked data-toggle="toggle" data-size="sm" data-onstyle="dark" id="{{ form.auto_run.auto_id }}" name="{{ form.auto_run.name }}">
+                </div>
+                <div class="col-3">
+                    <label for="{{ form.generate_users.id_for_label }}" class="pr-2">REPLACE USERS</label>
+                    <input type="checkbox" checked data-toggle="toggle" data-size="sm"  data-onstyle="dark" id="{{ form.generate_users.auto_id }}" name="{{ form.generate_users.name }}">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="{{ form.posh_user.id_for_label }}" class="col-2 col-form-label">POSH USER</label>
+                <input type="text" id="{{ form.posh_user.auto_id }}" value="{% if form.posh_user.value %}{{ form.posh_user.value }}{% endif %}" name="{{ form.posh_user.name }}" class="form-control mr-2 col-2 basicAutoSelect" data-url="{% url 'search-user-names' %}" placeholder="PoshUser Username" required>
+                {{ form.posh_user.errors }}
+            </div>
+            <div class="form-group row">
+                <label for="{{ form.title.id_for_label }}" class="col-2 col-form-label">TITLE</label>
+                <input type="text" id="{{ form.title.auto_id }}" value="{% if form.title.value %}{{ form.title.value }}{% endif %}" name="{{ form.title.name }}" class="form-control col-6" placeholder="Title" maxlength="50" required>
+                {{ form.title.errors }}
+            </div>
+            <div class="form-group justify-content-between row px-2">
+                <div class="col-1 pl-2 pr-0">
+                    <p class="mb-1">TIMES</p>
+                    {{ form.times.errors }}
+                </div>
+                <div class="col-4 border border-dark">
+                    {% for y in '0123'|make_list %}
+                        <div class="row py-1">
+                            {% if y == '0' or y == '2' %}
+                                {% for x in '012345' %}
+                                    <div class="col-2 px-1">
+                                        {% with times=form.times.value|split:"," %}
+                                            <button type="button" class="btn {% if forloop.counter0|time_return:y in times %}btn-dark{% else %}btn-outline-dark{% endif %} btn-block p-0 py-1 time">{% if forloop.counter0 == 0 %}12{% else %}{{ forloop.counter0 }}{% endif %} {% if y == '0' %}AM{% else %}PM{% endif %}</button>
+                                        {% endwith %}
+                                    </div>
+                                {% endfor %}
+                            {% elif y == '1' or y == '3' %}
+                                {% for x in '012345' %}
+                                    <div class="col-2 px-1">
+                                    {% with times=form.times.value|split:"," %}
+                                        <button type="button" class="btn {% if forloop.counter0|add:"6"|time_return:y in times %}btn-dark{% else %}btn-outline-dark{% endif %} btn-block p-0 py-1 time">{{ forloop.counter0|add:"6" }} {% if y == '1' %}AM{% else %}PM{% endif %}</button>
+                                    {% endwith %}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <input type="hidden" id="{{ form.times.auto_id }}" value="{% if form.times.value %}{{ form.times.value }}{% endif %}" name="{{ form.times.name }}">
+                </div>
+                <div class="col-6">
+                    <div class="row">
+                        <label for="{{ form.delay.id_for_label }}" class="col-3 col-form-label">DELAY</label>
+                        <input type="text" id="{{ form.delay.auto_id }}" value="{% if form.delay.value %}{{ form.delay.value }}{% endif %}" name="{{ form.delay.name }}" class="form-control col-4" placeholder="Delay in minutes" required>
+                        {{ form.delay.errors }}
+                    </div>
+                </div>
+            </div>
+            <hr class="my-5">
+            <div class="form-group row px-2">
+                <div class="col-2 p-0">
+                    <label for="{{ form.listings.id_for_label }}" class="col-12 col-form-label">LISTINGS</label>
+                    <div class="pl-3">
+                        {{ form.listings.errors }}
+                    </div>
+
+                </div>
+                <div class="col-4">
+                    <input type="text" class="form-control col-12 mr-0 basicAutoSelect" data-url="{% url 'search-listings' %}" placeholder="Listing Title" id="listing_input">
+                </div>
+                <div class="col-2">
+                    <button type="button" class="btn btn-dark ml-3" id="add_listing">Add</button>
+                </div>
+                <input type="hidden" id="{{ form.listings.auto_id }}" value="{% if form.listings.value %}{{ form.listings.value }}{% endif %}" name="{{ form.listings.name }}">
+            </div>
+            <div class="row px-4 mb-2">
+                <div class="col-6 p-2">
+                    <div class="card" style="height: 200px">
+                        <ul class="list-group list-group-flush overflow-auto" id="listings_container">
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group px-2">
+                <button class="btn btn-dark" type="submit">Create</button>
+            </div>
+        </form>
+        <script src="{% static 'poshmark/JS/create_campaign_utilities.js' %}"></script>
+    </div>
+{% endblock %}
