@@ -54,3 +54,6 @@ def basic_campaign(campaign_id):
             for listing in listings:
                 client.share_item(listing)
                 client.sleep(campaign.delay)
+
+    campaign.status = '2'
+    campaign.save()
