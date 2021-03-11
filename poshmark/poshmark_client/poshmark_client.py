@@ -741,11 +741,13 @@ class PoshMarkClient:
                 self.logger.error('Could not update listing - It does not exist')
 
                 if self.posh_user.error_during_listing:
+                    self.logger.critical('Could not list item. User seems to be inactive.')
+                    self.logger.info('Setting status of user to "Inactive"')
                     self.posh_user.status = '2'
+                    self.posh_user.save()
                 else:
                     self.posh_user.error_during_listing = True
-
-                self.posh_user.save()
+                    self.posh_user.save()
 
                 return False
 
