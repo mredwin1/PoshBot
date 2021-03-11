@@ -679,12 +679,16 @@ class PoshMarkClient:
             next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
             next_button.click()
 
+            self.sleep(1)
+
             list_item_button = self.locate(
                 By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div[2]/button'
             )
             list_item_button.click()
 
             self.logger.info('Item listed successfully with no brand')
+
+            self.sleep(5)
 
             while listing.status != 2:
                 if self.update_listing_brand(listing):
