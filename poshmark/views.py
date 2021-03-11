@@ -194,7 +194,7 @@ class StopCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        test = app.control.revoke(campaign.task_id, terminate=True)
+        test = app.control.revoke(campaign.task_id, terminate=True, signal='SIGKILL')
 
         return JsonResponse(data={'revoked': test}, status=200, safe=False)
 
