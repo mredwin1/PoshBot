@@ -3,7 +3,7 @@
 {% load static %}
 {% block content %}
     <div class="content-section">
-        <form method="POST" data-generate-info-url="{% url 'generate-posh-user-info' %}" id="PoshUserForm" enctype="multipart/form-data">
+        <form method="POST" data-generate-info-url="{% url 'generate-posh-user-info' %}" id="PoshUserForm" enctype="multipart/form-data" autocomplete="off">
             {% csrf_token %}
             <legend class="border-bottom mb-4">New Posh User</legend>
             <div class="form-group">

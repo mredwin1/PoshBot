@@ -4,7 +4,7 @@
 {% load crispy_forms_utils %}
 {% block content %}
     <div class="content-section">
-        <form method="POST" data-generate-info-url="{% url 'add-campaign' %}" id="CampaignForm">
+        <form method="POST" data-generate-info-url="{% url 'add-campaign' %}" id="CampaignForm" autocomplete="off">
             {% csrf_token %}
             <h1>Create Campaign</h1>
             <hr class="mb-5 mt-3">

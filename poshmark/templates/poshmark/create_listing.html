@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     <div class="content-section">
-        <form method="POST" data-generate-info-url="{% url 'add-listing' %}" id="ListingForm" enctype="multipart/form-data">
+        <form method="POST" data-generate-info-url="{% url 'add-listing' %}" id="ListingForm" enctype="multipart/form-data" autocomplete="off">
             {% csrf_token %}
             <h1>Create Listing</h1>
             <hr class="mb-5 mt-3">
