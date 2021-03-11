@@ -739,6 +739,14 @@ class PoshMarkClient:
                             self.sleep(1, 2)
             else:
                 self.logger.error('Could not update listing - It does not exist')
+
+                if self.posh_user.error_during_listing:
+                    self.posh_user.status = '2'
+                else:
+                    self.posh_user.error_during_listing = True
+
+                self.posh_user.save()
+
                 return False
 
         except Exception as e:
