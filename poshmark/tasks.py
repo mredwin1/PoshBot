@@ -50,7 +50,8 @@ def basic_campaign(campaign_id):
 
     with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
-        while now < now.replace(hour=23, minute=50) and now.strftime('%I %p') in campaign.times:
+        while now < now.replace(hour=23, minute=50) and now.strftime('%I %p') in campaign.times and posh_user.status != '2':
+            now = datetime.datetime.now(pytz.utc)
             for listing in listings:
                 client.share_item(listing)
                 client.sleep(campaign.delay)
