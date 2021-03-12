@@ -237,18 +237,134 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def check_logged_in(self):
-        """Will go to poshmark.com to see if the PoshUser is logged in or not, the bot knows if they are logged in if it
-        can find the search bar which is only displayed in the feed page when someone is logged in"""
-        self.logger.info('Checking if user is signed in')
-        self.web_driver.get('https://poshmark.com')
-        result = self.is_present(By.ID, 'searchInput')
-        if result:
-            self.logger.info('User is logged in')
-        else:
-            self.logger.info('User is not logged in')
+    def check_listing_timestamp(self, listing):
+        """Given a listing title will check the last time the listing was shared"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Updating the brand on following item: {listing.title}')
 
-        return result
+            self.go_to_closet()
+
+            if self.check_listing(listing.title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing.title:
+                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                        listing_button.click()
+
+                        self.sleep(1)
+
+                        timestamp_element = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/div/header/div/div/div/div[2]'
+                        )
+                        timestamp = timestamp_element.text
+
+                        self.logger.error(timestamp)
+
+                        timestamp = timestamp[8:]
+                        elapsed_time = 9001
+
+                        space_index = timestamp.find(' ')
+
+                        if timestamp[:space_index] == 'a':
+                            elapsed_time = 60
+                        elif timestamp[:space_index].isnumeric():
+                            offset = space_index + 1
+                            second_space_index = timestamp[offset:].find(' ') + offset
+                            unit = timestamp[offset:second_space_index]
+
+                            if unit == 'secs':
+                                elapsed_time = int(timestamp[:space_index])
+                            elif unit == 'mins':
+                                elapsed_time = int(timestamp[:space_index]) * 60
+                            elif unit == 'hours':
+                                elapsed_time = int(timestamp[:space_index]) * 60 * 60
+
+                        self.logger.error(str(elapsed_time))
+                        if elapsed_time > 120:
+                            self.delete_listing(listing)
+
+                        break
+            else:
+                self.logger.error('Could not check listing timestamp - It does not exist')
+
+                if self.posh_user.error_during_listing:
+                    self.logger.critical('Could not check listing timestamp. User seems to be inactive.')
+                    self.logger.info('Setting status of user to "Inactive"')
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
+                else:
+                    self.posh_user.error_during_listing = True
+                    self.posh_user.save()
+
+                return False
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def delete_listing(self, listing):
+        """Given a listing title will delete the listing"""
+        previous_status = self.posh_user.status
+        try:
+            self.logger.info(f'Updating the brand on following item: {listing.title}')
+
+            self.go_to_closet()
+
+            if self.check_listing(listing.title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing.title:
+                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                        listing_button.click()
+
+                        self.sleep(1)
+
+                        edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
+                        edit_listing_button.click()
+
+                        self.sleep(1, 2)
+
+                        delete_listing_button = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/a[1]'
+                        )
+                        delete_listing_button.click()
+
+                        self.sleep(1)
+
+                        confirm_button = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[6]/div[2]/div[3]/div/button[2]'
+                        )
+                        confirm_button.click()
+
+                        break
+            else:
+                self.logger.error('Could not find listing - It does not exist')
+
+        except Exception as e:
+            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
+            self.logger.error(f'{traceback.format_exc()}')
+
+            self.posh_user.status = previous_status
+            self.posh_user.save()
+
+    def check_logged_in(self):
+        """Will go to the user's closet to see if the PoshUser is logged in or not, the bot knows if they are logged in
+        if it can find the login button which is only displayed when a user is not logged in"""
+        self.logger.info('Checking if user is signed in')
+        self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+        result = self.is_present(By.XPATH, '//a[@href="/login"]')
+        if result:
+            self.logger.info('User is not logged in')
+        else:
+            self.logger.info('User is logged in')
+
+        return not result
 
     def register(self):
         """Will register a given user to poshmark"""
@@ -435,6 +551,12 @@ class PoshMarkClient:
                 self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
                 self.web_driver.refresh()
 
+            show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
+            if self.is_present(By.XPATH, show_all_listings_xpath):
+                show_all_listings = self.locate(By.XPATH, show_all_listings_xpath)
+                if show_all_listings.is_displayed():
+                    show_all_listings.click()
+
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
@@ -473,7 +595,8 @@ class PoshMarkClient:
                 if not profile_picture_exists:
                     self.logger.error('Could not upload profile picture - Picture not found.')
                 else:
-                    profile_picture = self.locate(By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
+                    profile_picture = self.locate(By.XPATH,
+                                                  '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
                     profile_picture.send_keys(profile_picture_path)
 
                     apply_button = self.locate(
@@ -497,7 +620,8 @@ class PoshMarkClient:
                 if not header_picture_exists:
                     self.logger.error('Could not upload header picture - Picture not found')
                 else:
-                    header_picture = self.locate(By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/label/input')
+                    header_picture = self.locate(By.XPATH,
+                                                 '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/label/input')
                     header_picture.send_keys(header_picture_path)
 
                     apply_button = self.locate(
@@ -690,11 +814,9 @@ class PoshMarkClient:
 
             self.sleep(5)
 
-            while listing.status != 2:
-                if self.update_listing_brand(listing):
-                    self.sleep(1, 3)
-                else:
-                    break
+            for x in range(2):
+                brand = None if x else 'Saks Fith Avenue'
+                self.update_listing_brand(listing, brand)
 
             self.sleep(2, 3)
 
@@ -705,7 +827,7 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def update_listing_brand(self, listing):
+    def update_listing_brand(self, listing, brand=None):
         """Will update the brand on a listing"""
         previous_status = self.posh_user.status
         try:
@@ -726,24 +848,20 @@ class PoshMarkClient:
                         edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
                         edit_listing_button.click()
 
-                        self.sleep(1)
-
                         brand_field = self.locate(
                             By.XPATH,
                             '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
                         )
                         brand_field.clear()
 
-                        if listing.status == 0:
-                            brand_field.send_keys('Saks Fifth Avenue')
-                            listing.status += 1
-                            listing.save()
-                            self.sleep(1, 2)
-                        elif listing.status == 1:
+                        if brand:
+                            self.logger.info('Updating brand to Saks Fifth Avenue')
+                            brand_field.send_keys(brand)
+                        else:
+                            self.logger.info(f'Updating brand to {listing.brand}')
                             brand_field.send_keys(listing.brand)
-                            listing.status += 1
-                            listing.save()
-                            self.sleep(1, 2)
+
+                        self.sleep(1, 2)
 
                         update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                         update_button.click()
@@ -770,8 +888,6 @@ class PoshMarkClient:
                     self.posh_user.error_during_listing = True
                     self.posh_user.save()
 
-                return False
-
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
@@ -784,8 +900,6 @@ class PoshMarkClient:
         previous_status = self.posh_user.status
         try:
             self.logger.info(f'Sharing the following item: {listing.title}')
-
-            self.logger.info(self.posh_user)
 
             if self.posh_user.meet_posh:
                 self.go_to_closet()
@@ -801,6 +915,7 @@ class PoshMarkClient:
                                 self.sleep(1)
                                 to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
                                 to_followers_button.click()
+                                self.check_listing_timestamp(listing)
                     else:
                         self.list_item(listing)
                 elif not some_listing_present and self.posh_user.error_during_listing:
