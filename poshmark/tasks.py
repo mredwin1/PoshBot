@@ -48,7 +48,7 @@ def basic_campaign(campaign_id):
     campaign.save()
     logger.save()
 
-    with PoshMarkClient(posh_user, logger) as client:
+    with PoshMarkClient(posh_user, logger, '3.141.186.75:3128') as client:
         now = datetime.datetime.now(pytz.utc)
         while now < now.replace(hour=23, minute=50) and now.strftime('%I %p') in campaign.times and posh_user.status != '2':
             now = datetime.datetime.now(pytz.utc)
