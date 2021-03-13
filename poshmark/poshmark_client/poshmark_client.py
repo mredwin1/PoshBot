@@ -79,7 +79,15 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, logger):
+    def __init__(self, posh_user, logger, proxy=None):
+        webdriver.desired_capabilities = webdriver.DesiredCapabilities.CHROME['proxy'] = {
+            'httpProxy': proxy,
+            'ftpProxy': proxy,
+            'sslProxy': proxy,
+
+            'proxyType': 'MANUAL',
+        }
+
         self.posh_user = posh_user
         self.logger = logger
         self.web_driver = None
@@ -260,8 +268,6 @@ class PoshMarkClient:
                         )
                         timestamp = timestamp_element.text
 
-                        self.logger.error(timestamp)
-
                         timestamp = timestamp[8:]
                         elapsed_time = 9001
 
@@ -281,8 +287,11 @@ class PoshMarkClient:
                             elif unit == 'hours':
                                 elapsed_time = int(timestamp[:space_index]) * 60 * 60
 
-                        self.logger.error(str(elapsed_time))
+                        self.logger.info(str(elapsed_time))
+
                         if elapsed_time > 120:
+                            self.logger.error(f'Sharing does not seem to be working, deleting listing. '
+                                              f'Elapsed Time: {elapsed_time / 60}')
                             self.delete_listing(listing)
 
                         break
@@ -311,7 +320,7 @@ class PoshMarkClient:
         """Given a listing title will delete the listing"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Updating the brand on following item: {listing.title}')
+            self.logger.info(f'Deleting the following item: {listing.title}')
 
             self.go_to_closet()
 
@@ -912,9 +921,14 @@ class PoshMarkClient:
                             if title.text == listing.title:
                                 share_button = listed_item.find_element_by_class_name('social-action-bar__share')
                                 share_button.click()
+
                                 self.sleep(1)
+
                                 to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
                                 to_followers_button.click()
+
+                                self.logger.info('Item Shared')
+
                                 self.check_listing_timestamp(listing)
                     else:
                         self.list_item(listing)
