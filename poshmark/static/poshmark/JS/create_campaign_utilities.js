@@ -94,7 +94,7 @@ $(document).ready(function () {
         });
     };
     $("#id_delay").inputFilter(function(value) {
-        return /^\d*$/.test(value);    // Allow digits only, using a RegExp
+        return /(^\d*$)|(\.$)|(^\d*\.\d*$)/.test(value);    // Allow digits only, using a RegExp
     });
     $('.time').click( function (event) {
         let current_button = $(this);

@@ -231,7 +231,6 @@ class Campaign(models.Model):
     title = models.CharField(max_length=30)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES)
     times = models.CharField(max_length=255)
-    task_id = models.CharField(max_length=255)
 
     delay = models.IntegerField()
 

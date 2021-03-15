@@ -27,6 +27,8 @@ setInterval(function get_log_entries() {
                        message_class = 'text-danger'
                    } else if (level === 'WARNING') {
                        message_class = 'text-warning'
+                   } else if (level === 'DEBUG') {
+                       message_class = 'text-info'
                    }
 
                    row.classList.add('row');

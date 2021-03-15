@@ -136,10 +136,10 @@ class CreateListing(forms.Form):
 class CreateCampaign(forms.Form):
     title = forms.CharField()
     times = forms.CharField(widget=forms.HiddenInput())
-    listings = forms.CharField(widget=forms.HiddenInput())
+    listings = forms.CharField(widget=forms.HiddenInput(), required=False)
     posh_user = forms.IntegerField(widget=forms.HiddenInput())
     mode = forms.CharField(initial='')
-    delay = forms.IntegerField()
+    delay = forms.FloatField()
     auto_run = forms.BooleanField(required=False)
     generate_users = forms.BooleanField(required=False)
 
@@ -169,7 +169,7 @@ class CreateCampaign(forms.Form):
 
             for time in times:
                 local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
-                utc_time = (local_time.astimezone(datetime.timezone.utc) + datetime.timedelta(hours=1)).strftime('%I %p')
+                utc_time = local_time.astimezone(datetime.timezone.utc).strftime('%I %p')
                 datetimes.append(utc_time)
 
             self.cleaned_data[times_field] = ','.join(datetimes)
@@ -187,7 +187,7 @@ class CreateCampaign(forms.Form):
 
                 self.cleaned_data[listings_field] = listing_objects
             else:
-                pass
+                self.add_error(listings_field, 'This field is required.')
 
         self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
 

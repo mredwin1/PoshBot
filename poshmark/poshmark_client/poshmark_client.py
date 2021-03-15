@@ -270,11 +270,13 @@ class PoshMarkClient:
 
                         timestamp = timestamp[8:]
                         elapsed_time = 9001
+                        unit = 'DECADES'
 
                         space_index = timestamp.find(' ')
-                        self.logger.debug(f'Timestamp: {timestamp} Space Index: {space_index} Amount of Time: {timestamp[:space_index]}')
 
-                        if timestamp[:space_index] == 'a':
+                        if timestamp == 'now':
+                            elapsed_time = 0
+                        elif timestamp[:space_index] == 'a':
                             elapsed_time = 60
                         elif timestamp[:space_index].isnumeric():
                             offset = space_index + 1

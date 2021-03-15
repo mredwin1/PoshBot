@@ -48,7 +48,20 @@ def basic_sharing(campaign_id):
     campaign.save()
     logger.save()
 
-    logger.info('I ran')
+    logger.info('Starting Campaign')
+    with PoshMarkClient(posh_user, logger) as client:
+        now = datetime.datetime.now(pytz.utc)
+        end_time = now + datetime.timedelta(days=1)
+        logger.debug(f'Campaign Times: {campaign.times}')
+        logger.debug(f'End Time: {end_time}')
+        now = datetime.datetime.now(pytz.utc)
+        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+            now = datetime.datetime.now(pytz.utc)
+            campaign.refresh_from_db()
+            logger.debug(f"Current Time: {now} Hour: {now.strftime('%I %p')} ")
+            client.sleep(campaign.delay)
+
+    logger.info('Campaign Ended')
 
     campaign.status = '2'
     campaign.save()
@@ -78,7 +91,6 @@ def advanced_sharing(campaign_id):
                 post_share_time = time.time()
 
                 elapsed_time = post_share_time - pre_share_time
-                logger.debug(f'Elapsed Time: {elapsed_time} Delay: {campaign.delay} Pre Share Time: {pre_share_time} Post Share Time: {post_share_time}')
                 if elapsed_time < campaign.delay:
                     client.sleep(campaign.delay - elapsed_time)
 

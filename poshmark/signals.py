@@ -1,5 +1,3 @@
-import logging
-
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
@@ -10,7 +8,6 @@ from poshmark.models import PoshUser, Campaign
 @receiver(post_delete, sender=PoshUser)
 def posh_user_deleted(sender, instance, *args, **kwargs):
     instance.delete_alias_email()
-    logging.info(f'Alias email for {instance.username} deleted')
 
 
 @receiver(post_save, sender=PoshUser)
@@ -20,7 +17,7 @@ def posh_user_saved(sender, instance, created, *args, **kwargs):
 
 
 @receiver(post_delete, sender=Campaign)
-def posh_user_saved(sender, instance, created, *args, **kwargs):
+def posh_user_saved(sender, instance, *args, **kwargs):
     if instance.posh_user.status == PoshUser.INUSE:
         instance.posh_user.status = PoshUser.ACTIVE
         instance.posh_user.save()
