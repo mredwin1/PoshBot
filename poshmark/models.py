@@ -16,14 +16,22 @@ from users.models import User
 
 
 class PoshUser(models.Model):
+    INUSE = '0'
+    ACTIVE = '1'
+    INACTIVE = '2'
+    WALIAS = '3'
+    WREGISTER = '4'
+    REGISTERING = '5'
+    UPROFILE = '6'
+
     STATUS_CHOICES = [
-        ('0', 'In Use'),
-        ('1', 'Active'),
-        ('2', 'Inactive'),
-        ('3', 'Waiting for alias email to be verified'),
-        ('4', 'Waiting to be registered'),
-        ('5', 'Registering'),
-        ('6', 'Updating Profile'),
+        (INUSE, 'In Use'),
+        (ACTIVE, 'Active'),
+        (INACTIVE, 'Inactive'),
+        (WALIAS, 'Waiting for alias email to be verified'),
+        (WREGISTER, 'Waiting to be registered'),
+        (WREGISTER, 'Registering'),
+        (UPROFILE, 'Updating Profile'),
     ]
 
     GENDER_CHOICES = [
@@ -34,6 +42,8 @@ class PoshUser(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+
+    date_added = models.DateField(auto_now_add=True, null=True)
 
     is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
@@ -263,27 +273,6 @@ class ListingPhotos(models.Model):
         blank=True
     )
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
-
-
-class Campaign(models.Model):
-    STATUS_CHOICES = [
-        ('1', 'Running'),
-        ('2', 'Idle'),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
-    listings = models.ManyToManyField(Listing)
-
-    title = models.CharField(max_length=30)
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES)
-    times = models.CharField(max_length=255)
-    task_id = models.CharField(max_length=255)
-
-    delay = models.IntegerField()
-
-    auto_run = models.BooleanField(default=False)
-    generate_users = models.BooleanField(default=False)
 
 
 class Log(models.Model):

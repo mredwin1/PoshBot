@@ -11,16 +11,18 @@
     </div>
     <hr>
     <div class="row mt-3 px-4">
-        {% with object_list.last as last_entry %}
-            <div class="col-12 p-3 border border-dark bg-light" style="height: 600px; overflow-y: scroll" data-get-log-entries-url="{% url 'get-log-entries' last_entry.logger.id last_entry.timestamp|date:"Y-m-d h:i:s.u A" %}" id="LogEntriesContainer">
-        {% endwith %}
-            {% for log_entry in object_list %}
-                <div class="row">
-                    <div class="col">
-                        <p class="m-0 {{ log_entry.level|level_color_return }}">{{ log_entry|log_entry_return }}</p>
+        {% if object_list %}
+            {% with object_list.last as last_entry %}
+                <div class="col-12 p-3 border border-dark bg-light" style="height: 600px; overflow-y: scroll" data-get-log-entries-url="{% url 'get-log-entries' last_entry.logger.id last_entry.timestamp|date:"Y-m-d h:i:s.u A" %}" id="LogEntriesContainer">
+            {% endwith %}
+                {% for log_entry in object_list %}
+                    <div class="row">
+                        <div class="col">
+                            <p class="m-0 {{ log_entry.level|level_color_return }}">{{ log_entry|log_entry_return }}</p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

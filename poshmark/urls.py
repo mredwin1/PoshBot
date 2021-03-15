@@ -43,4 +43,5 @@ urlpatterns = [
     path('search-listings/', posh_views.SearchListings.as_view(), name='search-listings'),
     path('start-campaign/<int:campaign_id>/', posh_views.StartCampaign.as_view(), name='start-campaign'),
     path('stop-campaign/<int:campaign_id>/', posh_views.StopCampaign.as_view(), name='stop-campaign'),
+    path('get-listing-info/', posh_views.GetListingInformation.as_view(), name='get-listing-info'),
     ]

@@ -35,10 +35,10 @@
                         <div class="card-footer bg-transparent">
                             <div class="row">
                                 <div class="col">
-                                    <button type="button" class="btn btn-dark btn-block start" data-start-url="{% url 'start-campaign' campaign.id %}" {% if campaign.status == '1' %}disabled{% endif %}>Start</button>
+                                    <button type="button" class="btn btn-dark btn-block start" data-start-url="{% url 'start-campaign' campaign.id %}" {% if campaign.status == '1' or campaign.status == '3' %}disabled{% endif %}>Start</button>
                                 </div>
                                 <div class="col">
-                                    <button type="button" class="btn btn-dark btn-block stop" data-stop-url="" {% if campaign.status == '2' %}disabled{% endif %}>Stop</button>
+                                    <button type="button" class="btn btn-dark btn-block stop" data-stop-url="{% url 'stop-campaign' campaign.id %}" {% if campaign.status == '2' or campaign.status == '3' %}disabled{% endif %}>Stop</button>
                                 </div>
                             </div>
                         </div>

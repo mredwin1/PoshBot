@@ -137,7 +137,8 @@ class CreateCampaign(forms.Form):
     title = forms.CharField()
     times = forms.CharField(widget=forms.HiddenInput())
     listings = forms.CharField(widget=forms.HiddenInput())
-    posh_user = forms.CharField()
+    posh_user = forms.IntegerField(widget=forms.HiddenInput())
+    mode = forms.CharField()
     delay = forms.IntegerField()
     auto_run = forms.BooleanField(required=False)
     generate_users = forms.BooleanField(required=False)
@@ -150,35 +151,43 @@ class CreateCampaign(forms.Form):
         super(CreateCampaign, self).clean()
 
         posh_user_field = 'posh_user'
-        posh_user = self.cleaned_data[posh_user_field]
-        separator_index = posh_user.find(' | ')
-        posh_user_id = posh_user[separator_index + 3:] if separator_index != -1 else ''
+        if posh_user_field in self.cleaned_data.keys():
+            posh_user_id = self.cleaned_data[posh_user_field]
 
-        if posh_user_id:
-            self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
+            if posh_user_id:
+                self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
+            else:
+                self.add_error(posh_user_field, 'This posh user does not exist.')
         else:
-            self.add_error(posh_user_field, 'This posh user does not exist.')
+            pass
 
         times_field = 'times'
-        times = self.cleaned_data[times_field].split(',')
-        local_tz = pytz.timezone('US/Eastern')
-        datetimes = []
+        if times_field in self.cleaned_data.keys():
+            times = self.cleaned_data[times_field].split(',')
+            local_tz = pytz.timezone('US/Eastern')
+            datetimes = []
 
-        for time in times:
-            local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
-            utc_time = (local_time.astimezone(datetime.timezone.utc) + datetime.timedelta(hours=1)).strftime('%I %p')
-            datetimes.append(utc_time)
+            for time in times:
+                local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
+                utc_time = (local_time.astimezone(datetime.timezone.utc) + datetime.timedelta(hours=1)).strftime('%I %p')
+                datetimes.append(utc_time)
 
-        self.cleaned_data[times_field] = ','.join(datetimes)
+            self.cleaned_data[times_field] = ','.join(datetimes)
+        else:
+            pass
 
-        listings_field = 'listings'
-        listing_ids = self.cleaned_data[listings_field].split(',')
-        listing_objects = []
+        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
+            listings_field = 'listings'
+            if listings_field in self.cleaned_data.keys():
+                listing_ids = self.cleaned_data[listings_field].split(',')
+                listing_objects = []
 
-        for id in listing_ids:
-            listing_objects.append(Listing.objects.get(id=int(id)))
+                for listing_id in listing_ids:
+                    listing_objects.append(Listing.objects.get(id=int(listing_id)))
 
-        self.cleaned_data[listings_field] = listing_objects
+                self.cleaned_data[listings_field] = listing_objects
+            else:
+                pass
 
         self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
 
@@ -191,10 +200,12 @@ class CreateCampaign(forms.Form):
             times=self.cleaned_data['times'],
             delay=self.cleaned_data['delay'],
             auto_run=self.cleaned_data['auto_run'],
-            generate_users=self.cleaned_data['generate_users']
+            generate_users=self.cleaned_data['generate_users'],
+            mode=self.cleaned_data['mode'],
         )
-
+        new_campaign.posh_user.status = PoshUser.INUSE
         new_campaign.save()
 
         for listing in self.cleaned_data['listings']:
-            new_campaign.listings.add(listing)
+            listing.campaign = new_campaign
+            listing.save()

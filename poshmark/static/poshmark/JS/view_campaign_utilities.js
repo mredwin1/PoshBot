@@ -22,7 +22,9 @@ $(document).ready(function () {
     $('.stop').click(function () {
         let stop_button = $(this);
         let start_button = stop_button.parent().parent().children().eq(0).children().eq(0);
-        let stop_url = start_button.data('stop-url');
+        let stop_url = stop_button.data('stop-url');
+
+        console.log(stop_url)
 
         $.ajax({
             url: stop_url,
@@ -31,10 +33,6 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function (data) {
-                console.log(data.revoked);
-                if (data.task_id) {
-                    console.log('something@')
-                }
                 start_button.prop('disabled', false);
                 stop_button.prop('disabled', true);
             },

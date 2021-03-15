@@ -3,6 +3,7 @@ import pytz
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.templatetags.static import static
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, reverse
 from django.views import View
@@ -10,7 +11,7 @@ from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
 from .forms import CreatePoshUser, CreateListing, CreateCampaign
-from .tasks import basic_campaign
+from .tasks import basic_sharing, advanced_sharing
 from poshmark.templatetags.custom_filters import log_entry_return
 from PoshBot.celery import app
 
@@ -172,9 +173,9 @@ class GetLogEntries(View, LoginRequiredMixin):
 class SearchUserNames(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        posh_users = PoshUser.objects.filter(username__icontains=search)
+        posh_users = PoshUser.objects.filter(username__icontains=search, status=PoshUser.ACTIVE).order_by('date_added')
 
-        user_names = [f'{posh_user.username} | {posh_user.id}' for posh_user in posh_users]
+        user_names = [f'{posh_user.username}|{posh_user.id}' for posh_user in posh_users]
 
         return JsonResponse(user_names, status=200, safe=False)
 
@@ -182,11 +183,31 @@ class SearchUserNames(View, LoginRequiredMixin):
 class SearchListings(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        listings = Listing.objects.filter(title__icontains=search)
+        listings = Listing.objects.filter(title__icontains=search, campaign__isnull=True)
 
-        all_listings = [f'{listing.title} | {listing.id}' for listing in listings]
+        all_listings = [f'{listing.title}|{listing.id}' for listing in listings]
 
         return JsonResponse(all_listings, status=200, safe=False)
+
+
+class GetListingInformation(View, LoginRequiredMixin):
+    def get(self, *args, **kwargs):
+        listing_ids = self.request.GET.get('listing_ids', '').split(',')
+        data = {}
+        if listing_ids:
+            for listing_id in listing_ids:
+                listing_info = []
+                listing = Listing.objects.get(id=int(listing_id))
+
+                listing_info.append(static('poshmark/images/listing.jpg'))
+                listing_info.append(listing.title)
+                listing_info.append(listing.listing_price)
+                listing_info.append(listing.original_price)
+                listing_info.append(listing.size)
+
+                data[listing_id] = listing_info
+
+        return JsonResponse(data, status=200, safe=False)
 
 
 class StopCampaign(View, LoginRequiredMixin):
@@ -194,23 +215,34 @@ class StopCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        test = app.control.revoke(campaign.task_id, terminate=True, signal='SIGKILL')
+        logger = Log.objects.filter(posh_user__username=campaign.posh_user.username).order_by('id').first()
+        logger.warning('Stop signal received')
 
-        return JsonResponse(data={'revoked': test}, status=200, safe=False)
+        campaign.status = '3'
+        campaign.save()
+
+        return JsonResponse(data={'stopped': 'true'}, status=200, safe=False)
 
 
 class StartCampaign(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
-
-        task = basic_campaign.delay(campaign_id)
-
         campaign = Campaign.objects.get(id=campaign_id)
-        campaign.task_id = task.task_id
+        task = None
+        task_id = None
 
-        campaign.save()
+        if campaign.mode == Campaign.BASIC_SHARING:
+            task = basic_sharing.delay(campaign_id)
+        elif campaign.mode == Campaign.ADVANCED_SHARING:
+            task = advanced_sharing.delay(campaign_id)
 
-        return JsonResponse(data={'task_id': task.task_id}, status=200, safe=False)
+        if task:
+            task_id = task.task_id
+            campaign.task_id = task.task_id
+
+            campaign.save()
+
+        return JsonResponse(data={'task_id': task_id}, status=200, safe=False)
 
 
 class CampaignListView(ListView, LoginRequiredMixin):

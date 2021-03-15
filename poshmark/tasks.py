@@ -38,7 +38,23 @@ def register_posh_user(posh_user_id):
 
 
 @shared_task
-def basic_campaign(campaign_id):
+def basic_sharing(campaign_id):
+    campaign = Campaign.objects.get(id=campaign_id)
+    posh_user = campaign.posh_user
+    logger = Log(logger_type='2', posh_user=posh_user)
+
+    campaign.status = '1'
+    campaign.save()
+    logger.save()
+
+    logger.info('I ran')
+
+    campaign.status = '2'
+    campaign.save()
+
+
+@shared_task
+def advanced_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type='2', posh_user=posh_user)
@@ -47,14 +63,19 @@ def basic_campaign(campaign_id):
     campaign.status = '1'
     campaign.save()
     logger.save()
-
-    with PoshMarkClient(posh_user, logger, '3.141.186.75:3128') as client:
+    # '3.141.186.75:3128'
+    logger.info('Starting Campaign')
+    with PoshMarkClient(posh_user, logger, '54.165.67.102:8080') as client:
         now = datetime.datetime.now(pytz.utc)
-        while now < now.replace(hour=23, minute=50) and now.strftime('%I %p') in campaign.times and posh_user.status != '2':
+        end_time = now + datetime.timedelta(days=1)
+        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status != '3':
+            logger.info(campaign.status)
             now = datetime.datetime.now(pytz.utc)
             for listing in listings:
                 client.share_item(listing)
                 client.sleep(campaign.delay)
+
+    logger.info('Campaign Ended')
 
     campaign.status = '2'
     campaign.save()

@@ -2,7 +2,7 @@ import pytz
 
 from django import template
 from django.template.defaultfilters import stringfilter
-from poshmark.models import LogEntry
+from poshmark.models import PoshUser,LogEntry
 
 register = template.Library()
 
@@ -11,13 +11,13 @@ register = template.Library()
 def status_return(status_code):
     """Takes a status code and returns it's message"""
     status = {
-        '0': 'In Use',
-        '1': 'Active',
-        '2': 'Inactive',
-        '3': 'Waiting for alias email to be verified',
-        '4': 'Waiting to be registered',
-        '5': 'Registering',
-        '6': 'Updating Profile',
+        PoshUser.INUSE: 'In Use',
+        PoshUser.ACTIVE: 'Active',
+        PoshUser.INACTIVE: 'Inactive',
+        PoshUser.WALIAS: 'Waiting for alias email to be verified',
+        PoshUser.WREGISTER: 'Waiting to be registered',
+        PoshUser.REGISTERING: 'Registering',
+        PoshUser.UPROFILE: 'Updating Profile',
     }
 
     return status[status_code]
@@ -27,13 +27,13 @@ def status_return(status_code):
 def status_color_return(status_code):
     """Takes a status code and returns it's message"""
     statuses = {
-        '0': 'border-dark',
-        '1': 'border-success',
-        '2': 'border-secondary',
-        '3': 'border-primary',
-        '4': 'border-warning',
-        '5': 'border-info',
-        '6': 'border-danger',
+        PoshUser.INUSE: 'border-dark',
+        PoshUser.ACTIVE: 'border-success',
+        PoshUser.INACTIVE: 'border-secondary',
+        PoshUser.WALIAS: 'border-primary',
+        PoshUser.WREGISTER: 'border-warning',
+        PoshUser.REGISTERING: 'border-info',
+        PoshUser.UPROFILE: 'border-danger',
     }
 
     return statuses[status_code]
@@ -99,6 +99,7 @@ def campaign_status_return(value):
     statuses = {
         '1': 'RUNNING',
         '2': 'IDLE',
+        '3': 'Stopping',
     }
 
     return statuses[value]
@@ -111,6 +112,7 @@ def campaign_color_return(value):
     statuses = {
         '1': 'text-success',
         '2': 'text-warning',
+        '3': 'text-warning',
     }
 
     return statuses[value]
@@ -130,8 +132,14 @@ def logger_type_return(logger_type):
     """Takes a logger type code and returns it the type"""
 
     logger_types = {
-        '0': 'Other',
+        '0': 'other',
         '1': 'registration',
         '2': 'campaign',
     }
     return logger_types[logger_type] if logger_type in logger_types.keys() else 'Other'
+
+
+@register.filter
+def get_username(posh_user_id):
+    """Given a Posh User ID will return the username"""
+    return PoshUser.objects.get(id=posh_user_id).username
