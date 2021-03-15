@@ -199,6 +199,36 @@ class PoshUser(models.Model):
         return f'Posh User - Username: {self.username}'
 
 
+class Campaign(models.Model):
+    STATUS_CHOICES = [
+        ('1', 'Running'),
+        ('2', 'Idle'),
+        ('3', 'Stopping'),
+    ]
+
+    BASIC_SHARING = '0'
+    ADVANCED_SHARING = '1'
+
+    MODE_CHOICES = [
+        (BASIC_SHARING, 'Basic Sharing'),
+        (ADVANCED_SHARING, 'Advanced Sharing'),
+    ]
+
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='0')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
+
+    title = models.CharField(max_length=30)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES)
+    times = models.CharField(max_length=255)
+    task_id = models.CharField(max_length=255)
+
+    delay = models.IntegerField()
+
+    auto_run = models.BooleanField(default=False)
+    generate_users = models.BooleanField(default=False)
+
+
 class Listing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
@@ -212,6 +242,7 @@ class Listing(models.Model):
     size = models.CharField(max_length=20)
     brand = models.CharField(max_length=30)
     status = models.IntegerField(default=0)
+    campaign = models.ForeignKey(Campaign, on_delete=models.SET_NULL, null=True)
 
     def get_photos(self):
         """Returns the paths for all the listing's photos"""
