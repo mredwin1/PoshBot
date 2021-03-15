@@ -78,7 +78,7 @@ def level_color_return(level):
         LogEntry.ERROR: 'text-danger',
         LogEntry.WARNING: 'text-warning',
         LogEntry.INFO: 'text-dark',
-        LogEntry.DEBUG: 'text-dark',
+        LogEntry.DEBUG: 'text-info',
         LogEntry.NOTSET: 'text-dark',
     }
 

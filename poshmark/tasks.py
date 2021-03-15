@@ -1,5 +1,6 @@
 import datetime
 import pytz
+import time
 
 from django.utils import timezone
 from celery import shared_task
@@ -63,17 +64,23 @@ def advanced_sharing(campaign_id):
     campaign.status = '1'
     campaign.save()
     logger.save()
-    # '3.141.186.75:3128'
+    # Testing Proxy: '3.141.186.75:3128'  Server Proxy: '54.165.67.102:8080'
     logger.info('Starting Campaign')
-    with PoshMarkClient(posh_user, logger, '54.165.67.102:8080') as client:
+    with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
-        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status != '3':
-            logger.info(campaign.status)
+        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+            campaign.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
             for listing in listings:
+                pre_share_time = time.time()
                 client.share_item(listing)
-                client.sleep(campaign.delay)
+                post_share_time = time.time()
+
+                elapsed_time = post_share_time - pre_share_time
+                logger.debug(f'Elapsed Time: {elapsed_time} Delay: {campaign.delay} Pre Share Time: {pre_share_time} Post Share Time: {post_share_time}')
+                if elapsed_time < campaign.delay:
+                    client.sleep(campaign.delay - elapsed_time)
 
     logger.info('Campaign Ended')
 

@@ -249,7 +249,7 @@ class PoshMarkClient:
         """Given a listing title will check the last time the listing was shared"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Updating the brand on following item: {listing.title}')
+            self.logger.info(f'Checking the timestamp on following item: {listing.title}')
 
             self.go_to_closet()
 
@@ -272,6 +272,7 @@ class PoshMarkClient:
                         elapsed_time = 9001
 
                         space_index = timestamp.find(' ')
+                        self.logger.debug(f'Timestamp: {timestamp} Space Index: {space_index} Amount of Time: {timestamp[:space_index]}')
 
                         if timestamp[:space_index] == 'a':
                             elapsed_time = 60
@@ -287,12 +288,12 @@ class PoshMarkClient:
                             elif unit == 'hours':
                                 elapsed_time = int(timestamp[:space_index]) * 60 * 60
 
-                        self.logger.info(str(elapsed_time))
-
                         if elapsed_time > 120:
                             self.logger.error(f'Sharing does not seem to be working, deleting listing. '
-                                              f'Elapsed Time: {elapsed_time / 60}')
+                                              f'Elapsed Time: {elapsed_time} {unit}')
                             self.delete_listing(listing)
+                        else:
+                            self.logger.info(f'Shared successfully')
 
                         break
             else:
@@ -365,15 +366,17 @@ class PoshMarkClient:
     def check_logged_in(self):
         """Will go to the user's closet to see if the PoshUser is logged in or not, the bot knows if they are logged in
         if it can find the login button which is only displayed when a user is not logged in"""
+
         self.logger.info('Checking if user is signed in')
         self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
-        result = self.is_present(By.XPATH, '//a[@href="/login"]')
-        if result:
-            self.logger.info('User is not logged in')
-        else:
-            self.logger.info('User is logged in')
+        result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
 
-        return not result
+        if result:
+            self.logger.info('User is logged in')
+        else:
+            self.logger.info('User is not logged in')
+
+        return result
 
     def register(self):
         """Will register a given user to poshmark"""
@@ -930,6 +933,9 @@ class PoshMarkClient:
                                 self.logger.info('Item Shared')
 
                                 self.check_listing_timestamp(listing)
+
+                                break
+
                     else:
                         self.list_item(listing)
                 elif not some_listing_present and self.posh_user.error_during_listing:

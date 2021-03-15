@@ -138,7 +138,7 @@ class CreateCampaign(forms.Form):
     times = forms.CharField(widget=forms.HiddenInput())
     listings = forms.CharField(widget=forms.HiddenInput())
     posh_user = forms.IntegerField(widget=forms.HiddenInput())
-    mode = forms.CharField()
+    mode = forms.CharField(initial='')
     delay = forms.IntegerField()
     auto_run = forms.BooleanField(required=False)
     generate_users = forms.BooleanField(required=False)
@@ -203,7 +203,9 @@ class CreateCampaign(forms.Form):
             generate_users=self.cleaned_data['generate_users'],
             mode=self.cleaned_data['mode'],
         )
+
         new_campaign.posh_user.status = PoshUser.INUSE
+        new_campaign.posh_user.save()
         new_campaign.save()
 
         for listing in self.cleaned_data['listings']:
