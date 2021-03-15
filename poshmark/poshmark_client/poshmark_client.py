@@ -761,8 +761,8 @@ class PoshMarkClient:
 
             self.sleep(1)
 
-            upload_photos_field = self.locate(By.ID, 'img-file-input')
             if len(listing_photos) > 1:
+                upload_photos_field = self.locate(By.ID, 'img-file-input')
                 for photo in listing_photos[1:]:
                     upload_photos_field.clear()
                     upload_photos_field.send_keys(photo)
