@@ -12,7 +12,6 @@ setInterval(function get_log_entries() {
                let messages = data.log_entry_messages;
 
                log_container.data('get-log-entries-url', new_url);
-               console.log(log_container);
                for (let i=0; i < messages.length; i++) {
                    let container = document.getElementById('LogEntriesContainer');
                    let row = document.createElement('DIV');

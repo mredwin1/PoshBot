@@ -73,6 +73,7 @@ def advanced_sharing(campaign_id):
     posh_user = campaign.posh_user
     logger = Log(logger_type='2', posh_user=posh_user)
     listings = Listing.objects.filter(campaign__id=campaign_id)
+    logged_hour_message = False
 
     campaign.status = '1'
     campaign.save()
@@ -82,17 +83,24 @@ def advanced_sharing(campaign_id):
     with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
-        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
-            campaign.refresh_from_db()
-            now = datetime.datetime.now(pytz.utc)
-            for listing in listings:
-                pre_share_time = time.time()
-                client.share_item(listing)
-                post_share_time = time.time()
+        while now < end_time and posh_user.status != '2' and campaign.status == '1':
+            while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+                campaign.refresh_from_db()
+                now = datetime.datetime.now(pytz.utc)
+                for listing in listings:
+                    pre_share_time = time.time()
+                    client.share_item(listing)
+                    post_share_time = time.time()
 
-                elapsed_time = post_share_time - pre_share_time
-                if elapsed_time < campaign.delay:
-                    client.sleep(campaign.delay - elapsed_time)
+                    elapsed_time = post_share_time - pre_share_time
+                    if elapsed_time < campaign.delay:
+                        client.sleep(campaign.delay - elapsed_time)
+
+                if logged_hour_message:
+                    logged_hour_message = False
+
+            if not logged_hour_message:
+                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Easter')).strftime('%I %p')}, sleeping...")
 
     logger.info('Campaign Ended')
 

@@ -237,6 +237,9 @@ class Campaign(models.Model):
     auto_run = models.BooleanField(default=False)
     generate_users = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'Campaign - Title: {self.title} Username: {self.posh_user.username}'
+
 
 class Listing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -275,10 +278,14 @@ class ListingPhotos(models.Model):
 
 
 class Log(models.Model):
+    OTHER = '0'
+    REGISTRATION = '1'
+    CAMPAIGN = '2'
+
     REASON_CHOICES = [
-        ('0', 'Other'),
-        ('1', 'Registration'),
-        ('2', 'Campaign'),
+        (OTHER, 'Other'),
+        (REGISTRATION, 'Registration'),
+        (CAMPAIGN, 'Campaign'),
     ]
 
     logger_type = models.CharField(max_length=10, choices=REASON_CHOICES)
@@ -326,6 +333,14 @@ class Log(models.Model):
         if not self.id:
             self.created = timezone.now()
         return super(Log, self).save(*args, **kwargs)
+
+    def __str__(self):
+        logger_types = {
+            self.OTHER: 'Other',
+            self.REGISTRATION: 'Registration',
+            self.CAMPAIGN: 'Campaign'
+        }
+        return f'Log - Username: {self.posh_user.username} Type: {logger_types[self.logger_type]}'
 
 
 class LogEntry(models.Model):
