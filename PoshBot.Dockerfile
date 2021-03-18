@@ -9,6 +9,9 @@ ENV PIP_NO_CACHE_DIR=false \
     PIPENV_NOSPIN=1 \
     DEBIAN_FRONTEND=noninteractive
 
+# Empty apt cache
+RUN apt-get clean
+
 # Update
 RUN apt-get update
 

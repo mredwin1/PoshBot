@@ -17,7 +17,7 @@ def posh_user_saved(sender, instance, created, *args, **kwargs):
 
 
 @receiver(post_delete, sender=Campaign)
-def posh_user_saved(sender, instance, *args, **kwargs):
+def campaign_deleted(sender, instance, *args, **kwargs):
     if instance.posh_user.status == PoshUser.INUSE:
         instance.posh_user.status = PoshUser.ACTIVE
         instance.posh_user.save()

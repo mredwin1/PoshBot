@@ -78,7 +78,7 @@ def advanced_sharing(campaign_id):
     campaign.status = '1'
     campaign.save()
     logger.save()
-    # Testing Proxy: '3.141.186.75:3128'  Server Proxy: '54.165.67.102:8080'
+
     logger.info('Starting Campaign')
     with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
@@ -99,8 +99,8 @@ def advanced_sharing(campaign_id):
                 if logged_hour_message:
                     logged_hour_message = False
 
-            if not logged_hour_message:
-                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Easter')).strftime('%I %p')}, sleeping...")
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == '0':
+                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
 
     logger.info('Campaign Ended')
 

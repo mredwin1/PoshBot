@@ -137,43 +137,53 @@ class ActionLogListView(ListView, LoginRequiredMixin):
         else:
             logs = Log.objects.filter(user=self.request.user)
 
-        logs = logs.order_by('logger_type')
+        # logs = logs.order_by('logger_type')
+        #
+        # last_logger_type = ''
+        # organized_logs = {}
+        # grouped_by_type = []
+        # index = 1
+        # import logging
+        # logging.info(f'Logs: {logs} Length:{len(logs)}')
+        # for log in logs:
+        #     logging.info(f'Log: {log} Index: {index} Last if: {index == len(logs)}')
+        #     current_logger_type = log.logger_type
+        #     if last_logger_type != current_logger_type or index == len(logs):
+        #         if last_logger_type != current_logger_type and index == len(logs):
+        #             logger_type = current_logger_type
+        #         else:
+        #             logger_type = last_logger_type
+        #
+        #         logging.info('Inside the last if')
+        #
+        #         if last_logger_type != current_logger_type and index == len(logs):
+        #             grouped_by_type = [log]
+        #         elif index == len(logs):
+        #             grouped_by_type.append(log)
+        #
+        #         logging.info(grouped_by_type)
+        #         grouped_by_username = {}
+        #         for grouped_log in grouped_by_type:
+        #             logging.info(grouped_log)
+        #             username = grouped_log.posh_user.username
+        #             if username in grouped_by_username.keys():
+        #                 grouped_by_username[username].append(grouped_log)
+        #             else:
+        #                 grouped_by_username[username] = [grouped_log]
+        #
+        #         organized_logs[logger_type] = grouped_by_username
+        #         grouped_by_type = [log]
+        #         last_logger_type = current_logger_type
+        #     elif not last_logger_type:
+        #         last_logger_type = current_logger_type
+        #         grouped_by_type.append(log)
+        #     elif last_logger_type == current_logger_type:
+        #         grouped_by_type.append(log)
+        #     index += 1
+        #
+        # logging.info(str(organized_logs))
 
-        last_logger_type = ''
-        organized_logs = {}
-        grouped_by_type = []
-        index = 1
-        import logging
-        logging.info(f'Logs: {logs} Length:{len(logs)}')
-        for log in logs:
-            logging.info(f'Log: {log} Index: {index} Last if: {index == len(logs)}')
-            current_logger_type = log.logger_type
-            if not last_logger_type:
-                last_logger_type = current_logger_type
-                grouped_by_type.append(log)
-            elif last_logger_type == current_logger_type:
-                grouped_by_type.append(log)
-            elif last_logger_type != current_logger_type or index == len(logs):
-                logging.info('Inside the last if')
-                if index == len(logs):
-                    grouped_by_type.append(log)
-                logging.info(grouped_by_type)
-                grouped_by_username = {}
-                for grouped_log in grouped_by_type:
-                    logging.info(grouped_log)
-                    username = grouped_log.posh_user.username
-                    if username in grouped_by_username.keys():
-                        grouped_by_username[username].append(grouped_log)
-                    else:
-                        grouped_by_username[username] = [grouped_log]
-                organized_logs[last_logger_type] = grouped_by_username
-                grouped_by_type = [log]
-                last_logger_type = current_logger_type
-            index += 1
-
-        logging.info(str(organized_logs))
-
-        return organized_logs
+        return logs
 
 
 class LogEntryListView(ListView, LoginRequiredMixin):

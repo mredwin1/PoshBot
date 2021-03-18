@@ -12,6 +12,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -79,14 +80,15 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, logger, proxy=None):
-        webdriver.desired_capabilities = webdriver.DesiredCapabilities.CHROME['proxy'] = {
-            'httpProxy': proxy,
-            'ftpProxy': proxy,
-            'sslProxy': proxy,
+    def __init__(self, posh_user, logger):
+        prox = Proxy()
 
-            'proxyType': 'MANUAL',
-        }
+        prox.proxy_type = ProxyType.MANUAL
+
+        prox.http_proxy = '{hostname}:{port}'.format(hostname=os.environ['PROXY_HOST'], port=os.environ['PROXY_PORT'])
+        prox.ssl_proxy = '{hostname}:{port}'.format(hostname=os.environ['PROXY_HOST'], port=os.environ['PROXY_PORT'])
+        capabilities = webdriver.DesiredCapabilities.CHROME
+        prox.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
         self.logger = logger
