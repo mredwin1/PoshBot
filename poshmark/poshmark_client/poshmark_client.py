@@ -951,7 +951,7 @@ class PoshMarkClient:
 
                             # Update photos
                             self.logger.info('Uploading photos')
-                            listing_photos = listing.photos
+                            listing_photos = listing.get_photos()
 
                             cover_photo = self.locate(By.XPATH,
                                                       '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
