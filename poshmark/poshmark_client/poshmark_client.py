@@ -4,6 +4,7 @@ import re
 import requests
 import time
 import traceback
+import string
 
 from pathlib import Path
 from selenium import webdriver
@@ -85,8 +86,8 @@ class PoshMarkClient:
 
         prox.proxy_type = ProxyType.MANUAL
 
-        prox.http_proxy = '{hostname}:{port}'.format(hostname=os.environ['PROXY_HOST'], port=os.environ['PROXY_PORT'])
-        prox.ssl_proxy = '{hostname}:{port}'.format(hostname=os.environ['PROXY_HOST'], port=os.environ['PROXY_PORT'])
+        prox.http_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
+        prox.ssl_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
         capabilities = webdriver.DesiredCapabilities.CHROME
         prox.add_to_capabilities(capabilities)
 
@@ -220,7 +221,7 @@ class PoshMarkClient:
                 return 'CAPTCHA'
 
     def check_listing(self, listing_title):
-        """Will check if a listing exists on the user's closet. Without this listing it is"""
+        """Will check if a listing exists on the user's closet."""
         previous_status = self.posh_user.status
         try:
             self.logger.info(f'Checking for "{listing_title}" listing')
@@ -231,8 +232,6 @@ class PoshMarkClient:
                 titles = self.locate_all(By.CLASS_NAME, 'tile__title')
                 for title in titles:
                     if listing_title in title.text:
-                        self.posh_user.meet_posh = True
-                        self.posh_user.save()
                         self.logger.info(f'"{listing_title}" listing found')
                         return True
 
@@ -300,19 +299,17 @@ class PoshMarkClient:
                             self.logger.info(f'Shared successfully')
 
                         break
-            else:
-                self.logger.error('Could not check listing timestamp - It does not exist')
+                    else:
+                        listing_count = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
+                        )
+                        if listing_count.text != '0':
+                            self.logger.critical('Could not share item. User seems to be inactive.')
+                            self.logger.info('Setting status of user to "Inactive"')
+                            self.posh_user.status = '2'
+                            self.posh_user.save()
 
-                if self.posh_user.error_during_listing:
-                    self.logger.critical('Could not check listing timestamp. User seems to be inactive.')
-                    self.logger.info('Setting status of user to "Inactive"')
-                    self.posh_user.status = '2'
-                    self.posh_user.save()
-                else:
-                    self.posh_user.error_during_listing = True
-                    self.posh_user.save()
-
-                return False
+                        return False
 
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -321,19 +318,19 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def delete_listing(self, listing):
+    def delete_listing(self, listing_title):
         """Given a listing title will delete the listing"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Deleting the following item: {listing.title}')
+            self.logger.info(f'Deleting the following item: {listing_title}')
 
             self.go_to_closet()
 
-            if self.check_listing(listing.title):
+            if self.check_listing(listing_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
                 for listed_item in listed_items:
                     title = listed_item.find_element_by_class_name('tile__title')
-                    if title.text == listing.title:
+                    if title.text == listing_title:
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
@@ -664,11 +661,14 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def list_item(self, listing):
+    def list_item(self, listing=None):
         """Will list an item on poshmark for the user"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Listing the following item: {listing.title}')
+            if listing:
+                self.logger.info(f'Listing the following item: {listing.title}')
+            else:
+                self.logger.info('Creating a fake listing')
 
             if not self.check_logged_in():
                 self.log_in()
@@ -691,9 +691,9 @@ class PoshMarkClient:
 
             self.sleep(2)
 
-            space_index = listing.category.find(' ')
-            primary_category = listing.category[:space_index]
-            secondary_category = listing.category[space_index + 1:]
+            space_index = listing.category.find(' ') if listing else ''
+            primary_category = listing.category[:space_index] if listing else 'Men'
+            secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
             primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
             for category in primary_categories:
                 if category.text == primary_category:
@@ -716,10 +716,10 @@ class PoshMarkClient:
 
             subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
             subcategories = subcategory_menu.find_elements_by_tag_name('a')
-
-            for subcategory in subcategories:
-                if subcategory.text == listing.subcategory:
-                    subcategory.click()
+            subcategory = listing.subcategory if listing else 'Dress'
+            for available_subcategory in subcategories:
+                if available_subcategory.text == subcategory:
+                    available_subcategory.click()
                     break
 
             self.logger.info('Subcategory set')
@@ -748,7 +748,8 @@ class PoshMarkClient:
                 By.XPATH,
                 '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
             )
-            custom_size_input.send_keys(listing.size)
+            size = listing.size if listing else 'Large'
+            custom_size_input.send_keys(size)
             save_button.click()
             done_button.click()
 
@@ -759,7 +760,7 @@ class PoshMarkClient:
             # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
             # the rest, otherwise errors come up.
             self.logger.info('Uploading photos')
-            listing_photos = listing.get_photos()
+            listing_photos = listing.get_photos() if listing else ['/static/poshmark/images/listing.jpg']
             upload_photos_field = self.locate(By.ID, 'img-file-input')
             upload_photos_field.send_keys(listing_photos[0])
 
@@ -794,25 +795,33 @@ class PoshMarkClient:
             )
 
             # Send all the information to their respected fields
-            title_field.send_keys(listing.title)
+            lowercase = string.ascii_lowercase
+            uppercase = string.ascii_uppercase
+            title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
+            title_field.send_keys(title)
             self.sleep(1, 2)
 
-            for part in listing.description.split('\n'):
+            description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
+
+            for part in description.split('\n'):
                 description_field.send_keys(part)
                 ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
                     Keys.ENTER).perform()
 
             self.sleep(1, 2)
-            original_price_field.send_keys(str(listing.original_price))
+            original_prize = str(listing.original_price) if listing else '35'
+            original_price_field.send_keys(original_prize)
             self.sleep(1, 2)
-            listing_price_field.send_keys(str(listing.listing_price))
+            listing_price = str(listing.listing_price) if listing else '25'
+            listing_price_field.send_keys(listing_price)
             self.sleep(1, 2)
-
-            if listing.tags:
-                tags_button = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]', 'clickable'
-                )
-                self.web_driver.execute_script("arguments[0].click();", tags_button)
+            if listing:
+                if listing.tags:
+                    tags_button = self.locate(
+                        By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]',
+                        'clickable'
+                    )
+                    self.web_driver.execute_script("arguments[0].click();", tags_button)
 
             self.sleep(1, 3)
 
@@ -826,15 +835,11 @@ class PoshMarkClient:
             )
             list_item_button.click()
 
-            self.logger.info('Item listed successfully with no brand')
-
-            self.sleep(5)
-
-            for x in range(2):
-                brand = None if x else 'Saks Fith Avenue'
-                self.update_listing_brand(listing, brand)
+            self.logger.info('Item listed successfully')
 
             self.sleep(2, 3)
+
+            return title
 
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -843,19 +848,20 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def update_listing_brand(self, listing, brand=None):
-        """Will update the brand on a listing"""
+    def update_listing(self, current_title, listing, brand=None):
+        """Will update the listing with the current title with all of the information for the listing that was passed,
+        if a brand is given it will update the brand to that otherwise it will use the listings brand"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Updating the brand on following item: {listing.title}')
+            self.logger.info(f'Updating the following item: {current_title}')
 
             self.go_to_closet()
 
-            if self.check_listing(listing.title):
+            if self.check_listing(current_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
                 for listed_item in listed_items:
                     title = listed_item.find_element_by_class_name('tile__title')
-                    if title.text == listing.title:
+                    if title.text == current_title:
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
@@ -864,17 +870,177 @@ class PoshMarkClient:
                         edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
                         edit_listing_button.click()
 
-                        brand_field = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
-                        )
-                        brand_field.clear()
+                        self.sleep(1, 2)
 
                         if brand:
-                            self.logger.info('Updating brand to Saks Fifth Avenue')
+                            # Update Category and Sub Category
+                            self.logger.info('Updating category')
+                            category_dropdown = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[3]/div/div[2]/div[1]/div/div[1]/div'
+                            )
+                            category_dropdown.click()
+
+                            self.sleep(2)
+
+                            space_index = listing.category.find(' ')
+                            primary_category = listing.category[:space_index]
+                            secondary_category = listing.category[space_index + 1:]
+                            primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                            for category in primary_categories:
+                                if category.text == primary_category:
+                                    category.click()
+                                    break
+
+                            self.sleep(1, 3)
+
+                            secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                            for category in secondary_categories[1:]:
+                                if category.text == secondary_category:
+                                    category.click()
+                                    break
+
+                            self.logger.info('Category Updated')
+
+                            self.sleep(1)
+
+                            self.logger.info('Updating subcategory')
+
+                            subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
+                            subcategories = subcategory_menu.find_elements_by_tag_name('a')
+                            subcategory = listing.subcategory
+                            for available_subcategory in subcategories:
+                                if available_subcategory.text == subcategory:
+                                    available_subcategory.click()
+                                    break
+
+                            self.logger.info('Subcategory updated')
+
+                            self.sleep(2)
+
+                            # Set size (This must be done after the category has been selected)
+                            self.logger.info('Updating size')
+                            size_dropdown = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+                            )
+                            size_dropdown.click()
+                            size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
+
+                            for button in size_buttons:
+                                if button.text == 'Custom':
+                                    button.click()
+                                    break
+
+                            custom_size_input = self.locate(By.ID, 'customSizeInput0')
+                            save_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
+                            )
+                            done_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
+                            )
+                            size = listing.size
+                            custom_size_input.send_keys(size)
+                            save_button.click()
+                            done_button.click()
+
+                            self.logger.info('Size updated')
+
+                            self.sleep(1, 2)
+
+                            # Update photos
+                            self.logger.info('Uploading photos')
+                            listing_photos = listing.photos
+
+                            cover_photo = self.locate(By.XPATH,
+                                                      '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
+                            cover_photo.click()
+
+                            cover_photo_field = self.locate(
+                                By.XPATH,
+                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
+                            )
+                            cover_photo_field.send_keys(listing_photos[0])
+
+                            apply_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
+                            )
+                            apply_button.click()
+
+                            self.sleep(1)
+
+                            if len(listing_photos) > 1:
+                                upload_photos_field = self.locate(By.ID, 'img-file-input')
+                                for photo in listing_photos[1:]:
+                                    upload_photos_field.clear()
+                                    upload_photos_field.send_keys(photo)
+                                    self.sleep(1)
+
+                            self.logger.info('Photos uploaded')
+
+                            # Get all necessary fields
+                            self.logger.info('Updating the rest of the fields')
+                            title_field = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
+                            )
+                            description_field = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
+                            )
+
+                            original_price_field = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/input'
+                            )
+                            listing_price_field = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/div[1]/input'
+                            )
+                            brand_field = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                            )
+
+                            # Send all the information to their respected fields
+                            title_field.clear()
+                            title_field.send_keys(listing.title)
+
+                            self.sleep(1, 2)
+
+                            description_field.clear()
+                            for part in listing.description.split('\n'):
+                                description_field.send_keys(part)
+                                ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(
+                                    Keys.SHIFT).key_up(
+                                    Keys.ENTER).perform()
+
+                            self.sleep(1, 2)
+                            original_prize = str(listing.original_price)
+                            original_price_field.clear()
+                            original_price_field.send_keys(original_prize)
+                            self.sleep(1, 2)
+                            listing_price = str(listing.listing_price)
+                            listing_price_field.clear()
+                            listing_price_field.send_keys(listing_price)
+                            self.sleep(1, 2)
+                            brand_field.clear()
                             brand_field.send_keys(brand)
+
+                            if listing.tags:
+                                tags_button = self.locate(
+                                    By.XPATH,
+                                    '//*[@id="content"]/div/div[1]/div/section[5]/div/div[2]/div[1]/button[1]',
+                                    'clickable'
+                                )
+                                self.web_driver.execute_script("arguments[0].click();", tags_button)
+
                         else:
                             self.logger.info(f'Updating brand to {listing.brand}')
+                            brand_field = self.locate(
+                                By.XPATH,
+                                '/html/body/div[1]/main/div[2]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                            )
+                            brand_field.clear()
                             brand_field.send_keys(listing.brand)
 
                         self.sleep(1, 2)
@@ -893,15 +1059,13 @@ class PoshMarkClient:
 
                         break
             else:
-                self.logger.error('Could not update listing - It does not exist')
-
-                if self.posh_user.error_during_listing:
-                    self.logger.critical('Could not list item. User seems to be inactive.')
+                listing_count = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
+                )
+                if listing_count.text != '0':
+                    self.logger.critical('Could not share item. User seems to be inactive.')
                     self.logger.info('Setting status of user to "Inactive"')
                     self.posh_user.status = '2'
-                    self.posh_user.save()
-                else:
-                    self.posh_user.error_during_listing = True
                     self.posh_user.save()
 
         except Exception as e:
@@ -911,51 +1075,40 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def share_item(self, listing):
+    def share_item(self, listing_title):
         """Will share an item in the closet"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Sharing the following item: {listing.title}')
+            self.logger.info(f'Sharing the following item: {listing_title}')
 
-            if self.posh_user.meet_posh:
-                self.go_to_closet()
-                some_listing_present = self.is_present(By.CLASS_NAME, 'card--small')
-                if some_listing_present and not self.posh_user.error_during_listing:
-                    if self.check_listing(listing.title):
-                        listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-                        for listed_item in listed_items:
-                            title = listed_item.find_element_by_class_name('tile__title')
-                            if title.text == listing.title:
-                                share_button = listed_item.find_element_by_class_name('social-action-bar__share')
-                                share_button.click()
+            self.go_to_closet()
 
-                                self.sleep(1)
+            if self.check_listing(listing_title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing_title:
+                        share_button = listed_item.find_element_by_class_name('social-action-bar__share')
+                        share_button.click()
 
-                                to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
-                                to_followers_button.click()
+                        self.sleep(1)
 
-                                self.logger.info('Item Shared')
+                        to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
+                        to_followers_button.click()
 
-                                self.check_listing_timestamp(listing)
+                        self.logger.info('Item Shared')
 
-                                break
+                        return self.is_present(By.ID, 'flash')
 
-                    else:
-                        self.list_item(listing)
-                elif not some_listing_present and self.posh_user.error_during_listing:
-                    self.logger.critical('Could not list item. User seems to be inactive.')
+            else:
+                listing_count = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
+                )
+                if listing_count.text != '0':
+                    self.logger.critical('Could not share item. User seems to be inactive.')
                     self.logger.info('Setting status of user to "Inactive"')
                     self.posh_user.status = '2'
                     self.posh_user.save()
-                else:
-                    self.logger.warning('No listings for this user. User Inactive? - Listing item to test')
-                    self.list_item(listing)
-                    self.posh_user.error_during_listing = True
-                    self.posh_user.save()
-
-            else:
-                self.logger.warning('"Meet your Posher" listing still has not been posted. Checking now...')
-                self.check_listing('Meet your Posher')
 
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')

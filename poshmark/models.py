@@ -43,12 +43,13 @@ class PoshUser(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
+    proxy_port = models.IntegerField(null=True)
+
     date_added = models.DateField(auto_now_add=True, null=True)
 
     is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
     meet_posh = models.BooleanField(default=False)
-    error_during_listing = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
 

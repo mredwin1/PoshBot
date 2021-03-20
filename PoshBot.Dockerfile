@@ -10,7 +10,8 @@ ENV PIP_NO_CACHE_DIR=false \
     DEBIAN_FRONTEND=noninteractive
 
 # Empty apt cache
-RUN apt-get clean
+RUN apt-get clean autoclean
+RUN apt-get autoremove --yes
 
 # Update
 RUN apt-get update

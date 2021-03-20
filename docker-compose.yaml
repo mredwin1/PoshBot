@@ -59,7 +59,6 @@ services:
     container_name: redis_poshbot
     networks:
       - internal
-
   traefik:
     image: "traefik:v2.3"
     container_name: "traefik"
@@ -121,6 +120,18 @@ services:
     volumes:
       - shared_volume:/shared_volume
       - /dev/shm:/dev/shm
+  lpm:
+    image: luminati/luminati-proxy
+    restart: always
+    container_name: lpm
+    entrypoint: proxy-manager --www_whitelist_ips "0.0.0.0/0"
+    networks:
+      - internal
+    ports:
+      - 22999:22999
+    volumes:
+      - lpm_data:/root/luminati_proxy_manager
+
 networks:
   internal:
   traefik:
@@ -130,3 +141,4 @@ networks:
 volumes:
   postgres_db:
   shared_volume:
+  lpm_data:
