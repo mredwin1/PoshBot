@@ -104,6 +104,7 @@ services:
     volumes:
       - shared_volume:/shared_volume
       - /dev/shm:/dev/shm
+      - ./poshmark/static/poshmark/images:/static/poshmark/images
   celery_beat:
     image: ghcr.io/mredwin1/poshbot:latest
     container_name: celery_beat_poshbot
