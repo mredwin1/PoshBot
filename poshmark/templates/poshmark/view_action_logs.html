@@ -32,7 +32,7 @@
                             </h5>
                         </div>
                     </div>
-                    <div id="collapse-{{ username }}" class="collapse show" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
+                    <div id="collapse-{{ username }}" class="collapse" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
                         <div class="card-body">
                             {% for log in log_group %}
                                 <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
@@ -71,7 +71,7 @@
                             </h5>
                         </div>
                     </div>
-                    <div id="collapse-{{ username }}" class="collapse show" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
+                    <div id="collapse-{{ username }}" class="collapse" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
                         <div class="card-body">
                             {% for log in log_group %}
                                 <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
