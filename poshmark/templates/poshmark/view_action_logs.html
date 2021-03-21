@@ -24,15 +24,15 @@
             <div id="accordion">
                 {% for username, log_group in object_list.1.items %}
                     <div class="card">
-                        <div class="card-header" id="heading-{{ username }}">
+                        <div class="card-header" id="register-heading-{{ username }}">
                             <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ username }}" aria-expanded="false" aria-controls="collapse-{{ username }}">
+                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-register-{{ username }}" aria-expanded="false" aria-controls="collapse-register-{{ username }}">
                                     {{ username }}
                                 </button>
                             </h5>
                         </div>
                     </div>
-                    <div id="collapse-{{ username }}" class="collapse" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
+                    <div id="collapse-register-{{ username }}" class="collapse" aria-labelledby="register-heading-{{ username }}" data-parent="#accordion">
                         <div class="card-body">
                             {% for log in log_group %}
                                 <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
@@ -63,15 +63,15 @@
             <div id="accordion">
                 {% for username, log_group in object_list.2.items %}
                     <div class="card">
-                        <div class="card-header" id="heading-{{ username }}">
+                        <div class="card-header" id="campaign-heading-{{ username }}">
                             <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ username }}" aria-expanded="false" aria-controls="collapse-{{ username }}">
+                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-campaign-{{ username }}" aria-expanded="false" aria-controls="collapse-campaign-{{ username }}">
                                     {{ username }}
                                 </button>
                             </h5>
                         </div>
                     </div>
-                    <div id="collapse-{{ username }}" class="collapse" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
+                    <div id="collapse-campaign-{{ username }}" class="collapse" aria-labelledby="campaign-heading-{{ username }}" data-parent="#accordion">
                         <div class="card-body">
                             {% for log in log_group %}
                                 <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
@@ -102,15 +102,15 @@
             <div id="accordion">
                 {% for username, log_group in object_list.0.items %}
                     <div class="card">
-                        <div class="card-header" id="heading-{{ username }}">
+                        <div class="card-header" id="other-heading-{{ username }}">
                             <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ username }}" aria-expanded="false" aria-controls="collapse-{{ username }}">
+                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-other-{{ username }}" aria-expanded="false" aria-controls="collapse-other-{{ username }}">
                                     {{ username }}
                                 </button>
                             </h5>
                         </div>
                     </div>
-                    <div id="collapse-{{ username }}" class="collapse" aria-labelledby="heading-{{ username }}" data-parent="#accordion">
+                    <div id="collapse-other-{{ username }}" class="collapse" aria-labelledby="other-heading-{{ username }}" data-parent="#accordion">
                         <div class="card-body">
                             {% for log in log_group %}
                                 <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
