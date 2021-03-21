@@ -20,7 +20,7 @@ def posh_user_deleted(sender, instance, *args, **kwargs):
 
 @receiver(post_save, sender=PoshUser)
 def posh_user_saved(sender, instance, created, *args, **kwargs):
-    if created and not instance.is_registered:
+    if created and instance.status == PoshUser.WREGISTER:
         register_posh_user.delay(instance.id)
 
 
