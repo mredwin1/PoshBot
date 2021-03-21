@@ -38,59 +38,9 @@ def register_posh_user(posh_user_id):
     logger = Log(logger_type='1', posh_user=posh_user)
     logger.save()
 
-    data = {
-        'zone':
-            {
-                'name': posh_user.username
-            },
-        'plan':
-            {
-                'type': 'static',
-                'pool_ip_type': 'static_res',
-                'ip_fallback': 1,
-                'ips_type': 'shared',
-                'ips': 1,
-                'country': 'us'
-            },
-        'ips': ['any'],
-        'perm': 'country'
-    }
-
-    headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["PROXY_API_KEY"]}'}
-
-    zone_response = requests.post('https://luminati.io/api/zone', data=json.dumps(data), headers=headers)
-    zone_response_json = zone_response.json()
-
-    if zone_response.status_code != requests.codes.ok:
-        logger.critical('Zone could not be created - Not registering')
-    else:
-        last_port = PoshUser.objects.all().order_by('proxy_port').first().proxy_port
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            'proxy':
-                {
-                    'port': last_port + 1 if last_port else 24000,
-                    'zone': posh_user.username,
-                    'proxy_type': 'persist',
-                    'customer': os.environ['PROXY_CUSTOMER'],
-                    'password': zone_response_json['zone']['password'][0],
-                    'whitelist_ips': [],
-                }
-        }
-        port_response = requests.post('http://lpm:22999/api/proxies', data=json.dumps(data), headers=headers)
-        port_response_json = port_response.json()
-        if 'errors' in port_response_json.keys():
-            logger.critical('The following errors encountered while creating a port')
-            for error in port_response_json['errors']:
-                logger.critical(f"{error['msg']}")
-        else:
-            port = port_response_json['data']['port']
-            posh_user.proxy_port = port
-            posh_user.save()
-
-            with PoshMarkClient(posh_user, logger) as client:
-                client.register()
-                client.update_profile()
+    with PoshMarkClient(posh_user, logger) as client:
+        client.register()
+        client.update_profile()
 
 
 @shared_task

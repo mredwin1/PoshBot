@@ -1,4 +1,7 @@
 import datetime
+import json
+import logging
+import os
 import pytz
 import random
 import requests
@@ -82,6 +85,55 @@ class CreatePoshUser(forms.ModelForm):
             new_user.status = '1'
         else:
             new_user.status = '4'
+
+        data = {
+            'zone':
+                {
+                    'name': new_user.username
+                },
+            'plan':
+                {
+                    'type': 'static',
+                    'pool_ip_type': 'static_res',
+                    'ip_fallback': 1,
+                    'ips_type': 'shared',
+                    'ips': 1,
+                    'country': 'us'
+                },
+            'ips': ['any'],
+            'perm': 'country'
+        }
+
+        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["PROXY_API_KEY"]}'}
+
+        zone_response = requests.post('https://luminati.io/api/zone', data=json.dumps(data), headers=headers)
+        zone_response_json = zone_response.json()
+
+        if zone_response.status_code != requests.codes.ok:
+            logging.critical('Zone could not be created - Not registering')
+        else:
+            last_port = PoshUser.objects.all().order_by('proxy_port').first().proxy_port
+            headers = {'Content-Type': 'application/json'}
+            data = {
+                'proxy':
+                    {
+                        'port': last_port + 1 if last_port else 24000,
+                        'zone': new_user.username,
+                        'proxy_type': 'persist',
+                        'customer': os.environ['PROXY_CUSTOMER'],
+                        'password': zone_response_json['zone']['password'][0],
+                        'whitelist_ips': [],
+                    }
+            }
+            port_response = requests.post('http://lpm:22999/api/proxies', data=json.dumps(data), headers=headers)
+            port_response_json = port_response.json()
+            if 'errors' in port_response_json.keys():
+                logging.critical('The following errors encountered while creating a port')
+                for error in port_response_json['errors']:
+                    logging.critical(f"{error['msg']}")
+            else:
+                port = port_response_json['data']['port']
+                new_user.proxy_port = port
 
         new_user.save()
 
