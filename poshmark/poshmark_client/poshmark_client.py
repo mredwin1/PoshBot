@@ -351,8 +351,11 @@ class PoshMarkClient:
 
                         confirm_button = self.locate(
                             By.XPATH, '//*[@id="content"]/div/div[1]/div/div[6]/div[2]/div[3]/div/button[2]'
+                                      '//*[@id="content"]/div/div[1]/div/div[6]/div[2]/div[3]/div/button[2]'
                         )
                         confirm_button.click()
+
+                        self.sleep(5)
 
                         break
             else:
