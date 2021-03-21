@@ -382,7 +382,7 @@ class PoshMarkClient:
 
     def register(self):
         """Will register a given user to poshmark"""
-        if self.posh_user.is_registered:
+        if self.posh_user.status != '4':
             pass
         else:
             previous_status = self.posh_user.status
