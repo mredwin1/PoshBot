@@ -291,8 +291,8 @@ class PoshMarkClient:
                             elif unit == 'hours':
                                 elapsed_time = int(timestamp[:space_index]) * 60 * 60
 
-                        if elapsed_time > 120:
-                            self.logger.error(f'Sharing does not seem to be working, deleting listing. '
+                        if elapsed_time > 12:
+                            self.logger.error(f'Sharing does not seem to be working '
                                               f'Elapsed Time: {elapsed_time} {unit}')
                             return False
                         else:
