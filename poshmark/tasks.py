@@ -40,7 +40,8 @@ def register_posh_user(posh_user_id):
 
     with PoshMarkClient(posh_user, logger) as client:
         client.register()
-        client.update_profile()
+        if client.posh_user.status == PoshUser.ACTIVE:
+            client.update_profile()
 
 
 @shared_task
