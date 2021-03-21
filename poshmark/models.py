@@ -10,7 +10,7 @@ from django.db import models
 from django.utils import timezone
 from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
-from imagekit.processors import ResizeToFill
+from imagekit.processors import ResizeToFill, Transpose
 from mailslurp_client.exceptions import ApiException
 from users.models import User
 
@@ -245,6 +245,10 @@ class Campaign(models.Model):
 class Listing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     cover_photo = ProcessedImageField(
+        processors=[
+            Transpose(),
+            ResizeToFill(1000, 1000)
+        ],
         format='PNG',
         options={'quality': 60},
         blank=True
@@ -278,6 +282,10 @@ class Listing(models.Model):
 
 class ListingPhotos(models.Model):
     photo = ProcessedImageField(
+        processors=[
+            Transpose(),
+            ResizeToFill(1000, 1000)
+        ],
         format='PNG',
         options={'quality': 60},
         blank=True
