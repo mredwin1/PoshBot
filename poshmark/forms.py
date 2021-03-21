@@ -112,7 +112,8 @@ class CreatePoshUser(forms.ModelForm):
         if zone_response.status_code != requests.codes.ok:
             logging.critical('Zone could not be created - Not registering')
         else:
-            last_port = PoshUser.objects.all().order_by('proxy_port').first().proxy_port
+            last_user = PoshUser.objects.all().order_by('proxy_port').first()
+            last_port = last_user.proxy_port if last_user else None
             headers = {'Content-Type': 'application/json'}
             data = {
                 'proxy':
