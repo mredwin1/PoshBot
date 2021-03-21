@@ -47,7 +47,6 @@ class PoshUser(models.Model):
 
     date_added = models.DateField(auto_now_add=True, null=True)
 
-    is_registered = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
     meet_posh = models.BooleanField(default=False)
 
@@ -65,13 +64,19 @@ class PoshUser(models.Model):
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
     profile_picture = ProcessedImageField(
-        processors=[ResizeToFill(200, 200)],
+        processors=[
+            Transpose(),
+            ResizeToFill(200, 200)
+        ],
         format='PNG',
         options={'quality': 60},
         blank=True
     )
     header_picture = ProcessedImageField(
-        processors=[ResizeToFill(1200, 200)],
+        processors=[
+            Transpose(),
+            ResizeToFill(1200, 200)
+        ],
         format='PNG',
         options={'quality': 60},
         blank=True
