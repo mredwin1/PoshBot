@@ -456,8 +456,7 @@ class PoshMarkClient:
                 response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
                 user_image_located = self.locate(By.CLASS_NAME, 'user-image')
 
-                if user_image_located and response.status_code == requests.codes.ok:
-                    self.posh_user.is_registered = True
+                if response.status_code == requests.codes.ok:
                     self.posh_user.status = '1'
                     self.posh_user.save()
                     self.logger.info(f'Successfully registered {self.posh_user.username}, status changed to "Active"')
