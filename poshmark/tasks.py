@@ -120,7 +120,7 @@ def advanced_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
                 for listing in listings:
                     pre_share_time = time.time()
-                    client.share_item(listing)
+                    client.share_item(listing.title)
                     post_share_time = time.time()
 
                     elapsed_time = post_share_time - pre_share_time
