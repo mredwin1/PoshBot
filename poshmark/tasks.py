@@ -34,6 +34,10 @@ def log_cleanup():
 def register_posh_user(posh_user_id):
     """Registers a PoshUser to poshmark"""
     posh_user = PoshUser.objects.get(id=posh_user_id)
+
+    logger = Log(logger_type='1', posh_user=posh_user)
+    logger.save()
+
     data = {
         'zone':
             {
@@ -56,9 +60,6 @@ def register_posh_user(posh_user_id):
 
     zone_response = requests.post('https://luminati.io/api/zone', data=json.dumps(data), headers=headers)
     zone_response_json = zone_response.json()
-
-    logger = Log(logger_type='1', posh_user=posh_user)
-    logger.save()
 
     if zone_response.status_code != requests.codes.ok:
         logger.critical('Zone could not be created - Not registering')
