@@ -303,6 +303,7 @@ class PoshMarkClient:
                         listing_count = self.locate(
                             By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
                         )
+                        self.logger.debug(str(listing_count.text))
                         if listing_count.text != '0':
                             self.logger.critical('Could not share item. User seems to be inactive.')
                             self.logger.info('Setting status of user to "Inactive"')
@@ -961,7 +962,7 @@ class PoshMarkClient:
                                 By.XPATH,
                                 '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
                             )
-                            cover_photo_field.send_keys(listing_photos[0])
+                            cover_photo_field.send_keys(listing.cover_photo.path)
 
                             apply_button = self.locate(
                                 By.XPATH,
@@ -973,7 +974,7 @@ class PoshMarkClient:
 
                             if len(listing_photos) > 1:
                                 upload_photos_field = self.locate(By.ID, 'img-file-input')
-                                for photo in listing_photos[1:]:
+                                for photo in listing_photos:
                                     upload_photos_field.clear()
                                     upload_photos_field.send_keys(photo)
                                     self.sleep(1)
@@ -1062,6 +1063,7 @@ class PoshMarkClient:
                 listing_count = self.locate(
                     By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
                 )
+                self.logger.debug(str(listing_count.text))
                 if listing_count.text != '0':
                     self.logger.critical('Could not share item. User seems to be inactive.')
                     self.logger.info('Setting status of user to "Inactive"')
@@ -1104,6 +1106,7 @@ class PoshMarkClient:
                 listing_count = self.locate(
                     By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
                 )
+                self.logger.debug(str(listing_count.text))
                 if listing_count.text != '0':
                     self.logger.critical('Could not share item. User seems to be inactive.')
                     self.logger.info('Setting status of user to "Inactive"')
