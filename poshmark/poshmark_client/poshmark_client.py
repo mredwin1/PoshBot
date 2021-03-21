@@ -299,18 +299,18 @@ class PoshMarkClient:
                             self.logger.info(f'Shared successfully')
 
                             return True
-                    else:
-                        listing_count = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
-                        )
-                        self.logger.debug(str(listing_count.text))
-                        if listing_count.text != '0':
-                            self.logger.critical('Could not share item. User seems to be inactive.')
-                            self.logger.info('Setting status of user to "Inactive"')
-                            self.posh_user.status = '2'
-                            self.posh_user.save()
+                else:
+                    listing_count = self.locate(
+                        By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
+                    )
+                    self.logger.debug(str(listing_count.text))
+                    if listing_count.text != '0':
+                        self.logger.critical('Could not share item. User seems to be inactive.')
+                        self.logger.info('Setting status of user to "Inactive"')
+                        self.posh_user.status = '2'
+                        self.posh_user.save()
 
-                        return False
+                    return False
 
         except Exception as e:
             self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -454,7 +454,6 @@ class PoshMarkClient:
 
                 # Check if Posh User is now registered
                 response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
-                user_image_located = self.locate(By.CLASS_NAME, 'user-image')
 
                 if response.status_code == requests.codes.ok:
                     self.posh_user.status = '1'
@@ -488,12 +487,6 @@ class PoshMarkClient:
                 else:
                     self.posh_user.status = '4'
                     self.posh_user.save()
-                    if not user_image_located:
-                        self.logger.error(f'Registration for {self.posh_user.username} unsuccessful (form not '
-                                          f'submitted)')
-                    elif response.status_code != requests.codes.ok:
-                        self.logger.error(f'Registration for {self.posh_user.username} unsuccessful (could not find '
-                                          f'user closet at {response.url})')
                     self.logger.error('Status changed to "Waiting to be registered"')
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -1098,6 +1091,8 @@ class PoshMarkClient:
                         to_followers_button.click()
 
                         self.logger.info('Item Shared')
+
+                        self.sleep(5)
 
                         return self.check_listing_timestamp(listing_title)
 
