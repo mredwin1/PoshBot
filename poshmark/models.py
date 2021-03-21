@@ -244,17 +244,26 @@ class Campaign(models.Model):
 
 class Listing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    cover_photo = ProcessedImageField(
+        processors=[ResizeToFill(1000, 1000)],
+        format='PNG',
+        options={'quality': 60},
+        blank=True
+    )
 
     title = models.CharField(max_length=50)
-    description = models.TextField()
-    category = models.CharField(max_length=30)
-    subcategory = models.CharField(max_length=30)
-    tags = models.BooleanField(default=False)
-    original_price = models.IntegerField()
-    listing_price = models.IntegerField()
     size = models.CharField(max_length=20)
     brand = models.CharField(max_length=30)
-    status = models.IntegerField(default=0)
+    category = models.CharField(max_length=30)
+    subcategory = models.CharField(max_length=30)
+
+    description = models.TextField()
+
+    tags = models.BooleanField(default=False)
+
+    original_price = models.IntegerField()
+    listing_price = models.IntegerField()
+
     campaign = models.ForeignKey(Campaign, on_delete=models.SET_NULL, null=True)
 
     def get_photos(self):
