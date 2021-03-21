@@ -16,7 +16,7 @@ from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 @shared_task
 def check_registered_posh_users():
     """Will get all unregistered users and queue them up to be registered"""
-    posh_users = PoshUser.objects.filter(is_registered=False)
+    posh_users = PoshUser.objects.filter(status=PoshUser.WREGISTER)
 
     for posh_user in posh_users:
         register_posh_user(posh_user.id)
