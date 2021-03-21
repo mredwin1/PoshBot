@@ -1092,8 +1092,6 @@ class PoshMarkClient:
 
                         self.logger.info('Item Shared')
 
-                        self.sleep(5)
-
                         return self.check_listing_timestamp(listing_title)
 
             else:

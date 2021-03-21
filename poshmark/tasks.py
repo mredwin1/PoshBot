@@ -103,6 +103,7 @@ def advanced_sharing(campaign_id):
             while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
                 while len(fake_listing_titles) != len(listings):
                     title = client.list_item()
+                    client.sleep(12)
                     if client.check_listing(title):
                         if client.share_item(title):
                             fake_listing_titles.append(title)
