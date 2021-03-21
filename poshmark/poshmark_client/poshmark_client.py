@@ -246,19 +246,19 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
-    def check_listing_timestamp(self, listing):
+    def check_listing_timestamp(self, listing_title):
         """Given a listing title will check the last time the listing was shared"""
         previous_status = self.posh_user.status
         try:
-            self.logger.info(f'Checking the timestamp on following item: {listing.title}')
+            self.logger.info(f'Checking the timestamp on following item: {listing_title}')
 
             self.go_to_closet()
 
-            if self.check_listing(listing.title):
+            if self.check_listing(listing_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
                 for listed_item in listed_items:
                     title = listed_item.find_element_by_class_name('tile__title')
-                    if title.text == listing.title:
+                    if title.text == listing_title:
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
@@ -294,11 +294,11 @@ class PoshMarkClient:
                         if elapsed_time > 120:
                             self.logger.error(f'Sharing does not seem to be working, deleting listing. '
                                               f'Elapsed Time: {elapsed_time} {unit}')
-                            self.delete_listing(listing)
+                            return False
                         else:
                             self.logger.info(f'Shared successfully')
 
-                        break
+                            return True
                     else:
                         listing_count = self.locate(
                             By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
@@ -1100,7 +1100,7 @@ class PoshMarkClient:
 
                         self.logger.info('Item Shared')
 
-                        return self.is_present(By.ID, 'flash')
+                        return self.check_listing_timestamp(listing_title)
 
             else:
                 listing_count = self.locate(

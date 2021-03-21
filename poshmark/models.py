@@ -245,7 +245,6 @@ class Campaign(models.Model):
 class Listing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     cover_photo = ProcessedImageField(
-        processors=[ResizeToFill(1000, 1000)],
         format='PNG',
         options={'quality': 60},
         blank=True
@@ -279,7 +278,6 @@ class Listing(models.Model):
 
 class ListingPhotos(models.Model):
     photo = ProcessedImageField(
-        processors=[ResizeToFill(1000, 1000)],
         format='PNG',
         options={'quality': 60},
         blank=True
