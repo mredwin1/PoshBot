@@ -617,7 +617,7 @@ class PoshMarkClient:
                     self.sleep(1)
 
             attempts = 1
-            header_picture_path = self.posh_user.profile_picture.path
+            header_picture_path = self.posh_user.header_picture.path
             header_picture_exists = Path(header_picture_path).is_file()
             while not header_picture_exists and attempts < 6:
                 self.logger.info(str(header_picture_path))

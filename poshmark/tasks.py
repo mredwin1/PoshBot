@@ -99,7 +99,8 @@ def advanced_sharing(campaign_id):
                 if client.check_listing('Meet your Posher'):
                     client.posh_user.meet_posh = True
                     client.posh_user.save()
-                client.sleep(60)
+                else:
+                    client.sleep(60)
 
             while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
                 while len(fake_listing_titles) != len(listings):
