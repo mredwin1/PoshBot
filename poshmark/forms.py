@@ -8,6 +8,7 @@ import requests
 import string
 
 from django import forms
+from django.core.files.base import ContentFile
 from poshmark.models import PoshUser, Listing, ListingPhotos, Campaign
 
 
@@ -177,13 +178,13 @@ class CreateListing(forms.Form):
             user=self.request.user,
         )
 
-        new_listing.save()
-
         letters = string.ascii_lowercase
 
-        for file_content in self.files.values():
+        new_listing.cover_photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(self.files['cover_photo'].read()), save=True)
+
+        for file_content in self.files.getlist('other_photos'):
             listing_photo = ListingPhotos(listing=new_listing)
-            listing_photo.photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", file_content, save=True)
+            listing_photo.photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
 
 
 class CreateCampaign(forms.Form):
