@@ -456,7 +456,7 @@ class PoshMarkClient:
                 # Sleep for realism
                 self.sleep(5)
 
-                self.web_driver.save_scrennshot('/media/register.png')
+                self.web_driver.save_screenshot('/media/register.png')
 
                 # Check if Posh User is now registered
                 attempts = 0
