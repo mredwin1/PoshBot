@@ -7,7 +7,6 @@ class PoshUserAdmin(admin.ModelAdmin):
     model = PoshUser
     list_display = ('username', 'first_name', 'last_name')
     list_filter = [
-        ('is_registered', admin.BooleanFieldListFilter),
         ('status', admin.ChoicesFieldListFilter),
         ('user', admin.RelatedFieldListFilter),
     ]
