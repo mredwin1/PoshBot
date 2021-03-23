@@ -127,7 +127,7 @@ class CreatePoshUser(forms.ModelForm):
                         'whitelist_ips': [],
                     }
             }
-            port_response = requests.post('http://lpm:22999/api/proxies', data=json.dumps(data), headers=headers)
+            port_response = requests.post('http://lpm_poshbot:22999/api/proxies', data=json.dumps(data), headers=headers)
             port_response_json = port_response.json()
             if 'errors' in port_response_json.keys():
                 logging.critical('The following errors encountered while creating a port')
