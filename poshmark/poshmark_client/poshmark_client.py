@@ -1145,4 +1145,5 @@ class PoshMarkClient:
 
     def check_ip(self):
         self.web_driver.get('https://whatismyipaddress.com/')
+        self.sleep(5)
         self.web_driver.save_screenshot('/media/ip.png')
