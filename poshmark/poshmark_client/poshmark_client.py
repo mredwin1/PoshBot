@@ -86,8 +86,8 @@ class PoshMarkClient:
 
         prox.proxy_type = ProxyType.MANUAL
 
-        prox.http_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
-        prox.ssl_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
+        prox.http_proxy = '{hostname}:{port}'.format(hostname='http://lpm_poshbot', port=str(posh_user.proxy_port))
+        prox.ssl_proxy = '{hostname}:{port}'.format(hostname='http://lpm_poshbot', port=str(posh_user.proxy_port))
         capabilities = webdriver.DesiredCapabilities.CHROME
         prox.add_to_capabilities(capabilities)
 
@@ -455,6 +455,8 @@ class PoshMarkClient:
 
                 # Sleep for realism
                 self.sleep(5)
+
+                self.web_driver.save_scrennshot('/media/register.png')
 
                 # Check if Posh User is now registered
                 attempts = 0
