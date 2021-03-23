@@ -464,6 +464,7 @@ class PoshMarkClient:
                 while attempts < 5 and response.status_code != requests.codes.ok:
                     response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
                     self.logger.warning(f'Closet for {self.posh_user.username} is still not available - Trying again')
+                    attempts += 1
                     self.sleep(5)
 
                 if response.status_code == requests.codes.ok:
