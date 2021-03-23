@@ -93,6 +93,7 @@ class PoshMarkClient:
 
         self.posh_user = posh_user
         self.logger = logger
+        self.logger.info(f'The proxy port is {posh_user.proxy_port}')
         self.web_driver = None
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -456,7 +457,12 @@ class PoshMarkClient:
                 self.sleep(5)
 
                 # Check if Posh User is now registered
+                attempts = 0
                 response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                while attempts < 5 and response.status_code != requests.codes.ok:
+                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                    self.logger.warning(f'Closet for {self.posh_user.username} is still not available - Trying again')
+                    self.sleep(5)
 
                 if response.status_code == requests.codes.ok:
                     self.posh_user.status = '1'
@@ -490,6 +496,7 @@ class PoshMarkClient:
                 else:
                     self.posh_user.status = '4'
                     self.posh_user.save()
+                    self.logger.error(f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
                     self.logger.error('Status changed to "Waiting to be registered"')
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
