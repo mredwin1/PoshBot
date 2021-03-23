@@ -39,11 +39,10 @@ def register_posh_user(posh_user_id):
     logger.save()
 
     with PoshMarkClient(posh_user, logger) as client:
-        client.check_ip()
-        # client.register()
-        # posh_user.refresh_from_db()
-        # if posh_user.status == PoshUser.ACTIVE:
-        #     client.update_profile()
+        client.register()
+        posh_user.refresh_from_db()
+        if posh_user.status == PoshUser.ACTIVE:
+            client.update_profile()
 
 
 @shared_task
