@@ -124,8 +124,8 @@ class CreatePoshUser(forms.ModelForm):
                         'proxy_type': 'persist',
                         'customer': os.environ['PROXY_CUSTOMER'],
                         'password': zone_response_json['zone']['password'][0],
-                        'whitelist_ips': [],
-                        'country': 'United States',
+                        'whitelist_ips': ["0.0.0.0/0"],
+                        'country': 'us',
                     }
             }
             port_response = requests.post('http://lpm:22999/api/proxies', data=json.dumps(data), headers=headers)
