@@ -57,16 +57,7 @@ def basic_sharing(campaign_id):
 
     logger.info('Starting Campaign')
     with PoshMarkClient(posh_user, logger) as client:
-        now = datetime.datetime.now(pytz.utc)
-        end_time = now + datetime.timedelta(days=1)
-        logger.debug(f'Campaign Times: {campaign.times}')
-        logger.debug(f'End Time: {end_time}')
-        now = datetime.datetime.now(pytz.utc)
-        while now < end_time and now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
-            now = datetime.datetime.now(pytz.utc)
-            campaign.refresh_from_db()
-            logger.debug(f"Current Time: {now} Hour: {now.strftime('%I %p')} ")
-            client.sleep(campaign.delay)
+        client.check_ip()
 
     logger.info('Campaign Ended')
 
