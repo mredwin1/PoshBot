@@ -85,9 +85,10 @@ class PoshMarkClient:
         prox = Proxy()
 
         prox.proxy_type = ProxyType.MANUAL
-
-        prox.http_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
-        prox.ssl_proxy = '{hostname}:{port}'.format(hostname='http://lpm', port=str(posh_user.proxy_port))
+        r = requests.get('http://lpm:22999/api/gen_token')
+        auth_token = r.json()['token']
+        prox.http_proxy = '{hostname}:{port}'.format(hostname=f'http://lum-auth-token:{auth_token}@http://lpm', port=str(posh_user.proxy_port))
+        prox.ssl_proxy = '{hostname}:{port}'.format(hostname=f'http://lum-auth-token:{auth_token}@http://lpm', port=str(posh_user.proxy_port))
         capabilities = webdriver.DesiredCapabilities.CHROME
         prox.add_to_capabilities(capabilities)
 
