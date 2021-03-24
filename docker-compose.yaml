@@ -124,7 +124,7 @@ services:
   lpm:
     image: luminati/luminati-proxy
     restart: always
-    container_name: lpm_poshbot
+    container_name: lpm
     entrypoint: proxy-manager --www_whitelist_ips "0.0.0.0/0"
     networks:
       - internal
