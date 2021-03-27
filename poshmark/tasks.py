@@ -66,12 +66,14 @@ def basic_sharing(campaign_id):
 
                 for listing_title in listing_titles:
                     pre_share_time = time.time()
-                    client.share_item(listing_title)
-                    post_share_time = time.time()
+                    if client.share_item(listing_title):
+                        post_share_time = time.time()
 
-                    elapsed_time = post_share_time - pre_share_time
-                    if elapsed_time < campaign.delay:
-                        client.sleep(campaign.delay - elapsed_time)
+                        elapsed_time = post_share_time - pre_share_time
+                        if elapsed_time < campaign.delay:
+                            client.sleep(campaign.delay - elapsed_time)
+                    else:
+                        break
 
                 if logged_hour_message:
                     logged_hour_message = False
@@ -135,12 +137,14 @@ def advanced_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
                 for listing in listings:
                     pre_share_time = time.time()
-                    client.share_item(listing.title)
-                    post_share_time = time.time()
+                    if client.share_item(listing.title):
+                        post_share_time = time.time()
 
-                    elapsed_time = post_share_time - pre_share_time
-                    if elapsed_time < campaign.delay:
-                        client.sleep(campaign.delay - elapsed_time)
+                        elapsed_time = post_share_time - pre_share_time
+                        if elapsed_time < campaign.delay:
+                            client.sleep(campaign.delay - elapsed_time)
+                    else:
+                        break
 
                 if logged_hour_message:
                     logged_hour_message = False
