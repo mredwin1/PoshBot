@@ -1,9 +1,6 @@
 import datetime
-import json
-import os
 import pytz
 import random
-import requests
 import time
 
 from django.utils import timezone
@@ -50,14 +47,37 @@ def basic_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type='2', posh_user=posh_user)
+    logged_hour_message = False
 
     campaign.status = '1'
     campaign.save()
     logger.save()
 
     logger.info('Starting Campaign')
-    with PoshMarkClient(posh_user, logger) as client:
-        client.check_ip()
+    with PoshMarkClient(posh_user, logger, use_proxy=False) as client:
+        now = datetime.datetime.now(pytz.utc)
+        end_time = now + datetime.timedelta(days=1)
+        while now < end_time and posh_user.status != '2' and campaign.status == '1':
+            while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+                campaign.refresh_from_db()
+                now = datetime.datetime.now(pytz.utc)
+
+                listing_titles = client.get_all_listings()
+
+                for listing_title in listing_titles:
+                    pre_share_time = time.time()
+                    client.share_item(listing_title)
+                    post_share_time = time.time()
+
+                    elapsed_time = post_share_time - pre_share_time
+                    if elapsed_time < campaign.delay:
+                        client.sleep(campaign.delay - elapsed_time)
+
+                if logged_hour_message:
+                    logged_hour_message = False
+
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == '0':
+                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
 
     logger.info('Campaign Ended')
 
