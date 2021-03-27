@@ -584,6 +584,29 @@ class PoshMarkClient:
             self.posh_user.status = previous_status
             self.posh_user.save()
 
+    def get_all_listings(self):
+        """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
+        try:
+            listings = []
+
+            self.go_to_closet()
+
+            listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+            for listed_item in listed_items:
+                title = listed_item.find_element_by_class_name('tile__title')
+                try:
+                    icon = listed_item.find_element_by_class_name('inventory-tag__text')
+                except NoSuchElementException:
+                    icon = None
+
+                if not icon:
+                    listings.append(title.text)
+
+            return listings
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+
     def update_profile(self):
         """Updates a user profile with their profile picture and header picture"""
         previous_status = self.posh_user.status
