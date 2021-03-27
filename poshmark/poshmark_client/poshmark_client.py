@@ -224,7 +224,6 @@ class PoshMarkClient:
 
     def check_listing(self, listing_title):
         """Will check if a listing exists on the user's closet."""
-        previous_status = self.posh_user.status
         try:
             self.logger.info(f'Checking for "{listing_title}" listing')
 
@@ -242,15 +241,10 @@ class PoshMarkClient:
             return False
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def check_listing_timestamp(self, listing_title):
         """Given a listing title will check the last time the listing was shared"""
-        previous_status = self.posh_user.status
         try:
             self.logger.info(f'Checking the timestamp on following item: {listing_title}')
 
@@ -301,29 +295,42 @@ class PoshMarkClient:
                             self.logger.info(f'Shared successfully')
 
                             return True
-                else:
-                    listing_count = self.locate(
-                        By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
-                    )
-                    self.logger.debug(str(listing_count.text))
-                    if listing_count.text != '0':
-                        self.logger.critical('Could not share item. User seems to be inactive.')
-                        self.logger.info('Setting status of user to "Inactive"')
-                        self.posh_user.status = '2'
-                        self.posh_user.save()
-
+            else:
+                if self.check_inactive():
+                    self.logger.warning('Setting user status to inactive')
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
                     return False
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
 
-            self.posh_user.status = previous_status
-            self.posh_user.save()
+    def check_inactive(self):
+        """Will check if the current user is inactive"""
+        try:
+            self.logger.info(f'Checking is the following user is inactive: {self.posh_user.username}')
+
+            self.go_to_closet()
+
+            listing_count_element = self.locate(
+                By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
+            )
+            listing_count = listing_count_element.text
+            index = listing_count.find('\n')
+            total_listings = int(listing_count[:index])
+
+            if total_listings > 0 and not self.is_present(By.CLASS_NAME, 'card--small'):
+                self.logger.warning('This user does not seem to be active, setting inactive')
+                return True
+            else:
+                self.logger.info('This user is still active')
+                return False
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
 
     def delete_listing(self, listing_title):
         """Given a listing title will delete the listing"""
-        previous_status = self.posh_user.status
         try:
             self.logger.info(f'Deleting the following item: {listing_title}')
 
@@ -351,11 +358,10 @@ class PoshMarkClient:
 
                         self.sleep(1)
 
-                        confirm_button = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[6]/div[2]/div[3]/div/button[2]'
-                                      '//*[@id="content"]/div/div[1]/div/div[6]/div[2]/div[3]/div/button[2]'
-                        )
-                        confirm_button.click()
+                        primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                        for primary_button in primary_buttons:
+                            if primary_button.text == 'Yes':
+                                primary_button.click()
 
                         self.sleep(5)
 
@@ -364,11 +370,7 @@ class PoshMarkClient:
                 self.logger.error('Could not find listing - It does not exist')
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def check_logged_in(self):
         """Will go to the user's closet to see if the PoshUser is logged in or not, the bot knows if they are logged in
@@ -500,7 +502,8 @@ class PoshMarkClient:
                 else:
                     self.posh_user.status = '4'
                     self.posh_user.save()
-                    self.logger.error(f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
+                    self.logger.error(
+                        f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
                     self.logger.error('Status changed to "Waiting to be registered"')
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -512,25 +515,33 @@ class PoshMarkClient:
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
         self.logger.info(f'Logging {self.posh_user.username} in')
+
         if not self.web_driver.current_url == 'https://poshmark.com/':
             self.web_driver.get('https://poshmark.com/')
             self.sleep(1, 3)
+
         self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
         self.logger.info(f'locating login button')
+
         log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
         log_in_nav.click()
+
         self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
 
         self.sleep(1, 3)
+
         username_field = self.locate(By.ID, 'login_form_username_email')
         password_field = self.locate(By.ID, 'login_form_password')
 
         self.logger.info('Filling in form')
 
         username_field.send_keys(self.posh_user.username)
+
         self.sleep(1, 2)
+
         password_field.send_keys(self.posh_user.password)
         password_field.send_keys(Keys.RETURN)
+
         self.logger.info('Form submitted')
 
         error_code = self.check_for_errors()
@@ -544,7 +555,6 @@ class PoshMarkClient:
 
     def go_to_closet(self):
         """Ensures the current url for the web driver is at users poshmark closet"""
-        previous_status = self.posh_user.status
         try:
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
@@ -578,16 +588,14 @@ class PoshMarkClient:
                     show_all_listings.click()
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def get_all_listings(self):
         """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
         try:
             listings = []
+
+            self.logger.info('Getting all listings')
 
             self.go_to_closet()
 
@@ -601,6 +609,8 @@ class PoshMarkClient:
 
                 if not icon:
                     listings.append(title.text)
+
+            self.logger.info(f"Found the following listings: {','.join(listings)}")
 
             return listings
 
@@ -693,7 +703,6 @@ class PoshMarkClient:
 
     def list_item(self, listing=None):
         """Will list an item on poshmark for the user"""
-        previous_status = self.posh_user.status
         try:
             if listing:
                 self.logger.info(f'Listing the following item: {listing.title}')
@@ -872,16 +881,11 @@ class PoshMarkClient:
             return title
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def update_listing(self, current_title, listing, brand=None):
         """Will update the listing with the current title with all of the information for the listing that was passed,
         if a brand is given it will update the brand to that otherwise it will use the listings brand"""
-        previous_status = self.posh_user.status
         try:
             self.logger.info(f'Updating the following item: {current_title}')
 
@@ -1089,26 +1093,16 @@ class PoshMarkClient:
 
                         break
             else:
-                listing_count = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
-                )
-                self.logger.debug(str(listing_count.text))
-                if listing_count.text != '0':
-                    self.logger.critical('Could not share item. User seems to be inactive.')
-                    self.logger.info('Setting status of user to "Inactive"')
+                if self.check_inactive():
+                    self.logger.warning('Setting user status to inactive')
                     self.posh_user.status = '2'
                     self.posh_user.save()
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def share_item(self, listing_title):
         """Will share an item in the closet"""
-        previous_status = self.posh_user.status
         try:
             self.logger.info(f'Sharing the following item: {listing_title}')
 
@@ -1132,22 +1126,14 @@ class PoshMarkClient:
                         return self.check_listing_timestamp(listing_title)
 
             else:
-                listing_count = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[1]/a'
-                )
-                self.logger.debug(str(listing_count.text))
-                if listing_count.text != '0':
-                    self.logger.critical('Could not share item. User seems to be inactive.')
-                    self.logger.info('Setting status of user to "Inactive"')
+                if self.check_inactive():
+                    self.logger.warning('Setting user status to inactive')
                     self.posh_user.status = '2'
                     self.posh_user.save()
+                    return False
 
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def check_news(self):
         """If the PoshUser is logged in it will check their new else it will log them in then check their news"""
