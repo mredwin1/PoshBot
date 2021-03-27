@@ -101,6 +101,7 @@ class PoshMarkClient:
         self.web_driver_options.add_experimental_option('useAutomationExtension', False)
         self.web_driver_options.add_argument('--disable-extensions')
         self.web_driver_options.add_argument('--headless')
+        self.web_driver_options.add_argument('--incognito')
         self.web_driver_options.add_argument('--no-sandbox')
 
     def __enter__(self):
