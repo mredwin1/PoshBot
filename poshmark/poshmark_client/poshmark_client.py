@@ -94,7 +94,6 @@ class PoshMarkClient:
 
         self.posh_user = posh_user
         self.logger = logger
-        self.logger.info(f'The proxy port is {posh_user.proxy_port}')
         self.web_driver = None
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
