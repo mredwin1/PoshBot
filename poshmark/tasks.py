@@ -46,7 +46,7 @@ def register_posh_user(posh_user_id):
 def basic_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type='2', posh_user=posh_user)
+    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     logged_hour_message = False
 
     campaign.status = '1'
@@ -57,8 +57,8 @@ def basic_sharing(campaign_id):
     with PoshMarkClient(posh_user, logger, use_proxy=False) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
-        while now < end_time and posh_user.status != '2' and campaign.status == '1':
-            while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
 
@@ -78,7 +78,7 @@ def basic_sharing(campaign_id):
                 if logged_hour_message:
                     logged_hour_message = False
 
-            if not logged_hour_message and campaign.status == '1' and posh_user.status == '0':
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
                 logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
 
     logger.info('Campaign Ended')
@@ -91,10 +91,9 @@ def basic_sharing(campaign_id):
 def advanced_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type='2', posh_user=posh_user)
+    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     listings = Listing.objects.filter(campaign__id=campaign_id)
     logged_hour_message = False
-    meet_posh_attempts = 0
     fake_listing_titles = []
     fake_listings_made = False
 
@@ -106,16 +105,8 @@ def advanced_sharing(campaign_id):
     with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
-        while now < end_time and posh_user.status != '2' and campaign.status == '1':
-
-            while not posh_user.meet_posh and meet_posh_attempts < 3:
-                if client.check_listing('Meet your Posher'):
-                    client.posh_user.meet_posh = True
-                    client.posh_user.save()
-                else:
-                    client.sleep(60)
-
-            while now.strftime('%I %p') in campaign.times and posh_user.status != '2' and campaign.status == '1':
+        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 while len(fake_listing_titles) != len(listings):
                     title = client.list_item()
                     client.sleep(12)
@@ -134,6 +125,7 @@ def advanced_sharing(campaign_id):
                     fake_listings_made = True
 
                 campaign.refresh_from_db()
+                posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
                 for listing in listings:
                     pre_share_time = time.time()
@@ -149,7 +141,7 @@ def advanced_sharing(campaign_id):
                 if logged_hour_message:
                     logged_hour_message = False
 
-            if not logged_hour_message and campaign.status == '1' and posh_user.status == '0':
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
                 logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
 
     logger.info('Campaign Ended')
