@@ -599,20 +599,25 @@ class PoshMarkClient:
 
             self.go_to_closet()
 
-            listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-            for listed_item in listed_items:
-                title = listed_item.find_element_by_class_name('tile__title')
-                try:
-                    icon = listed_item.find_element_by_class_name('inventory-tag__text')
-                except NoSuchElementException:
-                    icon = None
+            if self.is_present(By.CLASS_NAME, 'card--small'):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    try:
+                        icon = listed_item.find_element_by_class_name('inventory-tag__text')
+                    except NoSuchElementException:
+                        icon = None
 
-                if not icon:
-                    listings.append(title.text)
+                    if not icon:
+                        listings.append(title.text)
 
-            self.logger.info(f"Found the following listings: {','.join(listings)}")
+                self.logger.info(f"Found the following listings: {','.join(listings)}")
 
-            return listings
+                return listings
+            else:
+                if self.check_inactive():
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
