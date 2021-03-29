@@ -60,6 +60,7 @@ def basic_sharing(campaign_id):
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
+                posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
