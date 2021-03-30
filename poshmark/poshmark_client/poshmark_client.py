@@ -163,7 +163,7 @@ class PoshMarkClient:
         self.logger.info(f'Sleeping for {seconds} {word}')
         time.sleep(seconds)
 
-    def check_for_errors(self, step=None):
+    def check_for_errors(self):
         """This will check for errors on the current page and handle them as necessary"""
         self.logger.info('Checking for errors')
         captcha_errors = [
@@ -213,12 +213,8 @@ class PoshMarkClient:
                     word = 'attempt' if retries == 1 else 'attempts'
                     self.logger.info(f'2Captcha successfully solved captcha after {retries} {word}')
                     # Set the captcha response
-                    if step == 'registration':
-                        self.web_driver.execute_script(f'grecaptcha.getResponse = () => "{captcha_response}"')
-                        self.web_driver.execute_script('validateLoginCaptcha()')
-                    else:
-                        self.web_driver.execute_script(
-                            f'document.getElementById("g-recaptcha-response").innerHTML="{captcha_response}";')
+                    self.web_driver.execute_script(f'grecaptcha.getResponse = () => "{captcha_response}"')
+                    self.web_driver.execute_script('validateLoginCaptcha()')
 
                 return 'CAPTCHA'
 
@@ -450,7 +446,7 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
-                error_code = self.check_for_errors('registration')
+                error_code = self.check_for_errors()
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
                     done_button.click()
