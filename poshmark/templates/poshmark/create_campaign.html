@@ -18,7 +18,7 @@
     <div class="content-section">
         <form method="POST" data-generate-info-url="{% url 'add-campaign' %}" id="CampaignForm" autocomplete="off">
             {% csrf_token %}
-            <h1>Create Campaign</h1>
+            <h1>Campaign</h1>
             <hr class="mb-5 mt-3">
             <div class="form-group row justify-content-end mb-4">
                 <div class="col-6">
@@ -116,7 +116,7 @@
                 </div>
             </div>
             <div class="form-group px-2">
-                <button class="btn btn-dark" type="submit">Create</button>
+                <button class="btn btn-dark" type="submit">Save</button>
             </div>
         </form>
         <script src="{% static 'poshmark/JS/create_campaign_utilities.js' %}"></script>

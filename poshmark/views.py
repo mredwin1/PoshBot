@@ -10,7 +10,7 @@ from django.views import View
 from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
-from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm
+from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm
 from .tasks import basic_sharing, advanced_sharing
 from poshmark.templatetags.custom_filters import log_entry_return
 
@@ -75,6 +75,32 @@ def delete_posh_user(request, posh_user_id):
     posh_user.delete()
 
     return redirect('posh-users')
+
+
+class EditCampaign(View, LoginRequiredMixin):
+    form_class = EditCampaignForm
+
+    def get(self, request, *args, **kwargs):
+        campaign_id = self.kwargs['campaign_id']
+        campaign = Campaign.objects.get(id=campaign_id)
+
+        form = self.form_class(request, campaign)
+
+        return render(request, 'poshmark/create_campaign.html', {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        campaign_id = self.kwargs['campaign_id']
+        campaign = Campaign.objects.get(id=campaign_id)
+
+        form = self.form_class(request, campaign, data=request.POST)
+
+        if form.is_valid():
+            if form.has_changed():
+                form.save()
+
+            return redirect('view-campaigns')
+        else:
+            return render(request, 'poshmark/create_campaign.html', {'form': form})
 
 
 class PoshUserListView(ListView, LoginRequiredMixin):

@@ -124,6 +124,8 @@ def time_return(value, period):
     period = 'AM' if period == '0' or period == '1' else 'PM'
     value = 12 if value == 0 else value
 
+    value = value if len(str(value)) == 2 else f'0{value}'
+
     return f'{value} {period}'
 
 

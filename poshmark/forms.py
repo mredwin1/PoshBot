@@ -311,6 +311,8 @@ class CreateBasicCampaignForm(forms.Form):
                 self.add_error(username_field, 'This  PoshUser does not exists. '
                                                'Please sign up at poshmark.com or add it as a PoshUser.')
 
+        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+
     def save(self):
         try:
             posh_user = PoshUser.objects.get(username=self.cleaned_data['username'])
@@ -328,11 +330,85 @@ class CreateBasicCampaignForm(forms.Form):
             posh_user=posh_user,
             title=self.cleaned_data['title'],
             status='2',
-            times='12 AM,1 AM,2 AM,3 AM,4 AM,6 AM,7 AM,8 AM,9 AM,10 AM,11 AM,12 PM,1 PM,2 PM,3 PM,4 PM,5 PM,6 PM,7 PM,'
-                  '8 PM,9 PM,10 PM,11 PM',
+            times='12 AM,01 AM,02 AM,03 AM,04 AM,05 AM,06 AM,07 AM,08 AM,09 AM,10 AM,11 AM,12 PM,01 PM,02 PM,03 PM,'
+                  '04 PM,05 PM,06 PM,07 PM,08 PM,09 PM,10 PM,11 PM',
             delay=self.cleaned_data['delay'],
             mode=Campaign.BASIC_SHARING,
             auto_run=True,
         )
 
         new_campaign.save()
+
+
+class EditCampaignForm(CreateCampaign):
+    def __init__(self, request, campaign, *args, **kwargs):
+        super(EditCampaignForm, self).__init__(request, *args, **kwargs)
+        self.request = request
+        self.campaign = campaign
+
+        listings = Listing.objects.filter(campaign=campaign)
+        listings_list = [str(listing.id) for listing in listings]
+
+        self.fields['title'].initial = campaign.title
+        self.fields['times'].initial = campaign.times
+        self.fields['listings'].initial = ','.join(listings_list)
+        self.fields['posh_user'].initial = campaign.posh_user.id
+        self.fields['mode'].initial = campaign.mode
+        self.fields['delay'].initial = campaign.delay / 60
+        self.fields['auto_run'].initial = campaign.auto_run
+        self.fields['generate_users'].initial = campaign.generate_users
+
+    def clean(self):
+        super(CreateCampaign, self).clean()
+
+        posh_user_field = 'posh_user'
+        if posh_user_field in self.cleaned_data.keys():
+            posh_user_id = self.cleaned_data[posh_user_field]
+
+            if posh_user_id:
+                self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
+            else:
+                self.add_error(posh_user_field, 'This posh user does not exist.')
+        else:
+            pass
+
+        times_field = 'times'
+        if times_field in self.cleaned_data.keys():
+            times = self.cleaned_data[times_field].split(',')
+            local_tz = pytz.timezone('US/Eastern')
+            datetimes = []
+
+            for time in times:
+                local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
+                utc_time = local_time.astimezone(datetime.timezone.utc).strftime('%I %p')
+                datetimes.append(utc_time)
+
+            self.cleaned_data[times_field] = ','.join(datetimes)
+        else:
+            pass
+
+        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
+            listings_field = 'listings'
+            if listings_field in self.cleaned_data.keys():
+                listing_ids = self.cleaned_data[listings_field].split(',')
+                listing_objects = []
+
+                for listing_id in listing_ids:
+                    listing_objects.append(Listing.objects.get(id=int(listing_id)))
+
+                self.cleaned_data[listings_field] = listing_objects
+            else:
+                self.add_error(listings_field, 'This field is required.')
+
+        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+
+    def save(self):
+        self.campaign.posh_user = self.cleaned_data['posh_user']
+        self.campaign.title = self.cleaned_data['title']
+        self.campaign.times = self.cleaned_data['times']
+        self.campaign.delay = self.cleaned_data['delay']
+        self.campaign.auto_run = self.cleaned_data['auto_run']
+        self.campaign.generate_users = self.cleaned_data['generate_users']
+        self.campaign.mode = self.cleaned_data['mode']
+
+        self.campaign.save()

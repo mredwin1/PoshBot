@@ -60,7 +60,9 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <h5 class="card-title">{{ campaign.title }}</h5>
+                            <a href="{% url 'edit-campaign' campaign.id %}">
+                                <h5 class="card-title">{{ campaign.title }}</h5>
+                            </a>
                         </div>
                         <div class="card-footer bg-transparent">
                             <div class="row">
