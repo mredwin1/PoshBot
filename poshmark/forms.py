@@ -82,7 +82,6 @@ class CreatePoshUser(forms.ModelForm):
             new_user.is_email_verified = True
 
         if self.cleaned_data['is_registered']:
-            new_user.is_registered = True
             new_user.status = '1'
         else:
             new_user.status = '4'
@@ -266,3 +265,61 @@ class CreateCampaign(forms.Form):
         for listing in self.cleaned_data['listings']:
             listing.campaign = new_campaign
             listing.save()
+
+
+class CreateBasicCampaignForm(forms.Form):
+    title = forms.CharField(label='Title')
+    delay = forms.FloatField(label='Delay')
+    username = forms.CharField(label='Username')
+    password = forms.CharField(label='Password')
+
+    def __init__(self, request, *args, **kwargs):
+        super(CreateBasicCampaignForm, self).__init__(*args, **kwargs)
+        self.request = request
+
+    def clean(self):
+        super(CreateBasicCampaignForm, self).clean()
+
+        title_field = 'title'
+        try:
+            campaign = Campaign.objects.get(title=self.cleaned_data[title_field], user=self.request.user)
+            self.add_error(title_field, 'Campaign title taken, choose another title')
+        except Campaign.DoesNotExist:
+            pass
+
+        username_field = 'username'
+        try:
+            posh_user = PoshUser.objects.get(username=self.cleaned_data['username'])
+            if posh_user.status != PoshUser.ACTIVE:
+                self.add_error(username_field, 'This PoshUser is in the system and is not active.')
+        except PoshUser.DoesNotExist:
+            response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data[username_field]}')
+            if response.status_code != requests.codes.ok:
+                self.add_error(username_field, 'This  PoshUser does not exists. '
+                                               'Please sign up at poshmark.com or add it as a PoshUser.')
+
+    def save(self):
+        try:
+            posh_user = PoshUser.objects.get(username=self.cleaned_data['username'])
+        except PoshUser.DoesNotExist:
+            posh_user = PoshUser(
+                username=self.cleaned_data['username'],
+                password=self.cleaned_data['password'],
+                user=self.request.user,
+                status=PoshUser.INUSE
+            )
+            posh_user.save()
+
+        new_campaign = Campaign(
+            user=self.request.user,
+            posh_user=posh_user,
+            title=self.cleaned_data['title'],
+            status='2',
+            times='12 AM,1 AM,2 AM,3 AM,4 AM,6 AM,7 AM,8 AM,9 AM,10 AM,11 AM,12 PM,1 PM,2 PM,3 PM,4 PM,5 PM,6 PM,7 PM,'
+                  '8 PM,9 PM,10 PM,11 PM',
+            delay=self.cleaned_data['delay'],
+            mode=Campaign.BASIC_SHARING,
+            auto_run=True,
+        )
+
+        new_campaign.save()
