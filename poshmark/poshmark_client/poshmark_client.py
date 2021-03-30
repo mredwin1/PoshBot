@@ -545,7 +545,6 @@ class PoshMarkClient:
         if error_code == 'CAPTCHA':
             password_field = self.locate(By.ID, 'login_form_password')
             self.sleep(1)
-            password_field.send_keys(self.posh_user.password)
             password_field.send_keys(Keys.RETURN)
             self.logger.info('Form resubmitted')
 
