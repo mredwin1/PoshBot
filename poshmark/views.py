@@ -10,7 +10,7 @@ from django.views import View
 from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
-from .forms import CreatePoshUser, CreateListing, CreateCampaign
+from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm
 from .tasks import basic_sharing, advanced_sharing
 from poshmark.templatetags.custom_filters import log_entry_return
 
@@ -287,3 +287,15 @@ class CampaignListView(ListView, LoginRequiredMixin):
             organized_campaigns.append(limited_list)
         
         return organized_campaigns
+
+
+class CreateBasicCampaign(View, LoginRequiredMixin):
+    form_class = CreateBasicCampaignForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({}, status=200)
+        else:
+            return JsonResponse(form.errors, status=400)
