@@ -249,6 +249,13 @@ class CreateCampaign(forms.Form):
             else:
                 self.add_error(listings_field, 'This field is required.')
 
+        title_field = 'title'
+        try:
+            campaign = Campaign.objects.get(title=self.cleaned_data[title_field], user=self.request.user)
+            self.add_error(title_field, 'Campaign title taken, choose another title')
+        except Campaign.DoesNotExist:
+            pass
+
         self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
 
     def save(self):
