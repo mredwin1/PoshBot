@@ -1,15 +1,45 @@
 {% extends "poshmark/base.html" %}
 {% load static %}
 {% load custom_filters %}
+{% block modal-body %}
+    <form action="{% url 'add-basic-campaign' %}" method="POST" role="form" id="basicCampaignForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_title" class="col-form-label">Title:</label>
+            <input type="text" class="form-control" maxlength="50" id="id_title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label for="id_delay" class="col-form-label">Delay:</label>
+            <input type="text" class="form-control" id="id_delay" name="delay" required>
+        </div>
+        <div class="form-group">
+            <label for="id_username" class="col-form-label">Username:</label>
+            <input type="text" class="form-control" id="id_username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="id_password" class="col-form-label">Password:</label>
+            <input type="text" class="form-control" id="id_password" name="password" required>
+        </div>
+    </form>
+{% endblock modal-body %}
+{% block modal-footer %}
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+    <button type="submit" class="btn btn-primary" id="add-basic-campaign" form="basicCampaignForm">Add</button>
+{% endblock modal-footer %}
 {% block content %}
     <script src="{% static 'poshmark/JS/view_campaign_utilities.js' %}"></script>
     <div class="row">
-        <div class="col-11">
+        <div class="col-10">
             <h1 class="m-0">Campaigns</h1>
         </div>
         <div class="col-1">
             <div class="d-flex align-items-center justify-content-center h-100">
-                <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" title="New Campaign">+</a>
+                <button type="button" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Basic Campaign" id="addBasicCampaign">+</button>
+            </div>
+        </div>
+        <div class="col-1">
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">++</a>
             </div>
         </div>
     </div>
@@ -47,4 +77,4 @@
             {% endfor %}
         </div>
     {% endfor %}
-{% endblock %}
+{% endblock content %}
