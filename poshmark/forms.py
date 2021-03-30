@@ -58,6 +58,12 @@ class CreatePoshUser(forms.ModelForm):
 
             if not meets_criteria or len(password) < 6:
                 self.add_error('password', 'Password does not meet requirements')
+        else:
+            response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
+
+            if response.status_code != requests.codes.ok:
+                self.add_error('username', 'This PoshUser does not exists. '
+                                           'Please sign up at poshmark.com or deselect the registered checkbox.')
 
     def save(self, commit=True):
         new_user = super(CreatePoshUser, self).save(commit=False)
