@@ -185,7 +185,7 @@ class LogEntryListView(ListView, LoginRequiredMixin):
     model = LogEntry
 
     def get_queryset(self):
-        log_entries = LogEntry.objects.filter(logger=self.kwargs['logger_id'])
+        log_entries = LogEntry.objects.filter(logger=self.kwargs['logger_id']).order_by('timestamp')
 
         return log_entries
 
