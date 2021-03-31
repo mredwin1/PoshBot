@@ -293,7 +293,6 @@ class PoshMarkClient:
                             return True
             else:
                 if self.check_inactive():
-                    self.logger.warning('Setting user status to inactive')
                     self.posh_user.status = '2'
                     self.posh_user.save()
                     return False
