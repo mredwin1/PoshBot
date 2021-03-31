@@ -48,6 +48,7 @@ def basic_sharing(campaign_id):
     posh_user = campaign.posh_user
     logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     logged_hour_message = False
+    max_deviation = round(campaign.delay / 2)
 
     campaign.status = '1'
     campaign.save()
@@ -68,11 +69,14 @@ def basic_sharing(campaign_id):
                 for listing_title in listing_titles:
                     pre_share_time = time.time()
                     if client.share_item(listing_title):
+                        positive_negative = 1 if random.random() < 0.5 else -1
+                        deviation = random.randint(0, max_deviation) * positive_negative
                         post_share_time = time.time()
+                        elapsed_time = round(post_share_time - pre_share_time, 2)
+                        sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                        elapsed_time = post_share_time - pre_share_time
-                        if elapsed_time < campaign.delay:
-                            client.sleep(campaign.delay - elapsed_time)
+                        if elapsed_time < sleep_amount:
+                            client.sleep(sleep_amount)
                     else:
                         break
 
@@ -97,6 +101,7 @@ def advanced_sharing(campaign_id):
     logged_hour_message = False
     fake_listing_titles = []
     fake_listings_made = False
+    max_deviation = round(campaign.delay / 2)
 
     campaign.status = '1'
     campaign.save()
@@ -131,11 +136,14 @@ def advanced_sharing(campaign_id):
                 for listing in listings:
                     pre_share_time = time.time()
                     if client.share_item(listing.title):
+                        positive_negative = 1 if random.random() < 0.5 else -1
+                        deviation = random.randint(0, max_deviation) * positive_negative
                         post_share_time = time.time()
+                        elapsed_time = round(post_share_time - pre_share_time, 2)
+                        sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                        elapsed_time = post_share_time - pre_share_time
-                        if elapsed_time < campaign.delay:
-                            client.sleep(campaign.delay - elapsed_time)
+                        if elapsed_time < sleep_amount:
+                            client.sleep(sleep_amount)
                     else:
                         break
 
