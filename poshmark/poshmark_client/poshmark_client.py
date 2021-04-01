@@ -115,7 +115,7 @@ class PoshMarkClient:
     def open(self):
         """Used to open the selenium web driver session"""
         self.web_driver = webdriver.Chrome('/poshmark/poshmark_client/chromedriver', options=self.web_driver_options)
-        self.web_driver.implicitly_wait(10)
+        self.web_driver.implicitly_wait(5)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
@@ -171,53 +171,60 @@ class PoshMarkClient:
             'Invalid captcha',
             'Please enter your login information and complete the captcha to continue.'
         ]
+        error_classes = ['form__error-message', 'base_error_message', 'error_banner']
+        present_error_classes = []
 
-        base_error = self.is_present(By.CLASS_NAME, 'base_error_message')
-        banner_error = self.is_present(By.CLASS_NAME, 'error_banner')
+        for error_class in error_classes:
+            if self.is_present(By.CLASS_NAME, error_class):
+                present_error_classes.append(error_class)
 
-        if base_error:
-            error = self.locate(By.CLASS_NAME, 'base_error_message')
-        elif banner_error:
-            error = self.locate(By.CLASS_NAME, 'error_banner')
-        else:
-            self.logger.info('No known errors were encountered')
-            return None
+        if not present_error_classes:
+            self.logger.info('No known errors encountered')
 
-        if self.is_present(By.CLASS_NAME, 'base_error_message') or self.is_present(By.CLASS_NAME, 'error_banner'):
-            if error.text == 'Invalid Username or Password':
-                self.logger.error(f'Invalid Username or Password')
-                self.posh_user.status = '2'
-                self.posh_user.save()
+        for present_error_class in present_error_classes:
+            if 'form__error' in present_error_class:
+                errors = self.locate_all(By.CLASS_NAME, present_error_class)
+                error_texts = [error.text for error in errors]
+                self.logger.error(f"The following form errors were found: {','.join(error_texts)}")
 
-                return 'ERROR_USERNAME_PASSWORD'
+                return 'ERROR_FORM_ERROR'
+            else:
+                error = self.locate(By.CLASS_NAME, present_error_class)
 
-            elif error.text in captcha_errors:
-                self.logger.warning('Captcha encountered')
-                captcha_iframe = self.locate(By.TAG_NAME, 'iframe', location_type='visibility')
-                captcha_src = captcha_iframe.get_attribute('src')
-                google_key = re.findall(r'(?<=k=)(.*?)(?=&)', captcha_src)[0]
+                if error.text == 'Invalid Username or Password':
+                    self.logger.error(f'Invalid Username or Password')
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
 
-                captcha_solver = Captcha(google_key, self.web_driver.current_url, self.logger)
-                captcha_response = captcha_solver.solve_captcha()
-                retries = 1
+                    return 'ERROR_USERNAME_PASSWORD'
 
-                while captcha_response is None and retries != 5:
-                    self.logger.warning('Captcha not solved. Retrying captcha again...')
+                elif error.text in captcha_errors:
+                    self.logger.warning('Captcha encountered')
+                    captcha_iframe = self.locate(By.TAG_NAME, 'iframe', location_type='visibility')
+                    captcha_src = captcha_iframe.get_attribute('src')
+                    google_key = re.findall(r'(?<=k=)(.*?)(?=&)', captcha_src)[0]
+
+                    captcha_solver = Captcha(google_key, self.web_driver.current_url, self.logger)
                     captcha_response = captcha_solver.solve_captcha()
-                    retries += 1
+                    retries = 1
 
-                if retries == 5 and captcha_response is None:
-                    self.logger.error(f'2Captcha could not solve the captcha after {retries} attempts')
-                elif captcha_response == -1:
-                    self.logger.error('Exiting after encountering an error with the captcha.')
-                else:
-                    word = 'attempt' if retries == 1 else 'attempts'
-                    self.logger.info(f'2Captcha successfully solved captcha after {retries} {word}')
-                    # Set the captcha response
-                    self.web_driver.execute_script(f'grecaptcha.getResponse = () => "{captcha_response}"')
-                    self.web_driver.execute_script('validateLoginCaptcha()')
+                    while captcha_response is None and retries != 5:
+                        self.logger.warning('Captcha not solved. Retrying captcha again...')
+                        captcha_response = captcha_solver.solve_captcha()
+                        retries += 1
 
-                return 'CAPTCHA'
+                    if retries == 5 and captcha_response is None:
+                        self.logger.error(f'2Captcha could not solve the captcha after {retries} attempts')
+                    elif captcha_response == -1:
+                        self.logger.error('Exiting after encountering an error with the captcha.')
+                    else:
+                        word = 'attempt' if retries == 1 else 'attempts'
+                        self.logger.info(f'2Captcha successfully solved captcha after {retries} {word}')
+                        # Set the captcha response
+                        self.web_driver.execute_script(f'grecaptcha.getResponse = () => "{captcha_response}"')
+                        self.web_driver.execute_script('validateLoginCaptcha()')
+
+                    return 'CAPTCHA'
 
     def check_listing(self, listing_title):
         """Will check if a listing exists on the user's closet."""
@@ -452,55 +459,61 @@ class PoshMarkClient:
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
 
-                # Sleep for realism
-                self.sleep(5)
-
-                self.web_driver.save_screenshot('/media/register.png')
-
-                # Check if Posh User is now registered
-                attempts = 0
-                response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
-                while attempts < 5 and response.status_code != requests.codes.ok:
-                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
-                    self.logger.warning(f'Closet for {self.posh_user.username} is still not available - Trying again')
-                    attempts += 1
+                    # Sleep for realism
                     self.sleep(5)
 
-                if response.status_code == requests.codes.ok:
-                    self.posh_user.status = '1'
+                    self.web_driver.save_screenshot('/media/register.png')
+
+                    # Check if Posh User is now registered
+                    attempts = 0
+                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                    while attempts < 5 and response.status_code != requests.codes.ok:
+                        response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                        self.logger.warning(
+                            f'Closet for {self.posh_user.username} is still not available - Trying again')
+                        attempts += 1
+                        self.sleep(5)
+
+                    if response.status_code == requests.codes.ok:
+                        self.posh_user.status = '1'
+                        self.posh_user.save()
+                        self.logger.info(
+                            f'Successfully registered {self.posh_user.username}, status changed to "Active"')
+
+                        # Next Section - Profile
+                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+                        next_button.click()
+
+                        # Next Section - Select Brands (will not select brands)
+                        self.sleep(1, 3)  # Sleep for realism
+                        self.logger.info('Selecting random brands')
+                        brands = self.web_driver.find_elements_by_class_name('content-grid-item')
+                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+
+                        # Select random brands then click next
+                        for x in range(random.randint(3, 5)):
+                            try:
+                                brand = random.choice(brands)
+                                brand.click()
+                            except IndexError:
+                                pass
+                        next_button.click()
+
+                        # Next Section - All Done Page
+                        self.sleep(1, 3)  # Sleep for realism
+                        start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
+                        start_shopping_button.click()
+                        self.logger.info('Registration Complete')
+                    else:
+                        self.posh_user.status = '4'
+                        self.posh_user.save()
+                        self.logger.error(
+                            f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
+                        self.logger.error('Status changed to "Waiting to be registered"')
+                elif error_code == 'ERROR_FORM_ERROR':
+                    self.posh_user.status = '2'
                     self.posh_user.save()
-                    self.logger.info(f'Successfully registered {self.posh_user.username}, status changed to "Active"')
 
-                    # Next Section - Profile
-                    next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                    next_button.click()
-
-                    # Next Section - Select Brands (will not select brands)
-                    self.sleep(1, 3)  # Sleep for realism
-                    self.logger.info('Selecting random brands')
-                    brands = self.web_driver.find_elements_by_class_name('content-grid-item')
-                    next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-
-                    # Select random brands then click next
-                    for x in range(random.randint(3, 5)):
-                        try:
-                            brand = random.choice(brands)
-                            brand.click()
-                        except IndexError:
-                            pass
-                    next_button.click()
-
-                    # Next Section - All Done Page
-                    self.sleep(1, 3)  # Sleep for realism
-                    start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                    start_shopping_button.click()
-                    self.logger.info('Registration Complete')
-                else:
-                    self.posh_user.status = '4'
-                    self.posh_user.save()
-                    self.logger.error(
-                        f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
-                    self.logger.error('Status changed to "Waiting to be registered"')
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
                 self.logger.error(f'{traceback.format_exc()}')
