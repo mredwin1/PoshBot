@@ -231,7 +231,7 @@ class Campaign(models.Model):
     ]
 
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='0')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
 
     title = models.CharField(max_length=30)
