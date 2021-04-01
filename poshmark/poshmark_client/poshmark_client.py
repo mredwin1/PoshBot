@@ -720,164 +720,172 @@ class PoshMarkClient:
 
             self.sleep(1, 2)
 
-            # Set category and sub category
-            self.logger.info('Setting category')
-            category_dropdown = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[3]/div/div[2]/div[1]/div'
-            )
-            category_dropdown.click()
+            if self.is_present(By.XPATH, '//*[@id="app"]/main/div[1]/div/div[2]'):
+                self.logger.error('Error encountered when on the new listing page')
+                if self.check_inactive():
+                    self.posh_user.status = '2'
+                    self.posh_user.save()
+                else:
+                    self.logger.info('User is not inactive')
+            else:
+                # Set category and sub category
+                self.logger.info('Setting category')
+                category_dropdown = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[3]/div/div[2]/div[1]/div'
+                )
+                category_dropdown.click()
 
-            self.sleep(2)
+                self.sleep(2)
 
-            space_index = listing.category.find(' ') if listing else ''
-            primary_category = listing.category[:space_index] if listing else 'Men'
-            secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
-            primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-            for category in primary_categories:
-                if category.text == primary_category:
-                    category.click()
-                    break
+                space_index = listing.category.find(' ') if listing else ''
+                primary_category = listing.category[:space_index] if listing else 'Men'
+                secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
+                primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                for category in primary_categories:
+                    if category.text == primary_category:
+                        category.click()
+                        break
 
-            self.sleep(1, 3)
+                self.sleep(1, 3)
 
-            secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-            for category in secondary_categories[1:]:
-                if category.text == secondary_category:
-                    category.click()
-                    break
+                secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                for category in secondary_categories[1:]:
+                    if category.text == secondary_category:
+                        category.click()
+                        break
 
-            self.logger.info('Category set')
+                self.logger.info('Category set')
 
-            self.sleep(1)
+                self.sleep(1)
 
-            self.logger.info('Setting subcategory')
+                self.logger.info('Setting subcategory')
 
-            subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
-            subcategories = subcategory_menu.find_elements_by_tag_name('a')
-            subcategory = listing.subcategory if listing else 'Dress'
-            for available_subcategory in subcategories:
-                if available_subcategory.text == subcategory:
-                    available_subcategory.click()
-                    break
+                subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
+                subcategories = subcategory_menu.find_elements_by_tag_name('a')
+                subcategory = listing.subcategory if listing else 'Dress'
+                for available_subcategory in subcategories:
+                    if available_subcategory.text == subcategory:
+                        available_subcategory.click()
+                        break
 
-            self.logger.info('Subcategory set')
+                self.logger.info('Subcategory set')
 
-            self.sleep(2)
+                self.sleep(2)
 
-            # Set size (This must be done after the category has been selected)
-            self.logger.info('Setting size')
-            size_dropdown = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[1]/div'
-            )
-            size_dropdown.click()
-            size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
+                # Set size (This must be done after the category has been selected)
+                self.logger.info('Setting size')
+                size_dropdown = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+                )
+                size_dropdown.click()
+                size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
 
-            for button in size_buttons:
-                if button.text == 'Custom':
-                    button.click()
-                    break
+                for button in size_buttons:
+                    if button.text == 'Custom':
+                        button.click()
+                        break
 
-            custom_size_input = self.locate(By.ID, 'customSizeInput0')
-            save_button = self.locate(
-                By.XPATH,
-                '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
-            )
-            done_button = self.locate(
-                By.XPATH,
-                '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
-            )
-            size = listing.size if listing else 'Large'
-            custom_size_input.send_keys(size)
-            save_button.click()
-            done_button.click()
+                custom_size_input = self.locate(By.ID, 'customSizeInput0')
+                save_button = self.locate(
+                    By.XPATH,
+                    '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
+                )
+                done_button = self.locate(
+                    By.XPATH,
+                    '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
+                )
+                size = listing.size if listing else 'Large'
+                custom_size_input.send_keys(size)
+                save_button.click()
+                done_button.click()
 
-            self.logger.info('Size set')
+                self.logger.info('Size set')
 
-            self.sleep(1, 2)
+                self.sleep(1, 2)
 
-            # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
-            # the rest, otherwise errors come up.
-            self.logger.info('Uploading photos')
-            listing_photos = listing.get_photos() if listing else ['/static/poshmark/images/listing.jpg']
-            upload_photos_field = self.locate(By.ID, 'img-file-input')
-            upload_photos_field.send_keys(listing_photos[0])
-
-            apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
-            apply_button.click()
-
-            self.sleep(1)
-
-            if len(listing_photos) > 1:
+                # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
+                # the rest, otherwise errors come up.
+                self.logger.info('Uploading photos')
+                listing_photos = listing.get_photos() if listing else ['/static/poshmark/images/listing.jpg']
                 upload_photos_field = self.locate(By.ID, 'img-file-input')
-                for photo in listing_photos[1:]:
-                    upload_photos_field.clear()
-                    upload_photos_field.send_keys(photo)
-                    self.sleep(1)
+                upload_photos_field.send_keys(listing_photos[0])
 
-            self.logger.info('Photos uploaded')
+                apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
+                apply_button.click()
 
-            # Get all necessary fields
-            self.logger.info('Putting in the rest of the field')
-            title_field = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
-            )
-            description_field = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
-            )
+                self.sleep(1)
 
-            original_price_field = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/input'
-            )
-            listing_price_field = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/div[1]/input'
-            )
+                if len(listing_photos) > 1:
+                    upload_photos_field = self.locate(By.ID, 'img-file-input')
+                    for photo in listing_photos[1:]:
+                        upload_photos_field.clear()
+                        upload_photos_field.send_keys(photo)
+                        self.sleep(1)
 
-            # Send all the information to their respected fields
-            lowercase = string.ascii_lowercase
-            uppercase = string.ascii_uppercase
-            title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
-            title_field.send_keys(title)
-            self.sleep(1, 2)
+                self.logger.info('Photos uploaded')
 
-            description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
+                # Get all necessary fields
+                self.logger.info('Putting in the rest of the field')
+                title_field = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
+                )
+                description_field = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
+                )
 
-            for part in description.split('\n'):
-                description_field.send_keys(part)
-                ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
-                    Keys.ENTER).perform()
+                original_price_field = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/input'
+                )
+                listing_price_field = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/div[1]/input'
+                )
 
-            self.sleep(1, 2)
-            original_prize = str(listing.original_price) if listing else '35'
-            original_price_field.send_keys(original_prize)
-            self.sleep(1, 2)
-            listing_price = str(listing.listing_price) if listing else '25'
-            listing_price_field.send_keys(listing_price)
-            self.sleep(1, 2)
-            if listing:
-                if listing.tags:
-                    tags_button = self.locate(
-                        By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]',
-                        'clickable'
-                    )
-                    self.web_driver.execute_script("arguments[0].click();", tags_button)
+                # Send all the information to their respected fields
+                lowercase = string.ascii_lowercase
+                uppercase = string.ascii_uppercase
+                title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
+                title_field.send_keys(title)
+                self.sleep(1, 2)
 
-            self.sleep(1, 3)
+                description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
 
-            next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
-            next_button.click()
+                for part in description.split('\n'):
+                    description_field.send_keys(part)
+                    ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
+                        Keys.ENTER).perform()
 
-            self.sleep(1)
+                self.sleep(1, 2)
+                original_prize = str(listing.original_price) if listing else '35'
+                original_price_field.send_keys(original_prize)
+                self.sleep(1, 2)
+                listing_price = str(listing.listing_price) if listing else '25'
+                listing_price_field.send_keys(listing_price)
+                self.sleep(1, 2)
+                if listing:
+                    if listing.tags:
+                        tags_button = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]',
+                            'clickable'
+                        )
+                        self.web_driver.execute_script("arguments[0].click();", tags_button)
 
-            list_item_button = self.locate(
-                By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div[2]/button'
-            )
-            list_item_button.click()
+                self.sleep(1, 3)
 
-            self.logger.info('Item listed successfully')
+                next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
+                next_button.click()
 
-            self.sleep(2, 3)
+                self.sleep(1)
 
-            return title
+                list_item_button = self.locate(
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div[2]/button'
+                )
+                list_item_button.click()
+
+                self.logger.info('Item listed successfully')
+
+                self.sleep(2, 3)
+
+                return title
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
