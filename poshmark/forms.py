@@ -256,7 +256,7 @@ class CreateCampaign(forms.Form):
         except Campaign.DoesNotExist:
             pass
 
-        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+        self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
 
     def save(self):
         new_campaign = Campaign(
@@ -311,7 +311,7 @@ class CreateBasicCampaignForm(forms.Form):
                 self.add_error(username_field, 'This  PoshUser does not exists. '
                                                'Please sign up at poshmark.com or add it as a PoshUser.')
 
-        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+        self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
 
     def save(self):
         try:
@@ -354,7 +354,7 @@ class EditCampaignForm(CreateCampaign):
         self.fields['listings'].initial = ','.join(listings_list)
         self.fields['posh_user'].initial = campaign.posh_user.id
         self.fields['mode'].initial = campaign.mode
-        self.fields['delay'].initial = campaign.delay / 60
+        self.fields['delay'].initial = round(campaign.delay / 60, 2)
         self.fields['auto_run'].initial = campaign.auto_run
         self.fields['generate_users'].initial = campaign.generate_users
 
@@ -400,7 +400,7 @@ class EditCampaignForm(CreateCampaign):
             else:
                 self.add_error(listings_field, 'This field is required.')
 
-        self.cleaned_data['delay'] = self.cleaned_data['delay'] * 60
+        self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
 
     def save(self):
         self.campaign.posh_user = self.cleaned_data['posh_user']
