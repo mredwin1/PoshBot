@@ -98,6 +98,7 @@ class PoshMarkClient:
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         self.web_driver_options.add_experimental_option('useAutomationExtension', False)
+        self.web_driver_options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
         self.web_driver_options.add_argument('--disable-extensions')
         self.web_driver_options.add_argument('--headless')
         self.web_driver_options.add_argument('--incognito')
