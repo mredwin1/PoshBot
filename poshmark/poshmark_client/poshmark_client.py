@@ -550,11 +550,11 @@ class PoshMarkClient:
     def go_to_closet(self):
         """Ensures the current url for the web driver is at users poshmark closet"""
         try:
+            if not self.check_logged_in():
+                self.log_in()
+
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
-
-                if not self.check_logged_in():
-                    self.log_in()
 
                 self.sleep(1, 3)
 
