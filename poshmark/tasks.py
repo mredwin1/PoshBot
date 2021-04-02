@@ -129,7 +129,7 @@ def advanced_sharing(campaign_id):
 
                 listing_titles = client.get_all_listings()
                 listings_to_list = [listing for listing in campaign_listings if listing.title not in listing_titles]
-                while len(fake_listing_titles) != len(listings_to_list):
+                while len(fake_listing_titles) != len(listings_to_list) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                     title = client.list_item()
                     client.sleep(12)
                     if client.check_listing(title):
