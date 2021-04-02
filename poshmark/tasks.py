@@ -59,6 +59,8 @@ def basic_sharing(campaign_id):
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+            campaign.refresh_from_db()
+            posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
@@ -114,6 +116,8 @@ def advanced_sharing(campaign_id):
     end_time = now + datetime.timedelta(days=1)
     with PoshMarkClient(posh_user, logger) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
+            campaign.refresh_from_db()
+            posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
                 campaign.refresh_from_db()
