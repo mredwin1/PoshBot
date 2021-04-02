@@ -155,6 +155,7 @@ def advanced_sharing(campaign_id):
             if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
                 logger.info(
                     f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                logged_hour_message = True
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
@@ -184,6 +185,7 @@ def advanced_sharing(campaign_id):
 
             if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
                 logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                logged_hour_message = True
 
     logger.info('Campaign Ended')
 
