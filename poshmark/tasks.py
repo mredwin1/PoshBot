@@ -108,30 +108,51 @@ def advanced_sharing(campaign_id):
     logger.save()
 
     logger.info('Starting Campaign')
+
+    now = datetime.datetime.now(pytz.utc)
+    end_time = now + datetime.timedelta(days=1)
     with PoshMarkClient(posh_user, logger) as client:
-        now = datetime.datetime.now(pytz.utc)
-        end_time = now + datetime.timedelta(days=1)
+        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
+            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
+                campaign.refresh_from_db()
+                posh_user.refresh_from_db()
+                now = datetime.datetime.now(pytz.utc)
+
+                while not posh_user.meet_posh:
+                    if client.check_listing('Meet your Posher'):
+                        posh_user.meet_posh = True
+                        posh_user.save()
+                    else:
+                        client.sleep(60)
+
+                listing_titles = client.get_all_listings()
+                listings_to_list = [listing for listing in campaign_listings if listing.title not in listing_titles]
+                while len(fake_listing_titles) != len(listings_to_list):
+                    title = client.list_item()
+                    client.sleep(12)
+                    if client.check_listing(title):
+                        if client.share_item(title):
+                            fake_listing_titles.append(title)
+                        else:
+                            client.delete_listing(title)
+                    client.sleep(random.randint(16, 30))
+
+                for index, value in enumerate(listings_to_list):
+                    client.update_listing(fake_listing_titles[index], value, 'Saks Fifth Avenue')
+                    client.update_listing(value.title, value)
+                    client.sleep(random.randint(16, 30))
+                posted_new_listings = True
+
+                if logged_hour_message:
+                    logged_hour_message = False
+
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
+                logger.info(
+                    f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+
+    with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                if not posted_new_listings:
-                    listing_titles = client.get_all_listings()
-                    listings_to_list = [listing for listing in campaign_listings if listing.title not in listing_titles]
-                    while len(fake_listing_titles) != len(listings_to_list):
-                        title = client.list_item()
-                        client.sleep(12)
-                        if client.check_listing(title):
-                            if client.share_item(title):
-                                fake_listing_titles.append(title)
-                            else:
-                                client.delete_listing(title)
-                        client.sleep(random.randint(16, 30))
-
-                    for index, value in enumerate(listings_to_list):
-                        client.update_listing(fake_listing_titles[index], value, 'Saks Fifth Avenue')
-                        client.update_listing(value.title, value)
-                        client.sleep(random.randint(16, 30))
-                    posted_new_listings = True
-
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
