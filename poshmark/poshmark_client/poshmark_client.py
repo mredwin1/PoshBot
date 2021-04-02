@@ -621,11 +621,12 @@ class PoshMarkClient:
 
                 self.logger.info(f"Found the following listings: {','.join(listings)}")
 
-                return listings
             else:
                 if self.check_inactive():
                     self.posh_user.status = '2'
                     self.posh_user.save()
+
+            return listings
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
