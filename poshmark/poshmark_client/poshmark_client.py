@@ -84,6 +84,7 @@ class PoshMarkClient:
     def __init__(self, posh_user, logger, use_proxy=True):
         if use_proxy:
             if not posh_user.proxy_port:
+                logger.info('No proxy port found for this user and one is required. Generating one now.')
                 self.posh_user.generate_proxy_port(logger)
 
             proxy_port = str(posh_user.proxy_port)

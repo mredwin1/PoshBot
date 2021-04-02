@@ -185,6 +185,8 @@ class PoshUser(models.Model):
 
             self.save()
 
+            logger.info('Proxy port successfully generated')
+
     def delete_alias_email(self):
         """Using the mailslurp client it deletes it's alias email"""
         if self.alias_email_id:
