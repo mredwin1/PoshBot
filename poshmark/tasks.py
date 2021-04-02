@@ -134,6 +134,8 @@ def advanced_sharing(campaign_id):
                 listing_titles = client.get_all_listings()
                 listings_to_list = [listing for listing in campaign_listings if listing.title not in listing_titles]
                 while len(fake_listing_titles) != len(listings_to_list) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                    campaign.refresh_from_db()
+                    posh_user.refresh_from_db()
                     title = client.list_item()
                     client.sleep(12)
                     if client.check_listing(title):
@@ -159,6 +161,9 @@ def advanced_sharing(campaign_id):
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+            campaign.refresh_from_db()
+            posh_user.refresh_from_db()
+            now = datetime.datetime.now(pytz.utc)
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
