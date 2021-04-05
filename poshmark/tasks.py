@@ -124,7 +124,9 @@ def advanced_sharing(campaign_id):
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
 
-                while not posh_user.meet_posh:
+                while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                    campaign.refresh_from_db()
+                    posh_user.refresh_from_db()
                     if client.check_listing('Meet your Posher'):
                         posh_user.meet_posh = True
                         posh_user.save()
