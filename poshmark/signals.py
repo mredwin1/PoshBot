@@ -12,11 +12,12 @@ from poshmark.models import PoshUser, Campaign
 @receiver(post_delete, sender=PoshUser)
 def posh_user_deleted(sender, instance, *args, **kwargs):
     instance.delete_alias_email()
-    data = {'zone': instance.username}
-    headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["PROXY_API_KEY"]}'}
-    zone_response = requests.delete('https://luminati.io/api/zone', data=json.dumps(data), headers=headers)
+    if instance.proxy_port:
+        data = {'zone': instance.username}
+        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["PROXY_API_KEY"]}'}
+        zone_response = requests.delete('https://luminati.io/api/zone', data=json.dumps(data), headers=headers)
 
-    proxy_response = requests.delete(f'http://lpm:22999/api/proxies/{instance.proxy_port}')
+        proxy_response = requests.delete(f'http://lpm:22999/api/proxies/{instance.proxy_port}')
 
 
 @receiver(post_save, sender=PoshUser)
