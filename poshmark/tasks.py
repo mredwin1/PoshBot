@@ -36,6 +36,7 @@ def register_posh_user(posh_user_id):
     logger.save()
 
     with PoshMarkClient(posh_user, logger) as client:
+        client.check_ip('registration_ip')
         client.register()
         posh_user.refresh_from_db()
         if posh_user.status == PoshUser.ACTIVE:
@@ -115,6 +116,7 @@ def advanced_sharing(campaign_id):
     now = datetime.datetime.now(pytz.utc)
     end_time = now + datetime.timedelta(days=1)
     with PoshMarkClient(posh_user, logger) as client:
+        client.check_ip('campaign_ip')
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
