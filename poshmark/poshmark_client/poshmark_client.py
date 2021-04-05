@@ -1182,7 +1182,10 @@ class PoshMarkClient:
             offers_nav = self.locate(By.XPATH, '//a[@href="/offers/my_offers"]')
             offers_nav.click()
 
-    def check_ip(self):
-        self.web_driver.get('https://whatismyipaddress.com/')
+    def check_ip(self, filename=None):
+        self.web_driver.get('https://www.whatsmyip.org/more-info-about-you/')
         self.sleep(5)
-        self.web_driver.save_screenshot('/media/ip.png')
+        if filename:
+            self.web_driver.save_screenshot(f'/media/{filename}.png')
+        else:
+            self.web_driver.save_screenshot('/media/ip.png')
