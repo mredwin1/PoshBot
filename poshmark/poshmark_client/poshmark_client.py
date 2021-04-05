@@ -108,6 +108,8 @@ class PoshMarkClient:
         self.web_driver_options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
         self.web_driver_options.add_argument('--disable-extensions')
         self.web_driver_options.add_argument('--headless')
+        self.web_driver_options.add_argument('useragent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                                             '(KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
         self.web_driver_options.add_argument('--incognito')
         self.web_driver_options.add_argument('--no-sandbox')
 
