@@ -92,7 +92,7 @@ services:
     image: ghcr.io/mredwin1/poshbot:latest
     container_name: celery_poshbot
     restart: always
-    entrypoint: celery -A PoshBot worker -l INFO
+    entrypoint: celery -A PoshBot worker --autoscale=100,10 -l INFO
     depends_on:
       - redis
       - db
