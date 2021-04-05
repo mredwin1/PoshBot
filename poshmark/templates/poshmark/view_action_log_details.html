@@ -10,7 +10,7 @@
         </div>
     </div>
     <hr>
-    <div class="row mt-3 px-4">
+    <div class="row my-3 px-4">
         {% if object_list %}
             {% with object_list.last as last_entry %}
                 <div class="col-12 p-3 border border-dark bg-light" style="height: 600px; overflow-y: scroll" data-get-log-entries-url="{% url 'get-log-entries' last_entry.logger.id last_entry.timestamp|date:"Y-m-d h:i:s.u A" %}" id="LogEntriesContainer">
