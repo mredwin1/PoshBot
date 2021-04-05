@@ -132,22 +132,35 @@ class PoshUser(models.Model):
             return api_response
 
     def generate_proxy_port(self, logger):
+        # data = {
+        #     'zone':
+        #         {
+        #             'name': self.username
+        #         },
+        #     'plan':
+        #         {
+        #             'type': 'static',
+        #             'pool_ip_type': 'static_res',
+        #             'ip_fallback': 1,
+        #             'ips_type': 'shared',
+        #             'ips': 1,
+        #             'country': 'us'
+        #         },
+        #     'ips': ['any'],
+        #     'perm': 'country'
+        # }
+
         data = {
-            'zone':
-                {
-                    'name': self.username
-                },
-            'plan':
-                {
-                    'type': 'static',
-                    'pool_ip_type': 'static_res',
-                    'ip_fallback': 1,
-                    'ips_type': 'shared',
-                    'ips': 1,
-                    'country': 'us'
-                },
-            'ips': ['any'],
-            'perm': 'country'
+            "zone": {
+                "name": self.username
+            },
+            "plan": {
+                "type": "static",
+                "country": "us",
+                "pool_ip_type": "static_res",
+                "ips_type": "dedicated",
+                "ips": "1"
+            }
         }
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["PROXY_API_KEY"]}'}
