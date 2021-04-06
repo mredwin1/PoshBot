@@ -20,10 +20,10 @@ def posh_user_deleted(sender, instance, *args, **kwargs):
         proxy_response = requests.delete(f'http://lpm:22999/api/proxies/{instance.proxy_port}')
 
 
-@receiver(post_save, sender=PoshUser)
-def posh_user_saved(sender, instance, created, *args, **kwargs):
-    if created and instance.status == PoshUser.WREGISTER:
-        register_posh_user.delay(instance.id)
+# @receiver(post_save, sender=PoshUser)
+# def posh_user_saved(sender, instance, created, *args, **kwargs):
+#     if created and instance.status == PoshUser.WREGISTER:
+#         register_posh_user.delay(instance.id)
 
 
 @receiver(post_delete, sender=Campaign)
