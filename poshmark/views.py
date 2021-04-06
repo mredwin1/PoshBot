@@ -255,7 +255,7 @@ class StopCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        logger = Log.objects.filter(posh_user__username=campaign.posh_user.username).order_by('id').first()
+        logger = Log.objects.filter(posh_user__username=campaign.posh_user.username).order_by('created').last()
         logger.warning('Stop signal received')
 
         campaign.status = '3'
