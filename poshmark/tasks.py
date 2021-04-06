@@ -126,6 +126,14 @@ def advanced_sharing(campaign_id):
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
 
+                if posh_user.status == PoshUser.WREGISTER:
+                    client.register()
+                    posh_user.refresh_from_db()
+                    if posh_user.status == PoshUser.ACTIVE:
+                        client.update_profile()
+                    posh_user.status = PoshUser.INUSE
+                    posh_user.save()
+
                 while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                     campaign.refresh_from_db()
                     posh_user.refresh_from_db()
