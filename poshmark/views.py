@@ -3,6 +3,7 @@ import pytz
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.templatetags.static import static
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, reverse
@@ -213,7 +214,7 @@ class GetLogEntries(View, LoginRequiredMixin):
 class SearchUserNames(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        posh_users = PoshUser.objects.filter(username__icontains=search, status=PoshUser.ACTIVE).order_by('date_added')
+        posh_users = PoshUser.objects.filter(Q(status=PoshUser.WREGISTER) | Q(status=PoshUser.ACTIVE)).filter(username__icontains=search).order_by('date_added')
 
         user_names = [f'{posh_user.username}|{posh_user.id}' for posh_user in posh_users]
 
