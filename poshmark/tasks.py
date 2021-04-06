@@ -56,7 +56,7 @@ def basic_sharing(campaign_id):
     logger.save()
 
     logger.info('Starting Campaign')
-    with PoshMarkClient(posh_user, logger, use_proxy=False) as client:
+    with PoshMarkClient(posh_user, logger, False) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
