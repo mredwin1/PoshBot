@@ -121,17 +121,6 @@ services:
     volumes:
       - shared_volume:/shared_volume
       - /dev/shm:/dev/shm
-  lpm:
-    image: luminati/luminati-proxy
-    restart: always
-    container_name: lpm
-    entrypoint: proxy-manager --www_whitelist_ips "0.0.0.0/0"
-    networks:
-      - internal
-    ports:
-      - 22999:22999
-    volumes:
-      - lpm_data:/root/luminati_proxy_manager
 
 networks:
   internal:

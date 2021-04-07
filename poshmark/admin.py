@@ -19,7 +19,6 @@ class PoshUserAdmin(admin.ModelAdmin):
                 ('first_name', 'last_name'),
                 ('username', 'password'),
                 ('email',),
-                ('proxy_port',),
                 ('masked_email', 'alias_email_id'),
                 ('user', 'status', 'gender'),
             )
