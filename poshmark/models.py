@@ -230,8 +230,8 @@ class Campaign(models.Model):
     ]
 
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='0')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    posh_user = models.OneToOneField(PoshUser, on_delete=models.SET_NULL, blank=True, null=True)
 
     title = models.CharField(max_length=30)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES)
