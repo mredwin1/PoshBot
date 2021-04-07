@@ -217,8 +217,6 @@ class CreateCampaign(forms.Form):
             mode=self.cleaned_data['mode'],
         )
 
-        new_campaign.posh_user.status = PoshUser.INUSE
-        new_campaign.posh_user.save()
         new_campaign.save()
 
         for listing in self.cleaned_data['listings']:
