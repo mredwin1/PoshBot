@@ -110,7 +110,25 @@
                 <div class="row px-4">
                     <div class="col">
                         <div class="row py-2 mb-2 border border-dark" style="height: 19rem; overflow-y: auto" id="listings_container" data-url="{% url 'get-listing-info' %}">
-
+                            {% if form.listings.value %}
+                                {% for listing in form.listings.value|listings_return %}
+                                    <div class="col-3 mt-2">
+                                        <div class="card">
+                                            <img class="card-img-top" src="/static/poshmark/images/listing.jpg" alt="Listing Image">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ listing.title }}</h5>
+                                                <p class="card-text mb-1">
+                                                    <small class="font-weight-bold mr-1">{{ listing.listing_price }}</small>
+                                                    <s><small class="text-muted">{{ listing.original_price }}</small></s>
+                                                </p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">{{ listing.size }}</small>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>

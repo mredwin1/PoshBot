@@ -1,6 +1,7 @@
 import datetime
 import pytz
 
+from celery import chain
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -12,7 +13,7 @@ from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
 from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm
-from .tasks import basic_sharing, advanced_sharing
+from .tasks import basic_sharing, advanced_sharing, restart_task
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -273,9 +274,15 @@ class StartCampaign(View, LoginRequiredMixin):
         task_id = None
 
         if campaign.mode == Campaign.BASIC_SHARING:
-            task = basic_sharing.delay(campaign_id)
+            if campaign.auto_run:
+                task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
+            else:
+                task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
-            task = advanced_sharing.delay(campaign_id)
+            if campaign.auto_run:
+                task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
+            else:
+                task = advanced_sharing.delay(campaign_id)
 
         if task:
             task_id = task.task_id

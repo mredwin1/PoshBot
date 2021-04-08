@@ -180,10 +180,6 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 # Periodic Tasks
 CELERY_BEAT_SCHEDULE = {
-    # 'check_registered_users': {
-    #     'task': 'poshmark.tasks.check_registered_posh_users',
-    #     'schedule': crontab(minute='*/5')
-    # },
     'log_cleanup': {
         'task': 'poshmark.tasks.log_cleanup',
         'schedule': crontab(minute=0, hour=0)

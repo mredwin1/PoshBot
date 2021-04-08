@@ -2,7 +2,7 @@ import pytz
 
 from django import template
 from django.template.defaultfilters import stringfilter
-from poshmark.models import PoshUser,LogEntry
+from poshmark.models import PoshUser,LogEntry, Listing
 
 register = template.Library()
 
@@ -145,3 +145,10 @@ def logger_type_return(logger_type):
 def get_username(posh_user_id):
     """Given a Posh User ID will return the username"""
     return PoshUser.objects.get(id=posh_user_id).username
+
+
+@register.filter
+def listings_return(listing_ids):
+    """Given a string of Listing ids it will return a list of Listing objects"""
+    listing_ids = listing_ids.split(',')
+    return [Listing.objects.get(id=listing_id) for listing_id in listing_ids]

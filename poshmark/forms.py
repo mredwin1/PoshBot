@@ -296,7 +296,8 @@ class EditCampaignForm(CreateCampaign):
         self.fields['title'].initial = campaign.title
         self.fields['times'].initial = campaign.times
         self.fields['listings'].initial = ','.join(listings_list)
-        self.fields['posh_user'].initial = campaign.posh_user.id
+        if campaign.posh_user:
+            self.fields['posh_user'].initial = campaign.posh_user.id
         self.fields['mode'].initial = campaign.mode
         self.fields['delay'].initial = round(campaign.delay / 60, 2)
         self.fields['auto_run'].initial = campaign.auto_run

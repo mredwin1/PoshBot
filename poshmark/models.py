@@ -139,6 +139,57 @@ class PoshUser(models.Model):
                 api_instance = mailslurp_client.AliasControllerApi(api_client)
                 api_instance.delete_alias(self.alias_email_id)
 
+    def generate_random_posh_user(self):
+        signup_info = self.generate_sign_up_info()
+
+        while signup_info['gender'] != self.gender:
+            signup_info = self.generate_sign_up_info()
+
+        emails = [posh_user.email for posh_user in PoshUser.objects.filter(user=self.user)]
+
+        if len(emails) == 1:
+            last_email = emails[0]
+        else:
+            last_number = 0
+            last_email = ''
+            for email in emails:
+                plus_index = email.find('+')
+                at_index = email.find('@')
+
+                if plus_index == -1:
+                    pass
+                else:
+                    number = int(email[plus_index:at_index])
+
+                    if number > last_number:
+                        last_number = number
+                        last_email = email
+
+        plus_index = last_email.find('+')
+        at_index = last_email.find('@')
+
+        if plus_index == -1:
+            new_email = f'{last_email[:at_index]}+1{last_email[at_index:]}'
+        else:
+            number = int(last_email[plus_index:at_index]) + 1
+            new_email = f'{last_email[:plus_index + 1]}{number}{last_email[at_index:]}'
+
+        new_posh_user = PoshUser(
+            first_name=signup_info['first_name'],
+            last_name=signup_info['last_name'],
+            username=signup_info['username'],
+            password=self.password,
+            gender=signup_info['gender'],
+            user=self.user,
+            email=new_email,
+            status=PoshUser.WREGISTER,
+            profile_picture=self.profile_picture,
+            header_picture=self.header_picture,
+        )
+        new_posh_user.save()
+
+        return new_posh_user
+
     @staticmethod
     def check_alias_email():
         """Using the mailslurp client it checks if we the account has anymore aliases to create"""
@@ -243,7 +294,7 @@ class Campaign(models.Model):
     generate_users = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'Campaign - Title: {self.title} Username: {self.posh_user.username}'
+        return f'Campaign - Title: {self.title} Username: {self.posh_user.username if self.posh_user else "None"}'
 
 
 class Listing(models.Model):
