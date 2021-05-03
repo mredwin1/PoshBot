@@ -15,7 +15,6 @@ def status_return(status_code):
         PoshUser.ACTIVE: 'Active',
         PoshUser.INACTIVE: 'Inactive',
         PoshUser.WALIAS: 'Waiting for alias email to be verified',
-        PoshUser.WREGISTER: 'Waiting to be registered',
         PoshUser.REGISTERING: 'Registering',
         PoshUser.UPROFILE: 'Updating Profile',
     }
@@ -31,7 +30,6 @@ def status_color_return(status_code):
         PoshUser.ACTIVE: 'border-success',
         PoshUser.INACTIVE: 'border-secondary',
         PoshUser.WALIAS: 'border-primary',
-        PoshUser.WREGISTER: 'border-warning',
         PoshUser.REGISTERING: 'border-info',
         PoshUser.UPROFILE: 'border-danger',
     }
