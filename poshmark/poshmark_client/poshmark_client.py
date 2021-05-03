@@ -866,12 +866,12 @@ class PoshMarkClient:
                     By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
                 )
 
-                original_price_field = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/input'
-                )
-                listing_price_field = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/div[1]/input'
-                )
+                input_fields = self.locate_all(By.TAG_NAME, 'input')
+                for input_field in input_fields:
+                    if input_field.get_attribute('data-vv-name') == 'originalPrice':
+                        original_price_field = input_field
+                    if input_field.get_attribute('data-vv-name') == 'listingPrice':
+                        listing_price_field = input_field
 
                 # Send all the information to their respected fields
                 lowercase = string.ascii_lowercase
@@ -1064,12 +1064,12 @@ class PoshMarkClient:
                                 By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
                             )
 
-                            original_price_field = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/input'
-                            )
-                            listing_price_field = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/div[1]/input'
-                            )
+                            input_fields = self.locate_all(By.TAG_NAME, 'input')
+                            for input_field in input_fields:
+                                if input_field.get_attribute('data-vv-name') == 'originalPrice':
+                                    original_price_field = input_field
+                                if input_field.get_attribute('data-vv-name') == 'listingPrice':
+                                    listing_price_field = input_field
                             brand_field = self.locate(
                                 By.XPATH,
                                 '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
