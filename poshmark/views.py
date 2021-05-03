@@ -215,7 +215,7 @@ class GetLogEntries(View, LoginRequiredMixin):
 class SearchUserNames(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        posh_users = PoshUser.objects.filter(Q(status=PoshUser.WREGISTER) | Q(status=PoshUser.ACTIVE)).filter(username__icontains=search).order_by('date_added')
+        posh_users = PoshUser.objects.filter(status=PoshUser.ACTIVE).filter(username__icontains=search).order_by('date_added')
 
         user_names = [f'{posh_user.username}|{posh_user.id}' for posh_user in posh_users]
 
