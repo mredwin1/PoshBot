@@ -80,9 +80,8 @@ def advanced_sharing(campaign_id):
     posh_user = campaign.posh_user
     logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
+    listed_items = 0
     logged_hour_message = False
-    fake_listing_titles = []
-    posted_new_listings = False
     max_deviation = round(campaign.delay / 2)
 
     campaign.status = '1'
@@ -93,71 +92,56 @@ def advanced_sharing(campaign_id):
 
     now = datetime.datetime.now(pytz.utc)
     end_time = now + datetime.timedelta(days=1)
-    with PoshMarkClient(posh_user, logger, False) as client:
-        client.check_ip('campaign_ip')
-        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
+    # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
+    while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < len(campaign_listings):
+        campaign.refresh_from_db()
+        posh_user.refresh_from_db()
+        now = datetime.datetime.now(pytz.utc)
+        # This inner loop is to run the task for the given hour
+        while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < len(campaign_listings):
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
-            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and not posted_new_listings:
-                campaign.refresh_from_db()
-                posh_user.refresh_from_db()
-                now = datetime.datetime.now(pytz.utc)
-
-                if posh_user.status == PoshUser.WREGISTER:
-                    client.register()
-                    posh_user.refresh_from_db()
-                    if posh_user.status == PoshUser.ACTIVE:
-                        client.update_profile()
-                    posh_user.status = PoshUser.INUSE
-                    posh_user.save()
-
-                while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                    campaign.refresh_from_db()
-                    posh_user.refresh_from_db()
-                    if client.check_listing('Meet your Posher'):
-                        posh_user.meet_posh = True
+            # Create a new client for each listing to ensure they all have different IPs
+            for listing in campaign_listings:
+                with PoshMarkClient(posh_user, logger, True) as client:
+                    if not posh_user.is_registered:
+                        client.register()
+                        posh_user.refresh_from_db()
+                        if posh_user.status == PoshUser.ACTIVE:
+                            client.update_profile()
+                        posh_user.status = PoshUser.INUSE
                         posh_user.save()
-                    else:
-                        client.sleep(60)
 
-                listing_titles = client.get_all_listings()
-                listings_to_list = [listing for listing in campaign_listings if listing.title not in listing_titles]
-                while len(fake_listing_titles) != len(listings_to_list) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                    campaign.refresh_from_db()
-                    posh_user.refresh_from_db()
-                    title = client.list_item()
-                    client.sleep(12)
-                    if title:
-                        if client.check_listing(title):
-                            if client.share_item(title):
-                                if title:
-                                    fake_listing_titles.append(title)
-                            else:
-                                client.delete_listing(title)
-                        client.sleep(random.randint(16, 30))
-                if posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                    for index, value in enumerate(listings_to_list):
-                        client.update_listing(fake_listing_titles[index], value, 'Saks Fifth Avenue')
-                        client.update_listing(value.title, value)
-                        client.sleep(random.randint(16, 30))
-                    posted_new_listings = True
-                else:
-                    break
+                    # This will continue to check for the automatic "Meet your Posher" listing before continuing
+                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                        campaign.refresh_from_db()
+                        posh_user.refresh_from_db()
+                        if client.check_listing('Meet your Posher'):
+                            posh_user.meet_posh = True
+                            posh_user.save()
+                        else:
+                            client.sleep(60)
 
-                if logged_hour_message:
-                    logged_hour_message = False
+                    listed_item_titles = client.get_all_listings()
 
-            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
-                logger.info(
-                    f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
-                logged_hour_message = True
+                    if listing.title not in listed_item_titles:
+                        title = client.list_item()
+                        if title:
+                            if client.check_listing(title):
+                                if client.share_item(title):
+                                    client.update_listing(title, listing, 'Saks Fifth Avenue')
+                                    client.update_listing(listing.title, listing)
+                                    listed_items += 1
+                                else:
+                                    client.delete_listing(title)
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
+            # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
@@ -178,12 +162,12 @@ def advanced_sharing(campaign_id):
                             client.sleep(sleep_amount)
                     else:
                         break
-
                 if logged_hour_message:
                     logged_hour_message = False
 
             if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
-                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                logger.info(
+                    f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
                 logged_hour_message = True
 
     logger.info('Campaign Ended')
@@ -198,23 +182,24 @@ def advanced_sharing(campaign_id):
 @shared_task
 def restart_task(*args, **kwargs):
     campaign_id = args[0]
-    campaign = Campaign.objects.get(id=campaign_id)
-    old_posh_user = campaign.posh_user
+    if campaign_id:
+        campaign = Campaign.objects.get(id=campaign_id)
+        old_posh_user = campaign.posh_user
 
-    if campaign.mode == Campaign.BASIC_SHARING:
-        if campaign.auto_run:
-            task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
-        else:
-            task = basic_sharing.delay(campaign_id)
-    elif campaign.mode == Campaign.ADVANCED_SHARING:
-        if campaign.auto_run:
-            if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
-                new_posh_user = old_posh_user.generate_random_posh_user()
+        if campaign.mode == Campaign.BASIC_SHARING:
+            if campaign.auto_run:
+                task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
+            else:
+                task = basic_sharing.delay(campaign_id)
+        elif campaign.mode == Campaign.ADVANCED_SHARING:
+            if campaign.auto_run:
+                if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
+                    new_posh_user = old_posh_user.generate_random_posh_user()
 
-                campaign.posh_user = new_posh_user
+                    campaign.posh_user = new_posh_user
 
-                campaign.save()
+                    campaign.save()
 
-            task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
-        else:
-            task = advanced_sharing.delay(campaign_id)
+                task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
+            else:
+                task = advanced_sharing.delay(campaign_id)
