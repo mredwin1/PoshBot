@@ -191,7 +191,6 @@ class PoshMarkClient:
                 return 'ERROR_FORM_ERROR'
             else:
                 error = self.locate(By.CLASS_NAME, present_error_class)
-
                 if error.text == 'Invalid Username or Password':
                     self.logger.error(f'Invalid Username or Password')
                     self.posh_user.status = '2'
@@ -393,13 +392,13 @@ class PoshMarkClient:
 
     def register(self):
         """Will register a given user to poshmark"""
-        if self.posh_user.status != '4':
+        if self.posh_user.is_registered:
             pass
         else:
             previous_status = self.posh_user.status
             try:
                 self.logger.info(f'Registering {self.posh_user.username}')
-                self.posh_user.status = '5'
+                self.posh_user.status = '4'
                 self.posh_user.save()
                 # Start at home page so it is more realistic
                 self.web_driver.get('https://poshmark.com')
@@ -504,16 +503,26 @@ class PoshMarkClient:
                         self.sleep(1, 3)  # Sleep for realism
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
+
+                        self.posh_user.is_registered = True
+                        self.posh_user.status = '1'
+                        self.posh_user.save()
+
                         self.logger.info('Registration Complete')
                     else:
-                        self.posh_user.status = '4'
+                        self.posh_user.status = previous_status
                         self.posh_user.save()
                         self.logger.error(
                             f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
-                        self.logger.error('Status changed to "Waiting to be registered"')
+                        self.logger.error('Status changed to previous status')
                 elif error_code == 'ERROR_FORM_ERROR':
                     self.posh_user.status = '2'
                     self.posh_user.save()
+                elif error_code is None:
+                    self.posh_user.is_registered = True
+                    self.posh_user.status = '1'
+                    self.posh_user.save()
+                    self.logger.info('Registration Complete')
 
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -637,7 +646,7 @@ class PoshMarkClient:
         previous_status = self.posh_user.status
         try:
             self.logger.info('Updating Profile')
-            self.posh_user.status = '6'
+            self.posh_user.status = '5'
             self.posh_user.save()
 
             self.go_to_closet()
