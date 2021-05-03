@@ -453,6 +453,8 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
+                self.sleep(5)
+
                 error_code = self.check_for_errors()
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -656,7 +658,7 @@ class PoshMarkClient:
 
             self.logger.info('Clicked on edit profile button')
 
-            self.sleep(1, 3)
+            self.sleep(3, 5)
 
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
@@ -676,13 +678,15 @@ class PoshMarkClient:
                                                   '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
                     profile_picture.send_keys(profile_picture_path)
 
+                    self.sleep(5)
+
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div/button[2]')
                     apply_button.click()
 
                     self.logger.info('Profile picture uploaded')
 
-                    self.sleep(1)
+                    self.sleep(3, 5)
 
             attempts = 1
             header_picture_path = self.posh_user.header_picture.path
@@ -701,13 +705,15 @@ class PoshMarkClient:
                                                  '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/label/input')
                     header_picture.send_keys(header_picture_path)
 
+                    self.sleep(5)
+
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/div/div[2]/div[2]/div/button[2]')
                     apply_button.click()
 
                     self.logger.info('Header picture uploaded')
 
-                    self.sleep(1)
+                    self.sleep(2, 5)
 
             save_button = self.locate(By.CLASS_NAME, 'btn--primary')
             save_button.click()
