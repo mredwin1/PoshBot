@@ -76,18 +76,18 @@ class CreatePoshUser(forms.ModelForm):
             new_user.masked_email = alias.masked_email_address
 
             if alias.is_verified:
-                new_user.status = '4'
+                new_user.status = PoshUser.ACTIVE
             else:
-                new_user.status = '3'
+                new_user.status = PoshUser.WALIAS
 
         elif not self.cleaned_data['alias'] or not self.cleaned_data['is_registered']:
             new_user.email = self.cleaned_data['email']
             new_user.is_email_verified = True
-
-        if self.cleaned_data['is_registered']:
-            new_user.status = '1'
+            new_user.status = PoshUser.ACTIVE
         else:
-            new_user.status = '4'
+            new_user.status = PoshUser.ACTIVE
+
+        new_user.is_registered = self.cleaned_data['is_registered']
 
         new_user.save()
 
