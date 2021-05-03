@@ -28,10 +28,10 @@ def status_color_return(status_code):
     statuses = {
         PoshUser.INUSE: 'border-dark',
         PoshUser.ACTIVE: 'border-success',
-        PoshUser.INACTIVE: 'border-secondary',
+        PoshUser.INACTIVE: 'border-danger',
         PoshUser.WALIAS: 'border-primary',
         PoshUser.REGISTERING: 'border-info',
-        PoshUser.UPROFILE: 'border-danger',
+        PoshUser.UPROFILE: 'border-warning',
     }
 
     return statuses[status_code]
