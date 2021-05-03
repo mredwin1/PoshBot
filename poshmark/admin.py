@@ -14,7 +14,7 @@ class PoshUserAdmin(admin.ModelAdmin):
     fieldsets = (
         ('General Information', {
             'fields': (
-                ('is_email_verified',),
+                ('is_email_verified', 'is_registered'),
                 ('profile_picture', 'header_picture'),
                 ('first_name', 'last_name'),
                 ('username', 'password'),

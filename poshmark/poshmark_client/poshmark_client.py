@@ -191,7 +191,6 @@ class PoshMarkClient:
                 return 'ERROR_FORM_ERROR'
             else:
                 error = self.locate(By.CLASS_NAME, present_error_class)
-
                 if error.text == 'Invalid Username or Password':
                     self.logger.error(f'Invalid Username or Password')
                     self.posh_user.status = '2'
@@ -292,7 +291,7 @@ class PoshMarkClient:
                             elif unit == 'hours':
                                 elapsed_time = int(timestamp[:space_index]) * 60 * 60
 
-                        if elapsed_time > 12:
+                        if elapsed_time > 25:
                             self.logger.error(f'Sharing does not seem to be working '
                                               f'Elapsed Time: {elapsed_time} {unit}')
                             return False
@@ -393,13 +392,13 @@ class PoshMarkClient:
 
     def register(self):
         """Will register a given user to poshmark"""
-        if self.posh_user.status != '4':
+        if self.posh_user.is_registered:
             pass
         else:
             previous_status = self.posh_user.status
             try:
                 self.logger.info(f'Registering {self.posh_user.username}')
-                self.posh_user.status = '5'
+                self.posh_user.status = '4'
                 self.posh_user.save()
                 # Start at home page so it is more realistic
                 self.web_driver.get('https://poshmark.com')
@@ -454,6 +453,8 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
+                self.sleep(5)
+
                 error_code = self.check_for_errors()
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -504,16 +505,26 @@ class PoshMarkClient:
                         self.sleep(1, 3)  # Sleep for realism
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
+
+                        self.posh_user.is_registered = True
+                        self.posh_user.status = '1'
+                        self.posh_user.save()
+
                         self.logger.info('Registration Complete')
                     else:
-                        self.posh_user.status = '4'
+                        self.posh_user.status = previous_status
                         self.posh_user.save()
                         self.logger.error(
                             f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
-                        self.logger.error('Status changed to "Waiting to be registered"')
+                        self.logger.error('Status changed to previous status')
                 elif error_code == 'ERROR_FORM_ERROR':
                     self.posh_user.status = '2'
                     self.posh_user.save()
+                elif error_code is None:
+                    self.posh_user.is_registered = True
+                    self.posh_user.status = '1'
+                    self.posh_user.save()
+                    self.logger.info('Registration Complete')
 
             except Exception as e:
                 self.logger.error(f'Error encountered - Changing status back to {previous_status}')
@@ -619,8 +630,10 @@ class PoshMarkClient:
 
                     if not icon:
                         listings.append(title.text)
-
-                self.logger.info(f"Found the following listings: {','.join(listings)}")
+                if listings:
+                    self.logger.info(f"Found the following listings: {','.join(listings)}")
+                else:
+                    self.logger.info('No listings found')
 
             else:
                 if self.check_inactive():
@@ -637,7 +650,7 @@ class PoshMarkClient:
         previous_status = self.posh_user.status
         try:
             self.logger.info('Updating Profile')
-            self.posh_user.status = '6'
+            self.posh_user.status = '5'
             self.posh_user.save()
 
             self.go_to_closet()
@@ -647,7 +660,7 @@ class PoshMarkClient:
 
             self.logger.info('Clicked on edit profile button')
 
-            self.sleep(1, 3)
+            self.sleep(3, 5)
 
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
@@ -667,13 +680,15 @@ class PoshMarkClient:
                                                   '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
                     profile_picture.send_keys(profile_picture_path)
 
+                    self.sleep(5)
+
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div/button[2]')
                     apply_button.click()
 
                     self.logger.info('Profile picture uploaded')
 
-                    self.sleep(1)
+                    self.sleep(3, 5)
 
             attempts = 1
             header_picture_path = self.posh_user.header_picture.path
@@ -692,13 +707,15 @@ class PoshMarkClient:
                                                  '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/label/input')
                     header_picture.send_keys(header_picture_path)
 
+                    self.sleep(5)
+
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/div/div[2]/div[2]/div/button[2]')
                     apply_button.click()
 
                     self.logger.info('Header picture uploaded')
 
-                    self.sleep(1)
+                    self.sleep(2, 5)
 
             save_button = self.locate(By.CLASS_NAME, 'btn--primary')
             save_button.click()
@@ -849,12 +866,12 @@ class PoshMarkClient:
                     By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
                 )
 
-                original_price_field = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/input'
-                )
-                listing_price_field = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[8]/div/div/div[2]/div[1]/input'
-                )
+                input_fields = self.locate_all(By.TAG_NAME, 'input')
+                for input_field in input_fields:
+                    if input_field.get_attribute('data-vv-name') == 'originalPrice':
+                        original_price_field = input_field
+                    if input_field.get_attribute('data-vv-name') == 'listingPrice':
+                        listing_price_field = input_field
 
                 # Send all the information to their respected fields
                 lowercase = string.ascii_lowercase
@@ -1047,12 +1064,12 @@ class PoshMarkClient:
                                 By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
                             )
 
-                            original_price_field = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/input'
-                            )
-                            listing_price_field = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[8]/div/div/div[2]/div[1]/input'
-                            )
+                            input_fields = self.locate_all(By.TAG_NAME, 'input')
+                            for input_field in input_fields:
+                                if input_field.get_attribute('data-vv-name') == 'originalPrice':
+                                    original_price_field = input_field
+                                if input_field.get_attribute('data-vv-name') == 'listingPrice':
+                                    listing_price_field = input_field
                             brand_field = self.locate(
                                 By.XPATH,
                                 '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
@@ -1113,6 +1130,8 @@ class PoshMarkClient:
                         list_item_button.click()
 
                         self.sleep(5)
+
+                        self.logger.info('Updated successfully')
 
                         break
             else:
