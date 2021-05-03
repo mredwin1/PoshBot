@@ -127,6 +127,7 @@ def advanced_sharing(campaign_id):
 
                     if listing.title not in listed_item_titles:
                         title = client.list_item()
+                        client.sleep(20)
                         if title:
                             if client.check_listing(title):
                                 if client.share_item(title):
