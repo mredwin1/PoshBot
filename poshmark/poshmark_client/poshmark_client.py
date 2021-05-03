@@ -630,8 +630,10 @@ class PoshMarkClient:
 
                     if not icon:
                         listings.append(title.text)
-
-                self.logger.info(f"Found the following listings: {','.join(listings)}")
+                if listings:
+                    self.logger.info(f"Found the following listings: {','.join(listings)}")
+                else:
+                    self.logger.info('No listings found')
 
             else:
                 if self.check_inactive():
@@ -1128,6 +1130,8 @@ class PoshMarkClient:
                         list_item_button.click()
 
                         self.sleep(5)
+
+                        self.logger.info('Updated successfully')
 
                         break
             else:
