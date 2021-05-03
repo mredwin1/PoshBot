@@ -136,6 +136,8 @@ def advanced_sharing(campaign_id):
                                     listed_items += 1
                                 else:
                                     client.delete_listing(title)
+                    else:
+                        listed_items += 1
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
