@@ -21,17 +21,15 @@ class PoshUser(models.Model):
     ACTIVE = '1'
     INACTIVE = '2'
     WALIAS = '3'
-    WREGISTER = '4'
-    REGISTERING = '5'
-    UPROFILE = '6'
+    REGISTERING = '4'
+    UPROFILE = '5'
 
     STATUS_CHOICES = [
         (INUSE, 'In Use'),
         (ACTIVE, 'Active'),
         (INACTIVE, 'Inactive'),
         (WALIAS, 'Waiting for alias email to be verified'),
-        (WREGISTER, 'Waiting to be registered'),
-        (WREGISTER, 'Registering'),
+        (REGISTERING, 'Registering'),
         (UPROFILE, 'Updating Profile'),
     ]
 
@@ -47,6 +45,7 @@ class PoshUser(models.Model):
     date_added = models.DateField(auto_now_add=True, null=True)
 
     is_email_verified = models.BooleanField(default=False)
+    is_registered = models.BooleanField(default=False)
     meet_posh = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
@@ -182,7 +181,7 @@ class PoshUser(models.Model):
             gender=signup_info['gender'],
             user=self.user,
             email=new_email,
-            status=PoshUser.WREGISTER,
+            status=PoshUser.ACTIVE,
             profile_picture=self.profile_picture,
             header_picture=self.header_picture,
         )
