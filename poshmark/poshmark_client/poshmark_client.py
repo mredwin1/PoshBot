@@ -596,10 +596,11 @@ class PoshMarkClient:
 
                 self.logger.info('Clicked my closet button')
 
-                self.sleep(1, 3)
             else:
                 self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
                 self.web_driver.refresh()
+
+            self.sleep(2, 4)
 
             show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
             if self.is_present(By.XPATH, show_all_listings_xpath):
