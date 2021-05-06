@@ -124,21 +124,20 @@ def advanced_sharing(campaign_id):
                         else:
                             meet_your_posher_attempts += 1
                             client.sleep(60)
-
-                    listed_item_titles = client.get_all_listings()
-                    if listed_item_titles:
-                        if listing.title not in listed_item_titles:
-                            title = client.list_item()
-                            client.sleep(20)
-                            if title:
-                                if client.check_listing(title):
-                                    if client.share_item(title):
-                                        client.update_listing(title, listing)
-                                        listed_items += 1
-                                    else:
-                                        client.delete_listing(title)
-                        else:
-                            listed_items += 1
+                    titles = client.get_all_listings()
+                    listed_item_titles = titles if titles else []
+                    if listing.title not in listed_item_titles:
+                        title = client.list_item()
+                        client.sleep(20)
+                        if title:
+                            if client.check_listing(title):
+                                if client.share_item(title):
+                                    client.update_listing(title, listing)
+                                    listed_items += 1
+                                else:
+                                    client.delete_listing(title)
+                    else:
+                        listed_items += 1
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
