@@ -93,9 +93,9 @@ class PoshUser(models.Model):
 
         return genders[self.gender]
 
-    def generate_sign_up_info(self):
-        first_name = names.get_first_name()
-        last_name = names.get_last_name()
+    def generate_sign_up_info(self, old_first_name=None, old_last_name=None):
+        first_name = old_first_name if old_first_name else names.get_first_name()
+        last_name = old_last_name if old_last_name else names.get_last_name()
         username = self.generate_username(first_name, last_name)
         password = self.generate_password()
         user_gender = self.guess_gender(first_name)
@@ -139,10 +139,10 @@ class PoshUser(models.Model):
                 api_instance.delete_alias(self.alias_email_id)
 
     def generate_random_posh_user(self):
-        signup_info = self.generate_sign_up_info()
+        signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
 
         while signup_info['gender'] != self.gender:
-            signup_info = self.generate_sign_up_info()
+            signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
 
         emails = [posh_user.email for posh_user in PoshUser.objects.filter(user=self.user)]
 

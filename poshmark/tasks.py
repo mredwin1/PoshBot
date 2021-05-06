@@ -44,20 +44,20 @@ def basic_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
+                if listing_titles:
+                    for listing_title in listing_titles:
+                        pre_share_time = time.time()
+                        if client.share_item(listing_title):
+                            positive_negative = 1 if random.random() < 0.5 else -1
+                            deviation = random.randint(0, max_deviation) * positive_negative
+                            post_share_time = time.time()
+                            elapsed_time = round(post_share_time - pre_share_time, 2)
+                            sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                for listing_title in listing_titles:
-                    pre_share_time = time.time()
-                    if client.share_item(listing_title):
-                        positive_negative = 1 if random.random() < 0.5 else -1
-                        deviation = random.randint(0, max_deviation) * positive_negative
-                        post_share_time = time.time()
-                        elapsed_time = round(post_share_time - pre_share_time, 2)
-                        sleep_amount = (campaign.delay - elapsed_time) + deviation
-
-                        if elapsed_time < sleep_amount:
-                            client.sleep(sleep_amount)
-                    else:
-                        break
+                            if elapsed_time < sleep_amount:
+                                client.sleep(sleep_amount)
+                        else:
+                            break
 
                 if logged_hour_message:
                     logged_hour_message = False
@@ -83,6 +83,7 @@ def advanced_sharing(campaign_id):
     listed_items = 0
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
+    meet_your_posher_attempts = 0
 
     campaign.status = '1'
     campaign.save()
@@ -114,30 +115,30 @@ def advanced_sharing(campaign_id):
                         posh_user.save()
 
                     # This will continue to check for the automatic "Meet your Posher" listing before continuing
-                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3:
                         campaign.refresh_from_db()
                         posh_user.refresh_from_db()
                         if client.check_listing('Meet your Posher'):
                             posh_user.meet_posh = True
                             posh_user.save()
                         else:
+                            meet_your_posher_attempts += 1
                             client.sleep(60)
 
                     listed_item_titles = client.get_all_listings()
-
-                    if listing.title not in listed_item_titles:
-                        title = client.list_item()
-                        client.sleep(20)
-                        if title:
-                            if client.check_listing(title):
-                                if client.share_item(title):
-                                    client.update_listing(title, listing, 'Saks Fifth Avenue')
-                                    client.update_listing(listing.title, listing)
-                                    listed_items += 1
-                                else:
-                                    client.delete_listing(title)
-                    else:
-                        listed_items += 1
+                    if listed_item_titles:
+                        if listing.title not in listed_item_titles:
+                            title = client.list_item()
+                            client.sleep(20)
+                            if title:
+                                if client.check_listing(title):
+                                    if client.share_item(title):
+                                        client.update_listing(title, listing)
+                                        listed_items += 1
+                                    else:
+                                        client.delete_listing(title)
+                        else:
+                            listed_items += 1
 
     with PoshMarkClient(posh_user, logger, False) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
@@ -151,20 +152,20 @@ def advanced_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
+                if listing_titles:
+                    for listing_title in listing_titles:
+                        pre_share_time = time.time()
+                        if client.share_item(listing_title):
+                            positive_negative = 1 if random.random() < 0.5 else -1
+                            deviation = random.randint(0, max_deviation) * positive_negative
+                            post_share_time = time.time()
+                            elapsed_time = round(post_share_time - pre_share_time, 2)
+                            sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                for listing_title in listing_titles:
-                    pre_share_time = time.time()
-                    if client.share_item(listing_title):
-                        positive_negative = 1 if random.random() < 0.5 else -1
-                        deviation = random.randint(0, max_deviation) * positive_negative
-                        post_share_time = time.time()
-                        elapsed_time = round(post_share_time - pre_share_time, 2)
-                        sleep_amount = (campaign.delay - elapsed_time) + deviation
-
-                        if elapsed_time < sleep_amount:
-                            client.sleep(sleep_amount)
-                    else:
-                        break
+                            if elapsed_time < sleep_amount:
+                                client.sleep(sleep_amount)
+                        else:
+                            break
                 if logged_hour_message:
                     logged_hour_message = False
 
@@ -202,6 +203,8 @@ def restart_task(*args, **kwargs):
                     campaign.posh_user = new_posh_user
 
                     campaign.save()
+
+                    old_posh_user.delete()
 
                 task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
             else:
