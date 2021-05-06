@@ -661,7 +661,7 @@ class PoshMarkClient:
 
             self.logger.info('Clicked on edit profile button')
 
-            self.sleep(3, 5)
+            self.sleep(5)
 
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
@@ -689,7 +689,7 @@ class PoshMarkClient:
 
                     self.logger.info('Profile picture uploaded')
 
-                    self.sleep(3, 5)
+                    self.sleep(5)
 
             attempts = 1
             header_picture_path = self.posh_user.header_picture.path
@@ -716,7 +716,7 @@ class PoshMarkClient:
 
                     self.logger.info('Header picture uploaded')
 
-                    self.sleep(2, 5)
+                    self.sleep(5)
 
             save_button = self.locate(By.CLASS_NAME, 'btn--primary')
             save_button.click()
