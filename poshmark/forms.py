@@ -332,8 +332,8 @@ class EditCampaignForm(CreateCampaign):
         else:
             pass
 
-        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
-            listings_field = 'listings'
+        listings_field = 'listings'
+        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING and listings_field in self.changed_data:
             if listings_field in self.cleaned_data.keys():
                 listing_ids = self.cleaned_data[listings_field].split(',')
                 listing_objects = []
@@ -357,3 +357,13 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.mode = self.cleaned_data['mode']
 
         self.campaign.save()
+
+        if self.cleaned_data['listings']:
+            old_listings = Listing.objects.filter(campaign=self.campaign)
+            for old_listing in old_listings:
+                old_listing.campaign = None
+                old_listing.save()
+
+            for listing in self.cleaned_data['listings']:
+                listing.campaign = self.campaign
+                listing.save()
