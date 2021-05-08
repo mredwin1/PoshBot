@@ -193,7 +193,8 @@ def restart_task(*args, **kwargs):
     arguments = args[0]
     campaign_id = arguments[0]
     sold_listings = arguments[1]
-
+    import logging
+    logging.info(campaign_id)
     if campaign_id:
         campaign = Campaign.objects.get(id=campaign_id)
         old_posh_user = campaign.posh_user
@@ -205,7 +206,9 @@ def restart_task(*args, **kwargs):
             else:
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
+            logging.info('IN mode')
             if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
+                logging.info('Making user')
                 new_posh_user = old_posh_user.generate_random_posh_user()
 
                 campaign.posh_user = new_posh_user
