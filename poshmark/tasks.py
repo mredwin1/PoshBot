@@ -44,20 +44,21 @@ def basic_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
-                if listing_titles['shareable_listings']:
-                    for listing_title in listing_titles['shareable_listings']:
-                        pre_share_time = time.time()
-                        if client.share_item(listing_title):
-                            positive_negative = 1 if random.random() < 0.5 else -1
-                            deviation = random.randint(0, max_deviation) * positive_negative
-                            post_share_time = time.time()
-                            elapsed_time = round(post_share_time - pre_share_time, 2)
-                            sleep_amount = (campaign.delay - elapsed_time) + deviation
+                if listing_titles:
+                    if listing_titles['shareable_listings']:
+                        for listing_title in listing_titles['shareable_listings']:
+                            pre_share_time = time.time()
+                            if client.share_item(listing_title):
+                                positive_negative = 1 if random.random() < 0.5 else -1
+                                deviation = random.randint(0, max_deviation) * positive_negative
+                                post_share_time = time.time()
+                                elapsed_time = round(post_share_time - pre_share_time, 2)
+                                sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                            if elapsed_time < sleep_amount:
-                                client.sleep(sleep_amount)
-                        else:
-                            break
+                                if elapsed_time < sleep_amount:
+                                    client.sleep(sleep_amount)
+                            else:
+                                break
 
                 if logged_hour_message:
                     logged_hour_message = False
@@ -155,22 +156,23 @@ def advanced_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
-                if listing_titles['shareable_listings']:
-                    for listing_title in listing_titles['shareable_listings']:
-                        pre_share_time = time.time()
-                        if client.share_item(listing_title):
-                            positive_negative = 1 if random.random() < 0.5 else -1
-                            deviation = random.randint(0, max_deviation) * positive_negative
-                            post_share_time = time.time()
-                            elapsed_time = round(post_share_time - pre_share_time, 2)
-                            sleep_amount = (campaign.delay - elapsed_time) + deviation
+                if listing_titles:
+                    if listing_titles['shareable_listings']:
+                        for listing_title in listing_titles['shareable_listings']:
+                            pre_share_time = time.time()
+                            if client.share_item(listing_title):
+                                positive_negative = 1 if random.random() < 0.5 else -1
+                                deviation = random.randint(0, max_deviation) * positive_negative
+                                post_share_time = time.time()
+                                elapsed_time = round(post_share_time - pre_share_time, 2)
+                                sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                            if elapsed_time < sleep_amount:
-                                client.sleep(sleep_amount)
-                        else:
-                            break
-                else:
-                    sold_listings = listing_titles['sold_listings']
+                                if elapsed_time < sleep_amount:
+                                    client.sleep(sleep_amount)
+                            else:
+                                break
+                    else:
+                        sold_listings = listing_titles['sold_listings']
                 if logged_hour_message:
                     logged_hour_message = False
 
