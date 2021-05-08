@@ -44,8 +44,8 @@ def basic_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
-                if listing_titles:
-                    for listing_title in listing_titles:
+                if listing_titles['shareable_listings']:
+                    for listing_title in listing_titles['shareable_listings']:
                         pre_share_time = time.time()
                         if client.share_item(listing_title):
                             positive_negative = 1 if random.random() < 0.5 else -1
@@ -84,6 +84,7 @@ def advanced_sharing(campaign_id):
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
     meet_your_posher_attempts = 0
+    sold_listings = None
 
     campaign.status = '1'
     campaign.save()
@@ -124,8 +125,10 @@ def advanced_sharing(campaign_id):
                         else:
                             meet_your_posher_attempts += 1
                             client.sleep(60)
+
                     titles = client.get_all_listings()
-                    listed_item_titles = titles if titles else []
+                    all_titles = titles['shareable_listings'] + titles['sold_listings']
+                    listed_item_titles = all_titles if all_titles else []
                     if listing.title not in listed_item_titles:
                         title = client.list_item()
                         client.sleep(20)
@@ -137,6 +140,7 @@ def advanced_sharing(campaign_id):
                                 else:
                                     client.delete_listing(title)
                     else:
+                        logger.warning(f'{listing.title} already listed, not re listing')
                         listed_items += 1
 
     with PoshMarkClient(posh_user, logger, False) as client:
@@ -151,8 +155,8 @@ def advanced_sharing(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
 
                 listing_titles = client.get_all_listings()
-                if listing_titles:
-                    for listing_title in listing_titles:
+                if listing_titles['shareable_listings']:
+                    for listing_title in listing_titles['shareable_listings']:
                         pre_share_time = time.time()
                         if client.share_item(listing_title):
                             positive_negative = 1 if random.random() < 0.5 else -1
@@ -165,6 +169,8 @@ def advanced_sharing(campaign_id):
                                 client.sleep(sleep_amount)
                         else:
                             break
+                else:
+                    sold_listings = listing_titles['sold_listings']
                 if logged_hour_message:
                     logged_hour_message = False
 
@@ -174,9 +180,9 @@ def advanced_sharing(campaign_id):
                 logged_hour_message = True
 
     logger.info('Campaign Ended')
-
+    campaign.refresh_from_db()
     if campaign.status == '1':
-        return campaign_id
+        return campaign_id, sold_listings
     elif campaign.status == '3':
         campaign.status = '2'
         campaign.save()
@@ -185,9 +191,11 @@ def advanced_sharing(campaign_id):
 @shared_task
 def restart_task(*args, **kwargs):
     campaign_id = args[0]
+    sold_listings = args[1]
     if campaign_id:
         campaign = Campaign.objects.get(id=campaign_id)
         old_posh_user = campaign.posh_user
+        run_again = True
 
         if campaign.mode == Campaign.BASIC_SHARING:
             if campaign.auto_run:
@@ -195,16 +203,29 @@ def restart_task(*args, **kwargs):
             else:
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
-            if campaign.auto_run:
-                if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
-                    new_posh_user = old_posh_user.generate_random_posh_user()
+            if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
+                new_posh_user = old_posh_user.generate_random_posh_user()
 
-                    campaign.posh_user = new_posh_user
+                campaign.posh_user = new_posh_user
 
-                    campaign.save()
+                campaign.save()
 
-                    old_posh_user.delete()
+                old_posh_user.delete()
+            if sold_listings:
+                old_listings = Listing.objects.filter(campaign=campaign)
+                for old_listing in old_listings:
+                    old_listing.campaign = None
+                    old_listing.save()
 
+                new_listing = Listing.get_random_listing(sold_listings)
+
+                if new_listing:
+                    new_listing.campaign = campaign
+                    new_listing.save()
+                else:
+                    run_again = False
+
+            if campaign.auto_run and run_again:
                 task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
-            else:
+            elif not campaign.auto_run and run_again:
                 task = advanced_sharing.delay(campaign_id)
