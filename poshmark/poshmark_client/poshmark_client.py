@@ -614,7 +614,8 @@ class PoshMarkClient:
     def get_all_listings(self):
         """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
         try:
-            listings = []
+            shareable_listings = []
+            sold_listings = []
 
             self.logger.info('Getting all listings')
 
@@ -630,16 +631,24 @@ class PoshMarkClient:
                         icon = None
 
                     if not icon:
-                        listings.append(title.text)
-                if listings:
-                    self.logger.info(f"Found the following listings: {','.join(listings)}")
+                        shareable_listings.append(title.text)
+                    elif icon.text == 'Sold':
+                        sold_listings.append(title.text)
+
+                if shareable_listings:
+                    self.logger.info(f"Found the following listings: {','.join(shareable_listings)}")
                 else:
-                    self.logger.info('No listings found')
+                    self.logger.info('No shareable listings found')
 
             else:
                 if self.check_inactive():
                     self.posh_user.status = '2'
                     self.posh_user.save()
+
+            listings = {
+                'shareable_listings': shareable_listings,
+                'sold_listings': sold_listings
+            }
 
             return listings
 
