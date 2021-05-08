@@ -190,11 +190,10 @@ def advanced_sharing(campaign_id):
 
 @shared_task
 def restart_task(*args, **kwargs):
-    campaign_id = args[0]
-    try:
-        sold_listings = args[1]
-    except IndexError:
-        sold_listings = None
+    arguments = args[0]
+    campaign_id = arguments[0]
+    sold_listings = arguments[1]
+    
     if campaign_id:
         campaign = Campaign.objects.get(id=campaign_id)
         old_posh_user = campaign.posh_user
