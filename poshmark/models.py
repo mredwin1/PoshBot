@@ -330,6 +330,15 @@ class Listing(models.Model):
 
         return listing_photo_paths
 
+    @staticmethod
+    def get_random_listing(sold_listings):
+        available_listings = Listing.objects.filter(campaign=None).exclude(title__in=sold_listings)
+
+        if available_listings:
+            return random.choice(available_listings)
+        else:
+            return None
+
     def __str__(self):
         return self.title
 
