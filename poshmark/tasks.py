@@ -190,11 +190,9 @@ def advanced_sharing(campaign_id):
 
 @shared_task
 def restart_task(*args, **kwargs):
-    import logging
-    logging.info(args)
-    logging.info(type(args))
-    campaign_id = args[0]
-    sold_listings = args[1]
+    arguments = args[0]
+    campaign_id = arguments[0]
+    sold_listings = arguments[1]
 
     if campaign_id:
         campaign = Campaign.objects.get(id=campaign_id)
