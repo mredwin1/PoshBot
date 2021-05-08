@@ -141,7 +141,7 @@ class PoshUser(models.Model):
     def generate_random_posh_user(self):
         signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
 
-        while signup_info['gender'] != self.gender:
+        while signup_info['gender'] != self.gender and self.gender:
             signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
 
         emails = [posh_user.email for posh_user in PoshUser.objects.filter(user=self.user)]
