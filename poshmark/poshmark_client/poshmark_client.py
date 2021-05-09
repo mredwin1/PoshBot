@@ -630,6 +630,10 @@ class PoshMarkClient:
                     except NoSuchElementException:
                         icon = None
 
+                    # DEBUGGING
+                    if icon:
+                        self.logger.debug(icon.text)
+
                     if not icon:
                         shareable_listings.append(title.text)
                     elif icon.text == 'Sold':
@@ -649,7 +653,7 @@ class PoshMarkClient:
                 'shareable_listings': shareable_listings,
                 'sold_listings': sold_listings
             }
-
+            self.logger.debug(listings)
             return listings
 
         except Exception as e:
