@@ -44,6 +44,8 @@ class PoshUser(models.Model):
 
     date_added = models.DateField(auto_now_add=True, null=True)
 
+    port = models.IntegerField(blank=True, null=True)
+
     is_email_verified = models.BooleanField(default=False)
     is_registered = models.BooleanField(default=False)
     meet_posh = models.BooleanField(default=False)
@@ -119,7 +121,8 @@ class PoshUser(models.Model):
         with mailslurp_client.ApiClient(configuration) as api_client:
             api_instance = mailslurp_client.AliasControllerApi(api_client)
 
-            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email, name=str(self.username))
+            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email,
+                                                                       name=str(self.username))
 
             try:
                 api_response = api_instance.create_alias(create_alias_options)
@@ -188,6 +191,65 @@ class PoshUser(models.Model):
         new_posh_user.save()
 
         return new_posh_user
+
+    def create_port(self):
+        proxy_customer = os.environ.get('PROXY_CUSTOMER', None)
+        proxy_api_key = os.environ.get('PROXY_API_KEY', None)
+        if proxy_api_key and proxy_customer:
+            posh_user = PoshUser.objects.exclude(port=None).order_by('-port').first()
+            port = posh_user.port + 1 if posh_user else 24000
+            zone_name = self.username
+
+            headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {proxy_api_key}'}
+            api_response = requests.get(f'https://luminati.io/api/zone/passwords?zone={zone_name}', headers=headers)
+            try:
+                password = api_response.json()['passwords'][0]
+            except json.decoder.JSONDecodeError:
+
+                api_data = {
+                    'zone': {
+                        'name': zone_name
+                    },
+                    'plan': {
+                        'type': 'static',
+                        'ip_fallback': 1,
+                        'ips_type': 'shared',
+                        'ips': 1,
+                        'country': 'us',
+                        'bandwidth': 'payperusage'
+                    }
+                }
+
+                api_response = requests.post('https://luminati.io/api/zone', data=json.dumps(api_data), headers=headers)
+                password = api_response.json()['zone']['password'][0]
+
+            try:
+                data = {
+                    'proxy': {
+                        'port': port,
+                        'zone': zone_name,
+                        'proxy_type': 'persist',
+                        'customer': proxy_customer,
+                        'password': password
+                    }
+                }
+                headers = {'Content-Type': 'application/json'}
+                lpm_response = requests.post('http://lpm:22999/api/proxies', data=json.dumps(data), headers=headers)
+
+                if lpm_response.status_code != requests.codes.ok:
+                    port = None
+                    logging.error(f'Some error while creating port: {lpm_response.json()}')
+
+            except KeyError:
+                port = None
+                logging.error(f'Unexpected zone response: {api_response}')
+
+            self.port = port
+            self.save(update_fields=['port'])
+        else:
+            port = None
+            logging.error('Environment variable not set: PROXY_CUSTOMER or PROXY_API_KEY')
+        return port
 
     @staticmethod
     def check_alias_email():
@@ -316,6 +378,7 @@ class Listing(models.Model):
 
     description = models.TextField()
 
+    sold = models.BooleanField(default=False)
     tags = models.BooleanField(default=False)
 
     original_price = models.IntegerField()
