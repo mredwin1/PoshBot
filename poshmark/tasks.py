@@ -102,12 +102,12 @@ def advanced_sharing(campaign_id):
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
-        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
             # This inner loop is to run the task for the given hour
-            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
@@ -206,8 +206,6 @@ def restart_task(*args, **kwargs):
     if arguments:
         campaign_id = arguments[0]
         sold_listings = arguments[1]
-        import logging
-        logging.info(campaign_id)
         if campaign_id:
             campaign = Campaign.objects.get(id=campaign_id)
             old_posh_user = campaign.posh_user
@@ -219,9 +217,7 @@ def restart_task(*args, **kwargs):
                 else:
                     task = basic_sharing.delay(campaign_id)
             elif campaign.mode == Campaign.ADVANCED_SHARING:
-                logging.info('IN mode')
                 if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
-                    logging.info('Making user')
                     new_posh_user = old_posh_user.generate_random_posh_user()
 
                     campaign.posh_user = new_posh_user
