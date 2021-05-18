@@ -506,3 +506,16 @@ class LogEntry(models.Model):
     logger = models.ForeignKey(Log, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     message = models.TextField()
+
+
+class PoshProxy(models.Model):
+    in_use = models.BooleanField(default=False)
+
+    max_accounts = models.IntegerField()
+    registered_accounts = models.IntegerField()
+
+    ip = models.GenericIPAddressField()
+    port = models.IntegerField()
+
+    def reset_ip(self):
+        pass

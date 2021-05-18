@@ -13,7 +13,7 @@ from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
 from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm
-from .tasks import basic_sharing, advanced_sharing, restart_task
+from .tasks import basic_sharing, restart_task, start_campaign
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -279,10 +279,7 @@ class StartCampaign(View, LoginRequiredMixin):
             else:
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
-            if campaign.auto_run:
-                task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
-            else:
-                task = advanced_sharing.delay(campaign_id)
+            start_campaign.delay(campaign_id)
 
         if task:
             task_id = task.task_id

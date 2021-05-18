@@ -81,28 +81,13 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, logger, use_proxy=False):
-        if use_proxy:
-            # if posh_user.port:
-            #     port = posh_user.port
-            # else:
-            #     port = posh_user.create_port()
-            #
-            # if port:
-            #     proxy = Proxy()
-            #     proxy.proxy_type = ProxyType.MANUAL
-            #
-            #     proxy.http_proxy = '{hostname}:{port}'.format(hostname='192.154.247.131', port=port)
-            #     proxy.ssl_proxy = '{hostname}:{port}'.format(hostname='192.154.247.131', port=port)
-            #     capabilities = webdriver.DesiredCapabilities.CHROME
-            #     proxy.add_to_capabilities(capabilities)
-            # else:
-            #     logger.error('Could not get users port, Not using proxy.')
+    def __init__(self, posh_user, logger, posh_proxy=None):
+        if posh_proxy:
             proxy = Proxy()
             proxy.proxy_type = ProxyType.MANUAL
 
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname='192.154.247.131', port='8000')
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname='192.154.247.131', port='8000')
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
             capabilities = webdriver.DesiredCapabilities.CHROME
             proxy.add_to_capabilities(capabilities)
 

@@ -178,10 +178,18 @@ LOGIN_URL = 'login'
 CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 
+CELERY_TASK_ROUTES = {
+    'tasks.basic_sharing': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
+    'tasks.advanced_sharing': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
+    'tasks.start_campaign': {'queue': 'no_concurrency', 'routing_key': 'task.utility'},
+    'tasks.restart_campaign': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
+}
+
 # Periodic Tasks
 CELERY_BEAT_SCHEDULE = {
     'log_cleanup': {
         'task': 'poshmark.tasks.log_cleanup',
-        'schedule': crontab(minute=0, hour=0)
+        'schedule': crontab(minute=0, hour=0),
+        'options': {'queue': 'no_concurrency'}
     },
 }

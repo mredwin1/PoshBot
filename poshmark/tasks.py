@@ -6,7 +6,7 @@ import time
 from django.utils import timezone
 from celery import shared_task, chain
 
-from .models import PoshUser, Log, Campaign, Listing
+from .models import PoshUser, Log, Campaign, Listing, PoshProxy
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 
@@ -16,6 +16,26 @@ def log_cleanup():
 
     for log in logs:
         log.delete()
+
+
+@shared_task
+def start_campaign(campaign_id):
+    proxy = PoshProxy.objects.filter(in_use=False).first()
+
+    while proxy is None:
+        time.sleep(30)
+
+    if proxy.registered_accounts >= proxy.max_accounts:
+        proxy.reset_ip()
+
+    proxy.in_use = True
+    proxy.save()
+
+    campaign = Campaign.objects.get(id=campaign_id)
+    if campaign.auto_run:
+        task = chain(advanced_sharing.s(campaign_id, proxy.id), restart_task.s()).apply_async()
+    else:
+        task = advanced_sharing.delay(campaign_id, proxy.id)
 
 
 @shared_task
@@ -31,7 +51,7 @@ def basic_sharing(campaign_id):
     logger.save()
 
     logger.info('Starting Campaign')
-    with PoshMarkClient(posh_user, logger, False) as client:
+    with PoshMarkClient(posh_user, logger) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = (now + datetime.timedelta(days=1)).replace(hour=7, minute=55, microsecond=0)
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
@@ -76,8 +96,9 @@ def basic_sharing(campaign_id):
 
 
 @shared_task
-def advanced_sharing(campaign_id):
+def advanced_sharing(campaign_id, proxy_id):
     campaign = Campaign.objects.get(id=campaign_id)
+    proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     all_campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
@@ -98,7 +119,7 @@ def advanced_sharing(campaign_id):
 
     logger.info('Starting Campaign')
 
-    with PoshMarkClient(posh_user, logger, True) as client:
+    with PoshMarkClient(posh_user, logger, proxy) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
@@ -150,7 +171,11 @@ def advanced_sharing(campaign_id):
                             listed_items += 1
                             logger.warning(f'{listing.title} already listed, not re listing')
 
-    with PoshMarkClient(posh_user, logger, False) as client:
+    proxy.registered_accounts += 1
+    proxy.in_use = False
+    proxy.save()
+
+    with PoshMarkClient(posh_user, logger) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
@@ -240,7 +265,5 @@ def restart_task(*args, **kwargs):
                     else:
                         run_again = False
 
-                if campaign.auto_run and run_again:
-                    task = chain(advanced_sharing.s(campaign_id), restart_task.s()).apply_async()
-                elif not campaign.auto_run and run_again:
-                    task = advanced_sharing.delay(campaign_id)
+                if run_again:
+                    start_campaign.delay(campaign_id)
