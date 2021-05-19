@@ -452,6 +452,8 @@ class LogEntry(models.Model):
 class PoshProxy(models.Model):
     in_use = models.BooleanField(default=False)
 
+    ip_reset_url = models.CharField(max_length=200, default='', blank=True)
+
     max_accounts = models.IntegerField()
     registered_accounts = models.IntegerField()
 
@@ -459,7 +461,8 @@ class PoshProxy(models.Model):
     port = models.IntegerField()
 
     def reset_ip(self):
-        response = requests.get('https://portal.proxyguys.com/api/v1/modems/reset/d4b17cc2023648adbbe1fd10366de564')
-        logging.info(response)
+        if self.ip_reset_url:
+            response = requests.get(self.ip_reset_url)
+            logging.info(response)
         self.registered_accounts = 0
         self.save()
