@@ -31,6 +31,9 @@ def start_campaign(campaign_id):
         proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     if proxy.registered_accounts >= proxy.max_accounts:
+        while proxy.current_connections != 0:
+            time.sleep(30)
+            proxy.refresh_from_db()
         proxy.reset_ip()
 
     proxy.current_connections += 1
