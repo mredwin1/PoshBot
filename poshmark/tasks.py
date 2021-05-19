@@ -21,11 +21,11 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
-    proxy = PoshProxy.objects.filter(current_connections__lt=3).first()
+    proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     while proxy is None:
         time.sleep(30)
-        proxy = PoshProxy.objects.filter(current_connections__lt=3).first()
+        proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     if proxy.registered_accounts >= proxy.max_accounts:
         proxy.reset_ip()
