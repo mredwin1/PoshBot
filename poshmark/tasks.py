@@ -280,4 +280,3 @@ def restart_task(*args, **kwargs):
                 if run_again:
                     campaign.status = '4'
                     campaign.save()
-                    start_campaign.delay(campaign_id)
