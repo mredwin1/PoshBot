@@ -1,5 +1,7 @@
 import json
 import logging
+import time
+
 import mailslurp_client
 import names
 import os
@@ -464,5 +466,6 @@ class PoshProxy(models.Model):
         if self.ip_reset_url:
             response = requests.get(self.ip_reset_url)
             logging.info(response)
+        time.sleep(10)
         self.registered_accounts = 0
         self.save()
