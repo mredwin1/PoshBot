@@ -463,8 +463,15 @@ class PoshProxy(models.Model):
 
     def reset_ip(self):
         if self.ip_reset_url:
-            response = requests.get(self.ip_reset_url)
-            logging.info(response)
-        time.sleep(10)
+            login_response = requests.post(
+                'https://portal.proxyguys.com/login',
+                data={'username': os.environ['PROXY_USERNAME'], 'password': os.environ['PROXY_PASSWORD']}
+            )
+            reset_response = requests.get(
+                'https://portal.proxyguys.com/api/v2/proxies/availability',
+                cookies=login_response.cookies
+            )
+            logging.info(reset_response)
+            time.sleep(5)
         self.registered_accounts = 0
         self.save()
