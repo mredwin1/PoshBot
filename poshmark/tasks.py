@@ -23,8 +23,6 @@ def log_cleanup():
 def start_campaign(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
-    campaign.status = '4'
-    campaign.save()
 
     while proxy is None:
         time.sleep(30)
