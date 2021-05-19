@@ -459,4 +459,7 @@ class PoshProxy(models.Model):
     port = models.IntegerField()
 
     def reset_ip(self):
-        pass
+        response = requests.get('https://portal.proxyguys.com/api/v1/modems/reset/d4b17cc2023648adbbe1fd10366de564')
+        logging.info(response)
+        self.registered_accounts = 0
+        self.save()
