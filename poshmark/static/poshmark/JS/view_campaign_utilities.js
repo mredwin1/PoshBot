@@ -77,6 +77,8 @@ $(document).ready(function () {
                 if (data.task_id) {
                     start_button.prop('disabled', true);
                     stop_button.prop('disabled', false);
+                } else if (data.error) {
+                    alert(data.error)
                 }
             },
         });
