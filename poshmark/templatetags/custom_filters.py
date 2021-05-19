@@ -97,7 +97,8 @@ def campaign_status_return(value):
     statuses = {
         '1': 'RUNNING',
         '2': 'IDLE',
-        '3': 'Stopping',
+        '3': 'STOPPING',
+        '4': 'STARTING',
     }
 
     return statuses[value]
@@ -109,8 +110,9 @@ def campaign_color_return(value):
     """Takes a string which is a campaign status code and returns a class for text color"""
     statuses = {
         '1': 'text-success',
-        '2': 'text-warning',
+        '2': 'text-secondary',
         '3': 'text-warning',
+        '4': 'text-info',
     }
 
     return statuses[value]

@@ -21,7 +21,10 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
+    campaign = Campaign.objects.get(id=campaign_id)
     proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
+    campaign.status = '4'
+    campaign.save()
 
     while proxy is None:
         time.sleep(30)
@@ -33,7 +36,6 @@ def start_campaign(campaign_id):
     proxy.current_connections += 1
     proxy.save()
 
-    campaign = Campaign.objects.get(id=campaign_id)
     if campaign.auto_run:
         task = chain(advanced_sharing.s(campaign_id, proxy.id), restart_task.s()).apply_async()
     else:
@@ -254,6 +256,7 @@ def restart_task(*args, **kwargs):
                     campaign.save()
 
                     old_posh_user.delete()
+
                 if sold_listings:
                     old_listings = Listing.objects.filter(campaign=campaign)
                     for old_listing in old_listings:
