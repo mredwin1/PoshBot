@@ -369,11 +369,12 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.save()
 
         if self.cleaned_data['listings']:
-            old_listings = Listing.objects.filter(campaign=self.campaign)
-            for old_listing in old_listings:
-                old_listing.campaign = None
-                old_listing.save()
+            if not isinstance(self.cleaned_data['listings'][0], str):
+                old_listings = Listing.objects.filter(campaign=self.campaign)
+                for old_listing in old_listings:
+                    old_listing.campaign = None
+                    old_listing.save()
 
-            for listing in self.cleaned_data['listings']:
-                listing.campaign = self.campaign
-                listing.save()
+                for listing in self.cleaned_data['listings']:
+                    listing.campaign = self.campaign
+                    listing.save()
