@@ -179,10 +179,10 @@ CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 CELERY_TASK_ROUTES = {
-    'poshmark.tasks.basic_sharing': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
-    'poshmark.tasks.advanced_sharing': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
-    'poshmark.tasks.start_campaign': {'queue': 'no_concurrency', 'routing_key': 'task.utility'},
-    'poshmark.tasks.restart_campaign': {'queue': 'concurrency', 'routing_key': 'task.campaign'},
+    'poshmark.tasks.basic_sharing': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.advanced_sharing': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.start_campaign': {'queue': 'no_concurrency', 'routing_key': 'no_concurrency'},
+    'poshmark.tasks.restart_campaign': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks

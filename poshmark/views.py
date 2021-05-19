@@ -273,6 +273,9 @@ class StartCampaign(View, LoginRequiredMixin):
         task = None
         task_id = None
 
+        import logging
+        logging.info('CAMPAIGN STARTING')
+
         if campaign.mode == Campaign.BASIC_SHARING:
             if campaign.auto_run:
                 task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
@@ -280,7 +283,6 @@ class StartCampaign(View, LoginRequiredMixin):
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
             task = start_campaign.delay(campaign_id)
-            import logging
             logging.info(task)
 
         if task:

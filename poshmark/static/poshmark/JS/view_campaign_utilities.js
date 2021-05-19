@@ -74,6 +74,7 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function (data) {
+                console.log(data)
                 if (data.task_id) {
                     start_button.prop('disabled', true);
                     stop_button.prop('disabled', false);
