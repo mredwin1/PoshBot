@@ -173,6 +173,7 @@ def advanced_sharing(campaign_id, proxy_id):
                             listed_items += 1
                             logger.warning(f'{listing.title} already listed, not re listing')
 
+    proxy.refresh_from_db()
     proxy.registered_accounts += 1
     proxy.current_connections -= 1
     proxy.save()
