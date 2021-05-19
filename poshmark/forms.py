@@ -364,6 +364,8 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.generate_users = self.cleaned_data['generate_users']
         self.campaign.mode = self.cleaned_data['mode']
 
+        self.campaign.posh_user.status = PoshUser.INUSE
+        self.campaign.posh_user.save()
         self.campaign.save()
 
         if self.cleaned_data['listings']:
