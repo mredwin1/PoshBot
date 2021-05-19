@@ -239,6 +239,8 @@ def restart_task(*args, **kwargs):
     if arguments:
         campaign_id = arguments[0]
         sold_listings = arguments[1]
+        import logging
+        logging.info(campaign_id)
         if campaign_id:
             campaign = Campaign.objects.get(id=campaign_id)
             old_posh_user = campaign.posh_user
@@ -272,6 +274,8 @@ def restart_task(*args, **kwargs):
                         new_listing.save()
                     else:
                         run_again = False
+
+                logging.info(campaign)
 
                 if run_again:
                     campaign.status = '4'

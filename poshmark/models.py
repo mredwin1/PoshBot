@@ -471,7 +471,6 @@ class PoshProxy(models.Model):
                 'https://portal.proxyguys.com/api/v2/proxies/availability',
                 cookies=login_response.cookies
             )
-            logging.info(reset_response)
             time.sleep(5)
         self.registered_accounts = 0
         self.save()
