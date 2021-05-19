@@ -65,7 +65,7 @@ $(document).ready(function () {
         let start_url = start_button.data('start-url');
 
         status_div.removeClass('text-warning').addClass('text-success');
-        status_div.text('Running');
+        status_div.text('RUNNING');
 
         $.ajax({
             url: start_url,
@@ -89,7 +89,7 @@ $(document).ready(function () {
         let stop_url = stop_button.data('stop-url');
 
         status_div.removeClass('text-success').addClass('text-warning');
-        status_div.text('Stopping');
+        status_div.text('STOPPING');
 
         $.ajax({
             url: stop_url,

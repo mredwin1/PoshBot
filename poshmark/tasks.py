@@ -22,7 +22,7 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
-    proxy = PoshProxy.objects.filter(in_use=False).first()
+    proxy = PoshProxy.objects.filter(current_connections__lt=3).first()
 
     while proxy is None:
         time.sleep(30)
@@ -31,7 +31,7 @@ def start_campaign(campaign_id):
     if proxy.registered_accounts >= proxy.max_accounts:
         proxy.reset_ip()
 
-    proxy.in_use = True
+    proxy.current_connections += 1
     proxy.save()
 
     campaign = Campaign.objects.get(id=campaign_id)
@@ -177,7 +177,7 @@ def advanced_sharing(campaign_id, proxy_id):
                             logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.registered_accounts += 1
-    proxy.in_use = False
+    proxy.current_connections -= 1
     proxy.save()
 
     with PoshMarkClient(posh_user, logger) as client:

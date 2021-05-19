@@ -450,12 +450,11 @@ class LogEntry(models.Model):
 
 
 class PoshProxy(models.Model):
-    in_use = models.BooleanField(default=False)
-
     ip_reset_url = models.CharField(max_length=200, default='', blank=True)
 
     max_accounts = models.IntegerField()
     registered_accounts = models.IntegerField()
+    current_connections = models.IntegerField(default=0)
 
     ip = models.GenericIPAddressField()
     port = models.IntegerField()
