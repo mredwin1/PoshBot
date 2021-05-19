@@ -35,8 +35,6 @@ def start_campaign(campaign_id):
     proxy.save()
 
     campaign = Campaign.objects.get(id=campaign_id)
-    logging.info(campaign)
-    logging.info(proxy)
     if campaign.auto_run:
         task = chain(advanced_sharing.s(campaign_id, proxy.id), restart_task.s()).apply_async()
     else:
