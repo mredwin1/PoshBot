@@ -279,7 +279,7 @@ class StartCampaign(View, LoginRequiredMixin):
             else:
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
-            start_campaign.delay(campaign_id)
+            task = start_campaign.delay(campaign_id)
 
         if task:
             task_id = task.task_id
