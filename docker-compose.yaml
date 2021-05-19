@@ -90,7 +90,7 @@ services:
       - "/letsencrypt/acme.json:/acme.json"
   celery_concurrency:
     image: ghcr.io/mredwin1/poshbot:latest
-    container_name: celery_poshbot
+    container_name: celery_concurrency_poshbot
     restart: always
     entrypoint: celery -A PoshBot worker --concurrency=100 -Q concurrency -l INFO
     depends_on:
@@ -107,7 +107,7 @@ services:
       - ./poshmark/static/poshmark/images:/static/poshmark/images
   celery_noconcurrency:
     image: ghcr.io/mredwin1/poshbot:latest
-    container_name: celery_poshbot
+    container_name: celery_nonconcurrency_poshbot
     restart: always
     entrypoint: celery -A PoshBot worker --concurrency=1 -Q no_concurrency -l INFO
     depends_on:
