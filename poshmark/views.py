@@ -4,7 +4,6 @@ import pytz
 from celery import chain
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from django.templatetags.static import static
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, reverse
@@ -273,9 +272,6 @@ class StartCampaign(View, LoginRequiredMixin):
         task = None
         task_id = None
 
-        import logging
-        logging.info('CAMPAIGN STARTING')
-
         if campaign.mode == Campaign.BASIC_SHARING:
             if campaign.auto_run:
                 task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
@@ -283,7 +279,6 @@ class StartCampaign(View, LoginRequiredMixin):
                 task = basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.ADVANCED_SHARING:
             task = start_campaign.delay(campaign_id)
-            logging.info(task)
 
         if task:
             task_id = task.task_id
