@@ -296,6 +296,11 @@ class EditCampaignForm(CreateCampaign):
         listings = Listing.objects.filter(campaign=campaign)
         listings_list = [str(listing.id) for listing in listings]
 
+        import logging
+        logging.info(campaign)
+        logging.info(listings)
+        logging.info(listings_list)
+
         self.fields['title'].initial = campaign.title
         self.fields['times'].initial = campaign.times
         self.fields['listings'].initial = ','.join(listings_list)
