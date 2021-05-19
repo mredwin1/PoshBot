@@ -63,6 +63,9 @@
                             <a href="{% url 'edit-campaign' campaign.id %}">
                                 <h5 class="card-title">{{ campaign.title }}</h5>
                             </a>
+                            <a href="https://poshmark.com/closet/{{ campaign.posh_user.username }}" target="_blank">
+                                <h5 class="card-title">{{ campaign.posh_user.username }}</h5>
+                            </a>
                         </div>
                         <div class="card-footer bg-transparent">
                             <div class="row">
