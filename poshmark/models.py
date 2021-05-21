@@ -111,6 +111,9 @@ class PoshUser(models.Model):
             'gender': user_gender
         }
 
+        import logging
+        logging.info(signup_info)
+
         return signup_info
 
     def generate_email(self, master_email):
