@@ -134,17 +134,20 @@ def advanced_sharing(campaign_id, proxy_id):
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
-                if not posh_user.is_registered:
+                while not posh_user.is_registered and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                     client.register()
                     posh_user.refresh_from_db()
+                    
                     if posh_user.status == PoshUser.ACTIVE:
                         client.update_profile()
-                    posh_user.status = PoshUser.INUSE
-                    posh_user.save()
+                    if posh_user.status != PoshUser.INACTIVE:
+                        posh_user.status = PoshUser.INUSE
+                        posh_user.save()
 
+                posh_user.refresh_from_db()
                 if listed_items < 1:
                     # This will continue to check for the automatic "Meet your Posher" listing before continuing
-                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3:
+                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3 and posh_user.is_registered:
                         campaign.refresh_from_db()
                         posh_user.refresh_from_db()
                         if client.check_listing('Meet your Posher'):
@@ -154,24 +157,25 @@ def advanced_sharing(campaign_id, proxy_id):
                             meet_your_posher_attempts += 1
                             client.sleep(60)
 
-                    for listing in campaign_listings:
-                        titles = client.get_all_listings()
-                        all_titles = titles['shareable_listings'] + titles['sold_listings']
-                        listed_item_titles = all_titles if all_titles else []
-                        if listing.title not in listed_item_titles:
-                            title = client.list_item()
-                            client.sleep(20)
-                            if title:
-                                if client.check_listing(title):
-                                    if client.share_item(title):
-                                        client.update_listing(title, listing)
-                                        listed_items += 1
-                                        break
-                                    else:
-                                        client.delete_listing(title)
-                        else:
-                            listed_items += 1
-                            logger.warning(f'{listing.title} already listed, not re listing')
+                    if posh_user.is_registered:
+                        for listing in campaign_listings:
+                            titles = client.get_all_listings()
+                            all_titles = titles['shareable_listings'] + titles['sold_listings']
+                            listed_item_titles = all_titles if all_titles else []
+                            if listing.title not in listed_item_titles:
+                                title = client.list_item()
+                                client.sleep(20)
+                                if title:
+                                    if client.check_listing(title):
+                                        if client.share_item(title):
+                                            client.update_listing(title, listing)
+                                            listed_items += 1
+                                            break
+                                        else:
+                                            client.delete_listing(title)
+                            else:
+                                listed_items += 1
+                                logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.refresh_from_db()
     posh_user.refresh_from_db()

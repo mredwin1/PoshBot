@@ -48,7 +48,7 @@
             <hr class="my-5">
             <div class="form-group row px-2">
                 <label for="{{ form.size.id_for_label }}" class="col-2 col-form-label">SIZE</label>
-                <input type="text" id="{{ form.size.auto_id }}" value="{% if form.size.value %}{{ form.size.value }}{% endif %}" name="{{ form.size.name }}" class="form-control col-10" placeholder="Size of the item? (required)" maxlength="50" required>
+                <input type="text" id="{{ form.size.auto_id }}" value="{% if form.size.value %}{{ form.size.value }}{% endif %}" name="{{ form.size.name }}" class="form-control col-10" placeholder="Size of the item? (required)" maxlength="20" required>
             </div>
             <hr class="my-5">
             <div class="form-group row px-2">
@@ -64,7 +64,7 @@
             <hr class="my-5">
             <div class="form-group row px-2">
                 <label for="{{ form.brand.id_for_label }}" class="col-2 col-form-label">BRAND</label>
-                <input type="text" id="{{ form.brand.auto_id }}" value="{% if form.brand.value %}{{ form.brand.value }}{% endif %}" name="{{ form.brand.name }}" class="form-control col-10" placeholder="Brand of the item? (required)" maxlength="50" required>
+                <input type="text" id="{{ form.brand.auto_id }}" value="{% if form.brand.value %}{{ form.brand.value }}{% endif %}" name="{{ form.brand.name }}" class="form-control col-10" placeholder="Brand of the item? (required)" maxlength="30" required>
             </div>
             <hr class="my-5">
             <div class="form-group row px-2">
