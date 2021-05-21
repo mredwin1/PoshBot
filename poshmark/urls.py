@@ -36,6 +36,7 @@ urlpatterns = [
         name='view-listings'
     ),
     path('add-listing/', posh_views.create_listing, name='add-listing'),
+    path('edit-listing/<int:listing_id>', posh_views.EditListing.as_view(), name='edit-listing'),
     path('add-campaign/', posh_views.create_campaign, name='add-campaign'),
     path('edit-campaign/<int:campaign_id>', posh_views.EditCampaign.as_view(), name='edit-campaign'),
     path('view-campaigns/', posh_views.CampaignListView.as_view(template_name='poshmark/view_campaigns.html'),

@@ -115,18 +115,24 @@ class CreateListing(forms.Form):
     def __init__(self, request, *args, **kwargs):
         super(CreateListing, self).__init__(*args, **kwargs)
         self.request = request
-        
+
+    def clean(self):
+        super(CreateListing, self).clean()
+
+        self.cleaned_data['category'] = f"{self.cleaned_data['main_category']} {self.cleaned_data['secondary_category']}"
+        self.cleaned_data['tags'] = True if self.cleaned_data['tags'] == 'true' else False
+
     def save(self):
         new_listing = Listing(
             title=self.cleaned_data['title'],
             description=self.cleaned_data['description'],
-            category=f"{self.cleaned_data['main_category']} {self.cleaned_data['secondary_category']}",
+            category=self.cleaned_data['category'],
             subcategory=self.cleaned_data['subcategory'],
             size=self.cleaned_data['size'],
             brand=self.cleaned_data['brand'],
-            tags=True if self.cleaned_data['tags'] == 'true' else False,
-            original_price=int(self.cleaned_data['original_price']),
-            listing_price=int(self.cleaned_data['listing_price']),
+            tags=self.cleaned_data['tags'],
+            original_price=self.cleaned_data['original_price'],
+            listing_price=self.cleaned_data['listing_price'],
             user=self.request.user,
         )
 
@@ -138,6 +144,51 @@ class CreateListing(forms.Form):
             listing_photo = ListingPhotos(listing=new_listing)
             listing_photo.photo.save(f"{new_listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
 
+
+class EditListingForm(CreateListing):
+    def __init__(self, request, listing, *args, **kwargs):
+        super(EditListingForm, self).__init__(request, *args, **kwargs)
+        self.request = request
+        self.listing = listing
+
+        index = listing.category.find(' ')
+        main_category = listing.category[:index]
+        secondary_category = listing.category[index + 1:]
+
+        self.fields['title'].initial = listing.title
+        self.fields['size'].initial = listing.size
+        self.fields['brand'].initial = listing.brand
+        self.fields['main_category'].initial = main_category
+        self.fields['secondary_category'].initial = secondary_category
+        self.fields['subcategory'].initial = listing.subcategory
+        self.fields['description'].initial = listing.description
+        self.fields['tags'].initial = listing.tags
+        self.fields['original_price'].initial = listing.original_price
+        self.fields['listing_price'].initial = listing.listing_price
+
+    def save(self):
+        self.listing.title = self.cleaned_data['title']
+        self.listing.size = self.cleaned_data['size']
+        self.listing.brand = self.cleaned_data['brand']
+        self.listing.category = self.cleaned_data['category']
+        self.listing.subcategory = self.cleaned_data['subcategory']
+        self.listing.description = self.cleaned_data['description']
+        self.listing.tags = self.cleaned_data['tags']
+        self.listing.original_price = self.cleaned_data['original_price']
+        self.listing.listing_price = self.cleaned_data['listing_price']
+
+        self.listing.cover_photo.delete()
+        letters = string.ascii_lowercase
+
+        self.listing.cover_photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(self.files['cover_photo'].read()), save=True)
+
+        listing_photos = ListingPhotos.objects.filter(listing=self.listing)
+        for listing_photo in listing_photos:
+            listing_photo.delete()
+
+        for file_content in self.files.getlist('other_photos'):
+            listing_photo = ListingPhotos(listing=self.listing)
+            listing_photo.photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
 
 class CreateCampaign(forms.Form):
     title = forms.CharField()
@@ -289,7 +340,7 @@ class CreateBasicCampaignForm(forms.Form):
 
 class EditCampaignForm(CreateCampaign):
     def __init__(self, request, campaign, *args, **kwargs):
-        super(EditCampaignForm, self).__init__(request, *args, **kwargs)
+        super(CreateCampaign, self).__init__(request, *args, **kwargs)
         self.request = request
         self.campaign = campaign
 

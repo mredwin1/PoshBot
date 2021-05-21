@@ -11,7 +11,8 @@ from django.views import View
 from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign
-from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm
+from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
+    EditListingForm
 from .tasks import basic_sharing, restart_task, start_campaign
 from poshmark.templatetags.custom_filters import log_entry_return
 
@@ -42,7 +43,7 @@ def create_listing(request):
     if request.method == 'GET':
         form = CreateListing(request)
 
-        return render(request, 'poshmark/create_listing.html', {'form': form})
+        return render(request, 'poshmark/listings.html', {'form': form})
     else:
         form = CreateListing(data=request.POST, files=request.FILES, request=request)
 
@@ -51,7 +52,7 @@ def create_listing(request):
 
             return redirect('view-listings')
         else:
-            return render(request, 'poshmark/create_listing.html', {'form': form})
+            return render(request, 'poshmark/listings.html', {'form': form})
 
 
 @login_required
@@ -59,7 +60,7 @@ def create_campaign(request):
     if request.method == 'GET':
         form = CreateCampaign(request)
 
-        return render(request, 'poshmark/create_campaign.html', {'form': form})
+        return render(request, 'poshmark/campaigns.html', {'form': form})
     else:
         form = CreateCampaign(data=request.POST, files=request.FILES, request=request)
         if form.is_valid():
@@ -67,7 +68,7 @@ def create_campaign(request):
 
             return redirect('view-campaigns')
         else:
-            return render(request, 'poshmark/create_campaign.html', {'form': form})
+            return render(request, 'poshmark/campaigns.html', {'form': form})
 
 
 @login_required
@@ -87,7 +88,7 @@ class EditCampaign(View, LoginRequiredMixin):
 
         form = self.form_class(request, campaign)
 
-        return render(request, 'poshmark/create_campaign.html', {'form': form})
+        return render(request, 'poshmark/campaigns.html', {'form': form})
 
     def post(self, request, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
@@ -101,7 +102,33 @@ class EditCampaign(View, LoginRequiredMixin):
 
             return redirect('view-campaigns')
         else:
-            return render(request, 'poshmark/create_campaign.html', {'form': form})
+            return render(request, 'poshmark/campaigns.html', {'form': form})
+
+
+class EditListing(View, LoginRequiredMixin):
+    form_class = EditListingForm
+
+    def get(self, request, *args, **kwargs):
+        listing_id = self.kwargs['listing_id']
+        listing = Listing.objects.get(id=listing_id)
+
+        form = self.form_class(request, listing)
+
+        return render(request, 'poshmark/listings.html', {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        listing_id = self.kwargs['listing_id']
+        listing = Listing.objects.get(id=listing_id)
+
+        form = self.form_class(request, listing, data=request.POST)
+
+        if form.is_valid():
+            if form.has_changed():
+                form.save()
+
+            return redirect('view-listings')
+        else:
+            return render(request, 'poshmark/listings.html', {'form': form})
 
 
 class PoshUserListView(ListView, LoginRequiredMixin):

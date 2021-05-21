@@ -27,22 +27,22 @@
             <div class="form-group row px-2">
                 <label for="{{ form.main_category.id_for_label }}" class="col-3 col-form-label">MAIN CATEGORY</label>
                 <select name="{{ form.main_category.name }}" id="{{ form.main_category.auto_id }}" class="col-3 form-control" required>
-                    <option value="" disabled selected>Select a Category</option>
-                    <option value="Women">Women</option>
-                    <option value="Men">Men</option>
-                    <option value="Kids">Kids</option>
-                    <option value="Home">Home</option>
-                    <option value="Pets">Pets</option>
+                    <option value="" disabled {% if form.main_category == '' %}selected{% endif %}>Select a Category</option>
+                    <option value="Women" {% if form.main_category == 'Women' %}selected{% endif %}>Women</option>
+                    <option value="Men" {% if form.main_category == 'Men' %}selected{% endif %}>Men</option>
+                    <option value="Kids" {% if form.main_category == 'Kids' %}selected{% endif %}>Kids</option>
+                    <option value="Home" {% if form.main_category == 'Home' %}selected{% endif %}>Home</option>
+                    <option value="Pets" {% if form.main_category == 'Pets' %}selected{% endif %}>Pets</option>
                 </select>
                 <label for="{{ form.secondary_category.id_for_label }}" class="col-3 col-form-label">SECONDARY CATEGORY</label>
                 <select name="{{ form.secondary_category.name }}" id="{{ form.secondary_category.auto_id }}" class="col-3 form-control" required>
-                    <option value="" disabled selected>Select a Category</option>
+                    <option value="{{ form.secondary_category.value }}" disabled selected>Select a Category</option>
                 </select>
             </div>
             <div class="form-group row px-2">
                 <label for="{{ form.subcategory.id_for_label }}" class="col-3 col-form-label">SUBCATEGORY</label>
                 <select name="{{ form.subcategory.name }}" id="{{ form.subcategory.auto_id }}" class="col-3 form-control">
-                    <option value="" disabled selected>Select a Subcategory</option>
+                    <option value="{{ form.subcategory.value }}" disabled selected>Select a Subcategory</option>
                 </select>
             </div>
             <hr class="my-5">
@@ -75,9 +75,9 @@
             </div>
             <hr class="mt-5 mb-3">
             <div class="form-group px-2">
-                <button class="btn btn-dark" type="submit">Create</button>
+                <button class="btn btn-dark" type="submit">Save</button>
             </div>
         </form>
-        <script src="{% static 'poshmark/JS/create_listing_utilities.js' %}"></script>
+        <script src="{% static 'poshmark/JS/listing_utilities.js' %}"></script>
     </div>
 {% endblock %}

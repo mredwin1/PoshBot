@@ -36,10 +36,18 @@ $(document).ready(function () {
         }
 
         secondary_category.empty();
-        secondary_category.append(`<option disabled selected>Select a Category</option>`);
+        if (secondary_category.val() === '') {
+            secondary_category.append(`<option disabled selected>Select a Category</option>`);
+        } else {
+            secondary_category.append(`<option disabled>Select a Category</option>`);
+        }
         $.each(choices, function(index, value) {
+            if (secondary_category.val() === value) {
+                secondary_category.append(`<option value="${value}" selected>${value}</option>`);
+            } else {
+                secondary_category.append(`<option value="${value}">${value}</option>`);
+            }
 
-            secondary_category.append(`<option value="${value}">${value}</option>`);
         });
 
     });
@@ -49,7 +57,6 @@ $(document).ready(function () {
         let category = main_category + ' ' + secondary_category;
         let subcategory = $('#id_subcategory');
         let choices;
-        console.log(category)
         if (category === 'Women Accessories') {
             choices = ['Belts', 'Face Masks', 'Glasses', 'Gloves & Mittens', 'Hair Accessories', 'Hats',
                 'Hosiery & Socks', 'Key & Card Holders', 'Laptop Cases', 'Phone Cases', 'Scarves & Wraps', 'Sunglasses',
@@ -256,10 +263,17 @@ $(document).ready(function () {
         }
 
         subcategory.empty();
-        subcategory.append(`<option disabled selected>Select a Subcategory</option>`);
+        if (subcategory.val() === '') {
+            subcategory.append(`<option disabled selected>Select a Subcategory</option>`);
+        } else {
+            subcategory.append(`<option disabled>Select a Subcategory</option>`);
+        }
         $.each(choices, function(index, value) {
-
-            subcategory.append(`<option value="${value}">${value}</option>`);
+            if (subcategory.val() === value) {
+                subcategory.append(`<option value="${value}" selected>${value}</option>`);
+            } else {
+                subcategory.append(`<option value="${value}">${value}</option>`);
+            }
         });
 
     });
