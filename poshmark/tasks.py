@@ -174,51 +174,56 @@ def advanced_sharing(campaign_id, proxy_id):
                             logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.refresh_from_db()
-    proxy.registered_accounts += 1
-    proxy.current_connections -= 1
-    proxy.save()
+    posh_user.refresh_from_db()
+    if posh_user.is_registered:
+        proxy.registered_accounts += 1
+        proxy.current_connections -= 1
+        proxy.save()
 
-    with PoshMarkClient(posh_user, logger) as client:
-        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-            campaign.refresh_from_db()
-            posh_user.refresh_from_db()
-            now = datetime.datetime.now(pytz.utc)
-            # This inner loop is to run the task for the given hour
-            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+        with PoshMarkClient(posh_user, logger) as client:
+            while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
+                # This inner loop is to run the task for the given hour
+                while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                    campaign.refresh_from_db()
+                    posh_user.refresh_from_db()
+                    now = datetime.datetime.now(pytz.utc)
 
-                listing_titles = client.get_all_listings()
-                if listing_titles:
-                    if listing_titles['shareable_listings']:
-                        for listing_title in listing_titles['shareable_listings']:
-                            pre_share_time = time.time()
-                            if client.share_item(listing_title):
-                                positive_negative = 1 if random.random() < 0.5 else -1
-                                deviation = random.randint(0, max_deviation) * positive_negative
-                                post_share_time = time.time()
-                                elapsed_time = round(post_share_time - pre_share_time, 2)
-                                sleep_amount = (campaign.delay - elapsed_time) + deviation
+                    listing_titles = client.get_all_listings()
+                    if listing_titles:
+                        if listing_titles['shareable_listings']:
+                            for listing_title in listing_titles['shareable_listings']:
+                                pre_share_time = time.time()
+                                if client.share_item(listing_title):
+                                    positive_negative = 1 if random.random() < 0.5 else -1
+                                    deviation = random.randint(0, max_deviation) * positive_negative
+                                    post_share_time = time.time()
+                                    elapsed_time = round(post_share_time - pre_share_time, 2)
+                                    sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                                if elapsed_time < sleep_amount:
-                                    client.sleep(sleep_amount)
-                            else:
-                                break
-                    else:
-                        sold_listings = listing_titles['sold_listings']
-                        for listing_title in sold_listings:
-                            listing = Listing.objects.get(title=listing_title, campaign__id=campaign_id)
-                            listing.sold = True
-                            listing.save()
+                                    if elapsed_time < sleep_amount:
+                                        client.sleep(sleep_amount)
+                                else:
+                                    break
+                        else:
+                            sold_listings = listing_titles['sold_listings']
+                            for listing_title in sold_listings:
+                                listing = Listing.objects.get(title=listing_title, campaign__id=campaign_id)
+                                listing.sold = True
+                                listing.save()
 
-                if logged_hour_message:
-                    logged_hour_message = False
+                    if logged_hour_message:
+                        logged_hour_message = False
 
-            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
-                logger.info(
-                    f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
-                logged_hour_message = True
+                if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
+                    logger.info(
+                        f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                    logged_hour_message = True
+    else:
+        proxy.current_connections -= 1
+        proxy.save()
 
     logger.info('Campaign Ended')
     campaign.refresh_from_db()
