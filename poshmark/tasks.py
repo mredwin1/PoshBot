@@ -129,7 +129,6 @@ def advanced_sharing(campaign_id, proxy_id):
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
-            client.check_ip(filename=f'{campaign.title}')
             # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
                 campaign.refresh_from_db()
