@@ -37,10 +37,7 @@ def start_campaign(campaign_id):
     proxy.current_connections += 1
     proxy.save()
 
-    if campaign.auto_run:
-        task = chain(advanced_sharing.s(campaign_id, proxy.id), restart_task.s()).apply_async()
-    else:
-        task = advanced_sharing.delay(campaign_id, proxy.id)
+    task = advanced_sharing.delay(campaign_id, proxy.id)
 
 
 @shared_task
@@ -227,46 +224,43 @@ def advanced_sharing(campaign_id, proxy_id):
     logger.info('Campaign Ended')
     campaign.refresh_from_db()
     if campaign.status == '1':
-        return campaign_id, sold_listings
+        campaign.status = '2'
+        campaign.save()
+        restart_task.delay(campaign.id, sold_listings)
     elif campaign.status == '3':
         campaign.status = '2'
         campaign.save()
 
 
 @shared_task
-def restart_task(*args, **kwargs):
-    arguments = args[0]
-    if arguments:
-        campaign_id = arguments[0]
-        sold_listings = arguments[1]
-        if campaign_id:
-            campaign = Campaign.objects.get(id=campaign_id)
-            old_posh_user = campaign.posh_user
-            run_again = True
+def restart_task(campaign_id, sold_listings=None):
+    campaign = Campaign.objects.get(id=campaign_id)
+    old_posh_user = campaign.posh_user
+    run_again = True
 
-            if campaign.mode == Campaign.BASIC_SHARING:
-                if campaign.auto_run:
-                    task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
-                else:
-                    task = basic_sharing.delay(campaign_id)
-            elif campaign.mode == Campaign.ADVANCED_SHARING:
-                if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
-                    new_posh_user = old_posh_user.generate_random_posh_user()
+    if campaign.mode == Campaign.BASIC_SHARING:
+        if campaign.auto_run:
+            task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
+        else:
+            task = basic_sharing.delay(campaign_id)
+    elif campaign.mode == Campaign.ADVANCED_SHARING:
+        if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
+            new_posh_user = old_posh_user.generate_random_posh_user()
 
-                    campaign.posh_user = new_posh_user
+            campaign.posh_user = new_posh_user
 
-                    campaign.save()
-                    campaign.posh_user.status = PoshUser.INUSE
-                    campaign.posh_user.save()
+            campaign.save()
+            campaign.posh_user.status = PoshUser.INUSE
+            campaign.posh_user.save()
 
-                    old_posh_user.delete()
+            old_posh_user.delete()
 
-                if sold_listings:
-                    run_again = False
+        if sold_listings:
+            run_again = False
 
-                if run_again:
-                    campaign.status = '4'
-                    start_campaign.delay(campaign_id)
-                else:
-                    campaign.status = '2'
-                campaign.save()
+        if run_again:
+            campaign.status = '4'
+            start_campaign.delay(campaign_id)
+        else:
+            campaign.status = '2'
+        campaign.save()
