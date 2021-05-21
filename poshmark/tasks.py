@@ -256,6 +256,8 @@ def restart_task(*args, **kwargs):
                     campaign.posh_user = new_posh_user
 
                     campaign.save()
+                    campaign.posh_user.status = PoshUser.INUSE
+                    campaign.posh_user.save()
 
                     old_posh_user.delete()
 
