@@ -264,6 +264,7 @@ def restart_task(*args, **kwargs):
 
                 if run_again:
                     campaign.status = '4'
+                    start_campaign.delay(campaign_id)
                 else:
                     campaign.status = '2'
                 campaign.save()
