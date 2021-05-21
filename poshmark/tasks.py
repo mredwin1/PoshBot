@@ -239,8 +239,6 @@ def restart_task(*args, **kwargs):
     if arguments:
         campaign_id = arguments[0]
         sold_listings = arguments[1]
-        import logging
-        logging.info(campaign_id)
         if campaign_id:
             campaign = Campaign.objects.get(id=campaign_id)
             old_posh_user = campaign.posh_user
@@ -262,21 +260,10 @@ def restart_task(*args, **kwargs):
                     old_posh_user.delete()
 
                 if sold_listings:
-                    old_listings = Listing.objects.filter(campaign=campaign)
-                    for old_listing in old_listings:
-                        old_listing.campaign = None
-                        old_listing.save()
-
-                    new_listing = Listing.get_random_listing(sold_listings)
-
-                    if new_listing:
-                        new_listing.campaign = campaign
-                        new_listing.save()
-                    else:
-                        run_again = False
-
-                logging.info(campaign)
+                    run_again = False
 
                 if run_again:
                     campaign.status = '4'
-                    campaign.save()
+                else:
+                    campaign.status = '2'
+                campaign.save()
