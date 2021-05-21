@@ -473,6 +473,6 @@ class PoshProxy(models.Model):
                 f'{self.ip_reset_url}',
                 cookies=login_response.cookies
             )
-            time.sleep(5)
+            time.sleep(10)
         self.registered_accounts = 0
         self.save()
