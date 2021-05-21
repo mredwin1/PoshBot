@@ -137,7 +137,7 @@ def advanced_sharing(campaign_id, proxy_id):
                 while not posh_user.is_registered and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                     client.register()
                     posh_user.refresh_from_db()
-                    
+
                     if posh_user.status == PoshUser.ACTIVE:
                         client.update_profile()
                     if posh_user.status != PoshUser.INACTIVE:
