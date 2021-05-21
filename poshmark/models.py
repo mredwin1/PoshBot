@@ -10,6 +10,7 @@ import string
 
 from django.db import models
 from django.utils import timezone
+from django_cleanup import cleanup
 from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill, Transpose
@@ -17,6 +18,7 @@ from mailslurp_client.exceptions import ApiException
 from users.models import User
 
 
+@cleanup.ignore
 class PoshUser(models.Model):
     INUSE = '0'
     ACTIVE = '1'
