@@ -262,6 +262,8 @@ def restart_task(campaign_id, sold_listings=None):
             campaign.posh_user.save()
 
             old_posh_user.delete()
+        elif old_posh_user.status == PoshUser.INACTIVE:
+            run_again = False
 
         if sold_listings:
             run_again = False
