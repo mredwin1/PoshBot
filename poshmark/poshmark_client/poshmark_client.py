@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 import re
@@ -92,6 +93,8 @@ class PoshMarkClient:
             proxy.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
+        self.last_login = None
+        self.login_error = None
         self.logger = logger
         self.web_driver = None
         self.web_driver_options = Options()
@@ -534,49 +537,59 @@ class PoshMarkClient:
 
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
-        self.logger.info(f'Logging {self.posh_user.username} in')
+        try:
+            self.logger.info(f'Logging {self.posh_user.username} in')
 
-        if not self.web_driver.current_url == 'https://poshmark.com/':
-            self.web_driver.get('https://poshmark.com/')
+            if not self.web_driver.current_url == 'https://poshmark.com/':
+                self.web_driver.get('https://poshmark.com/')
+                self.sleep(1, 3)
+
+            self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
+            self.logger.info(f'locating login button')
+
+            log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
+            log_in_nav.click()
+
+            self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
+
             self.sleep(1, 3)
 
-        self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
-        self.logger.info(f'locating login button')
-
-        log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
-        log_in_nav.click()
-
-        self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
-
-        self.sleep(1, 3)
-
-        username_field = self.locate(By.ID, 'login_form_username_email')
-        password_field = self.locate(By.ID, 'login_form_password')
-
-        self.logger.info('Filling in form')
-
-        username_field.send_keys(self.posh_user.username)
-
-        self.sleep(1, 2)
-
-        password_field.send_keys(self.posh_user.password)
-        password_field.send_keys(Keys.RETURN)
-
-        self.logger.info('Form submitted')
-
-        error_code = self.check_for_errors()
-
-        if error_code == 'CAPTCHA':
+            username_field = self.locate(By.ID, 'login_form_username_email')
             password_field = self.locate(By.ID, 'login_form_password')
-            self.sleep(1)
+
+            self.logger.info('Filling in form')
+
+            username_field.send_keys(self.posh_user.username)
+
+            self.sleep(1, 2)
+
+            password_field.send_keys(self.posh_user.password)
             password_field.send_keys(Keys.RETURN)
-            self.logger.info('Form resubmitted')
+
+            self.logger.info('Form submitted')
+
+            error_code = self.check_for_errors()
+
+            if error_code == 'CAPTCHA':
+                password_field = self.locate(By.ID, 'login_form_password')
+                self.sleep(1)
+                password_field.send_keys(Keys.RETURN)
+                self.logger.info('Form resubmitted')
+
+            self.last_login = datetime.datetime.now()
+            self.login_error = None
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            self.login_error = True
 
     def go_to_closet(self):
         """Ensures the current url for the web driver is at users poshmark closet"""
         try:
-            if not self.check_logged_in():
-                self.log_in()
+            current_time = datetime.datetime.now()
+            if self.last_login <= current_time - datetime.timedelta(hours=1) or self.last_login is None or self.login_error:
+                if not self.check_logged_in():
+                    self.log_in()
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
