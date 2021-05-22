@@ -581,9 +581,12 @@ class PoshMarkClient:
             self.last_login = datetime.datetime.now()
             self.login_error = None
 
+            return True
+
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
             self.login_error = True
+            return False
 
     def go_to_closet(self):
         """Ensures the current url for the web driver is at users poshmark closet"""
@@ -591,7 +594,8 @@ class PoshMarkClient:
             current_time = datetime.datetime.now()
             if self.last_login <= current_time - datetime.timedelta(hours=1) or self.last_login is None or self.login_error:
                 if not self.check_logged_in():
-                    self.log_in()
+                    while not self.log_in():
+                        self.logger.warning('Could not log in, trying again.')
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
