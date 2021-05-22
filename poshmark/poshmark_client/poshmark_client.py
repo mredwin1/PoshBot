@@ -387,6 +387,8 @@ class PoshMarkClient:
 
         if result:
             self.logger.info('User is logged in')
+            self.last_login = datetime.datetime.now()
+            self.login_error = None
         else:
             self.logger.info('User is not logged in')
 
