@@ -227,6 +227,7 @@ $(document).ready(function () {
 
             listings_container.html('');
 
+            listings_field.val('');
             $(selection).each(function (index, value) {
                 let listing_id = $(value).attr('id');
 
@@ -236,7 +237,7 @@ $(document).ready(function () {
                     listing_ids = listing_id
                 }
 
-                listings_field.val('');
+
                 listings_field.val(listing_ids);
             });
 

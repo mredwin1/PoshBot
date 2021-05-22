@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PoshUser, Log, Listing, Campaign
+from .models import PoshUser, Log, Listing, Campaign, PoshProxy
 
 
 class PoshUserAdmin(admin.ModelAdmin):
@@ -18,7 +18,7 @@ class PoshUserAdmin(admin.ModelAdmin):
                 ('profile_picture', 'header_picture'),
                 ('first_name', 'last_name'),
                 ('username', 'password'),
-                ('email',),
+                ('email', 'port'),
                 ('masked_email', 'alias_email_id'),
                 ('user', 'status', 'gender'),
             )
@@ -30,3 +30,4 @@ admin.site.register(PoshUser, PoshUserAdmin)
 admin.site.register(Log)
 admin.site.register(Listing)
 admin.site.register(Campaign)
+admin.site.register(PoshProxy)

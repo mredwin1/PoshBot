@@ -64,9 +64,6 @@ $(document).ready(function () {
         let status_div = stop_button.parent().parent().parent().parent().children().eq(0).children().eq(0).children().eq(1);
         let start_url = start_button.data('start-url');
 
-        status_div.removeClass('text-warning').addClass('text-success');
-        status_div.text('Running');
-
         $.ajax({
             url: start_url,
             type: 'GET',
@@ -75,8 +72,12 @@ $(document).ready(function () {
             contentType: false,
             success: function (data) {
                 if (data.task_id) {
+                    status_div.removeClass('text-secondary').addClass('text-info');
+                    status_div.text('STARTING');
                     start_button.prop('disabled', true);
                     stop_button.prop('disabled', false);
+                } else if (data.error) {
+                    alert(data.error)
                 }
             },
         });
@@ -89,7 +90,7 @@ $(document).ready(function () {
         let stop_url = stop_button.data('stop-url');
 
         status_div.removeClass('text-success').addClass('text-warning');
-        status_div.text('Stopping');
+        status_div.text('STOPPING');
 
         $.ajax({
             url: stop_url,

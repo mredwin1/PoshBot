@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand
 from django.db.utils import OperationalError
 
 from users.models import User
+from poshmark.models import Campaign, PoshProxy
 
 
 class Command(BaseCommand):
@@ -63,6 +64,18 @@ class Command(BaseCommand):
 
         logging.info('Running collectstatic...')
         call_command("collectstatic", interactive=False, clear=True)
+
+        logging.info('Setting all campaigns to IDLE status')
+        campaigns = Campaign.objects.all()
+        for campaign in campaigns:
+            campaign.status = '2'
+            campaign.save()
+
+        logging.info('Setting proxy connections to 0')
+        posh_proxies = PoshProxy.objects.all()
+        for posh_proxy in posh_proxies:
+            posh_proxy.current_connections = 0
+            posh_proxy.save()
 
         logging.info('Starting server...')
         os.system("gunicorn --preload -b 0.0.0.0:80 PoshBot.wsgi:application --threads 8 -w 4")

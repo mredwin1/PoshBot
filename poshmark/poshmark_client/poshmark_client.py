@@ -1,3 +1,4 @@
+import datetime
 import os
 import random
 import re
@@ -81,18 +82,19 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, logger, use_proxy=False):
-        if use_proxy:
+    def __init__(self, posh_user, logger, posh_proxy=None):
+        if posh_proxy:
             proxy = Proxy()
-
             proxy.proxy_type = ProxyType.MANUAL
 
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname='us.smartproxy.com', port='10001')
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname='us.smartproxy.com', port='10001')
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
             capabilities = webdriver.DesiredCapabilities.CHROME
             proxy.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
+        self.last_login = None
+        self.login_error = None
         self.logger = logger
         self.web_driver = None
         self.web_driver_options = Options()
@@ -385,6 +387,8 @@ class PoshMarkClient:
 
         if result:
             self.logger.info('User is logged in')
+            self.last_login = datetime.datetime.now()
+            self.login_error = None
         else:
             self.logger.info('User is not logged in')
 
@@ -535,49 +539,63 @@ class PoshMarkClient:
 
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
-        self.logger.info(f'Logging {self.posh_user.username} in')
+        try:
+            self.logger.info(f'Logging {self.posh_user.username} in')
 
-        if not self.web_driver.current_url == 'https://poshmark.com/':
-            self.web_driver.get('https://poshmark.com/')
+            if not self.web_driver.current_url == 'https://poshmark.com/':
+                self.web_driver.get('https://poshmark.com/')
+                self.sleep(1, 3)
+
+            self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
+            self.logger.info(f'locating login button')
+
+            log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
+            log_in_nav.click()
+
+            self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
+
             self.sleep(1, 3)
 
-        self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
-        self.logger.info(f'locating login button')
-
-        log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
-        log_in_nav.click()
-
-        self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
-
-        self.sleep(1, 3)
-
-        username_field = self.locate(By.ID, 'login_form_username_email')
-        password_field = self.locate(By.ID, 'login_form_password')
-
-        self.logger.info('Filling in form')
-
-        username_field.send_keys(self.posh_user.username)
-
-        self.sleep(1, 2)
-
-        password_field.send_keys(self.posh_user.password)
-        password_field.send_keys(Keys.RETURN)
-
-        self.logger.info('Form submitted')
-
-        error_code = self.check_for_errors()
-
-        if error_code == 'CAPTCHA':
+            username_field = self.locate(By.ID, 'login_form_username_email')
             password_field = self.locate(By.ID, 'login_form_password')
-            self.sleep(1)
+
+            self.logger.info('Filling in form')
+
+            username_field.send_keys(self.posh_user.username)
+
+            self.sleep(1, 2)
+
+            password_field.send_keys(self.posh_user.password)
             password_field.send_keys(Keys.RETURN)
-            self.logger.info('Form resubmitted')
+
+            self.logger.info('Form submitted')
+
+            error_code = self.check_for_errors()
+
+            if error_code == 'CAPTCHA':
+                password_field = self.locate(By.ID, 'login_form_password')
+                self.sleep(1)
+                password_field.send_keys(Keys.RETURN)
+                self.logger.info('Form resubmitted')
+
+            self.last_login = datetime.datetime.now()
+            self.login_error = None
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            self.login_error = True
+            return False
 
     def go_to_closet(self):
         """Ensures the current url for the web driver is at users poshmark closet"""
         try:
-            if not self.check_logged_in():
-                self.log_in()
+            current_time = datetime.datetime.now()
+            if self.last_login is None or self.last_login <= current_time - datetime.timedelta(hours=1) or self.login_error:
+                if not self.check_logged_in():
+                    while not self.log_in():
+                        self.logger.warning('Could not log in, trying again.')
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
@@ -600,7 +618,7 @@ class PoshMarkClient:
                 self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
                 self.web_driver.refresh()
 
-            self.sleep(2, 4)
+            self.sleep(3, 5)
 
             show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
             if self.is_present(By.XPATH, show_all_listings_xpath):
@@ -610,11 +628,15 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                while not self.log_in():
+                    self.logger.warning('Could not log in, trying again.')
 
     def get_all_listings(self):
         """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
         try:
-            listings = []
+            shareable_listings = []
+            sold_listings = []
 
             self.logger.info('Getting all listings')
 
@@ -629,18 +651,30 @@ class PoshMarkClient:
                     except NoSuchElementException:
                         icon = None
 
+                    # DEBUGGING
+                    if icon:
+                        self.logger.debug(icon.text)
+
                     if not icon:
-                        listings.append(title.text)
-                if listings:
-                    self.logger.info(f"Found the following listings: {','.join(listings)}")
+                        shareable_listings.append(title.text)
+                    elif icon.text == 'Sold':
+                        sold_listings.append(title.text)
+
+                if shareable_listings:
+                    self.logger.info(f"Found the following listings: {','.join(shareable_listings)}")
                 else:
-                    self.logger.info('No listings found')
+                    self.logger.info('No shareable listings found')
 
             else:
                 if self.check_inactive():
                     self.posh_user.status = '2'
                     self.posh_user.save()
 
+            listings = {
+                'shareable_listings': shareable_listings,
+                'sold_listings': sold_listings
+            }
+            self.logger.debug(listings)
             return listings
 
         except Exception as e:

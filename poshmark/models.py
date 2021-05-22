@@ -1,5 +1,6 @@
-import json
 import logging
+import time
+
 import mailslurp_client
 import names
 import os
@@ -9,6 +10,7 @@ import string
 
 from django.db import models
 from django.utils import timezone
+from django_cleanup import cleanup
 from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill, Transpose
@@ -16,6 +18,7 @@ from mailslurp_client.exceptions import ApiException
 from users.models import User
 
 
+@cleanup.ignore
 class PoshUser(models.Model):
     INUSE = '0'
     ACTIVE = '1'
@@ -43,6 +46,8 @@ class PoshUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     date_added = models.DateField(auto_now_add=True, null=True)
+
+    port = models.IntegerField(blank=True, null=True)
 
     is_email_verified = models.BooleanField(default=False)
     is_registered = models.BooleanField(default=False)
@@ -108,6 +113,9 @@ class PoshUser(models.Model):
             'gender': user_gender
         }
 
+        import logging
+        logging.info(signup_info)
+
         return signup_info
 
     def generate_email(self, master_email):
@@ -119,7 +127,8 @@ class PoshUser(models.Model):
         with mailslurp_client.ApiClient(configuration) as api_client:
             api_instance = mailslurp_client.AliasControllerApi(api_client)
 
-            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email, name=str(self.username))
+            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email,
+                                                                       name=str(self.username))
 
             try:
                 api_response = api_instance.create_alias(create_alias_options)
@@ -140,9 +149,6 @@ class PoshUser(models.Model):
 
     def generate_random_posh_user(self):
         signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
-
-        while signup_info['gender'] != self.gender:
-            signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
 
         emails = [posh_user.email for posh_user in PoshUser.objects.filter(user=self.user)]
 
@@ -178,7 +184,7 @@ class PoshUser(models.Model):
             last_name=signup_info['last_name'],
             username=signup_info['username'],
             password=self.password,
-            gender=signup_info['gender'],
+            gender=self.gender,
             user=self.user,
             email=new_email,
             status=PoshUser.ACTIVE,
@@ -269,6 +275,7 @@ class Campaign(models.Model):
         ('1', 'Running'),
         ('2', 'Idle'),
         ('3', 'Stopping'),
+        ('4', 'Starting'),
     ]
 
     BASIC_SHARING = '0'
@@ -316,6 +323,7 @@ class Listing(models.Model):
 
     description = models.TextField()
 
+    sold = models.BooleanField(default=False)
     tags = models.BooleanField(default=False)
 
     original_price = models.IntegerField()
@@ -329,6 +337,15 @@ class Listing(models.Model):
         listing_photo_paths = [listing_photo.photo.path for listing_photo in listing_photos]
 
         return listing_photo_paths
+
+    @staticmethod
+    def get_random_listing(sold_listings):
+        available_listings = Listing.objects.filter(campaign=None).exclude(title__in=sold_listings)
+
+        if available_listings:
+            return random.choice(available_listings)
+        else:
+            return None
 
     def __str__(self):
         return self.title
@@ -434,3 +451,28 @@ class LogEntry(models.Model):
     logger = models.ForeignKey(Log, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     message = models.TextField()
+
+
+class PoshProxy(models.Model):
+    ip_reset_url = models.CharField(max_length=200, default='', blank=True)
+
+    max_accounts = models.IntegerField()
+    registered_accounts = models.IntegerField()
+    current_connections = models.IntegerField(default=0)
+
+    ip = models.GenericIPAddressField()
+    port = models.IntegerField()
+
+    def reset_ip(self):
+        if self.ip_reset_url:
+            login_response = requests.post(
+                'https://portal.proxyguys.com/login',
+                data={'username': os.environ['PROXY_USERNAME'], 'password': os.environ['PROXY_PASSWORD']}
+            )
+            reset_response = requests.get(
+                f'{self.ip_reset_url}',
+                cookies=login_response.cookies
+            )
+            time.sleep(10)
+        self.registered_accounts = 0
+        self.save()
