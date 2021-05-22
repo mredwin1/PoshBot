@@ -147,15 +147,15 @@ def advanced_sharing(campaign_id, proxy_id):
                 posh_user.refresh_from_db()
                 if listed_items < 1:
                     # This will continue to check for the automatic "Meet your Posher" listing before continuing
-                    while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3 and posh_user.is_registered:
-                        campaign.refresh_from_db()
-                        posh_user.refresh_from_db()
-                        if client.check_listing('Meet your Posher'):
-                            posh_user.meet_posh = True
-                            posh_user.save()
-                        else:
-                            meet_your_posher_attempts += 1
-                            client.sleep(60)
+                    # while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3 and posh_user.is_registered:
+                    #     campaign.refresh_from_db()
+                    #     posh_user.refresh_from_db()
+                    #     if client.check_listing('Meet your Posher'):
+                    #         posh_user.meet_posh = True
+                    #         posh_user.save()
+                    #     else:
+                    #         meet_your_posher_attempts += 1
+                    #         client.sleep(60)
 
                     if posh_user.is_registered:
                         for listing in campaign_listings:
