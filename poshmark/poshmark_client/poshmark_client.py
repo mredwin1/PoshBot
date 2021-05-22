@@ -592,7 +592,7 @@ class PoshMarkClient:
         """Ensures the current url for the web driver is at users poshmark closet"""
         try:
             current_time = datetime.datetime.now()
-            if self.last_login <= current_time - datetime.timedelta(hours=1) or self.last_login is None or self.login_error:
+            if self.last_login is None or self.last_login <= current_time - datetime.timedelta(hours=1) or self.login_error:
                 if not self.check_logged_in():
                     while not self.log_in():
                         self.logger.warning('Could not log in, trying again.')
