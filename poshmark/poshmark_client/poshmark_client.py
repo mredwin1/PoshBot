@@ -98,10 +98,6 @@ class PoshMarkClient:
         self.logger = logger
         self.web_driver = None
         self.web_driver_options = Options()
-        chrome_prefs = {}
-        self.web_driver_options.experimental_options["prefs"] = chrome_prefs
-        chrome_prefs["profile.default_content_settings"] = {"images": 2}
-        chrome_prefs["profile.managed_default_content_settings"] = {"images": 2}
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         self.web_driver_options.add_experimental_option('useAutomationExtension', False)
         self.web_driver_options.add_argument('--disable-extensions')
@@ -1081,6 +1077,8 @@ class PoshMarkClient:
                             '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
                         )
                         cover_photo_field.send_keys(listing.cover_photo.path)
+
+                        self.sleep(1)
 
                         apply_button = self.locate(
                             By.XPATH,
