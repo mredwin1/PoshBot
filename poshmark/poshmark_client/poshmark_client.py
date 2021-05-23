@@ -544,7 +544,7 @@ class PoshMarkClient:
 
             if not self.web_driver.current_url == 'https://poshmark.com/':
                 self.web_driver.get('https://poshmark.com/')
-                self.sleep(1, 3)
+                self.sleep(5)
 
             self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
             self.logger.info(f'locating login button')
