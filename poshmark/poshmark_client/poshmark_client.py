@@ -787,11 +787,14 @@ class PoshMarkClient:
 
                 self.go_to_closet()
 
-                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-                for listed_item in listed_items:
-                    title = listed_item.find_element_by_class_name('tile__title')
-                    if '[FKE]' in title.text:
-                        return title.text
+                if self.is_present(By.CLASS_NAME, 'card--small'):
+                    listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                    for listed_item in listed_items:
+                        title = listed_item.find_element_by_class_name('tile__title')
+                        if '[FKE]' in title.text:
+                            self.logger.info(f'The following fake listing already exists: {title.text}')
+                            self.logger.info(f'Using this instead of making another')
+                            return title.text
 
             self.sleep(1, 3)
 
