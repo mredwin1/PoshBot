@@ -166,7 +166,7 @@ def advanced_sharing(campaign_id, proxy_id):
         proxy.current_connections -= 1
         proxy.save()
 
-        with PoshMarkClient(posh_user, logger) as client:
+        with PoshMarkClient(posh_user, campaign, logger) as client:
             while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
