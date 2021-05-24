@@ -596,10 +596,10 @@ class PoshMarkClient:
             log_in_attempts = 0
             if self.last_login is None or self.last_login <= current_time - datetime.timedelta(hours=1) or self.login_error:
                 if not self.check_logged_in():
-                    while not self.log_in() and log_in_attempts > 2:
+                    while not self.log_in() and log_in_attempts < 2:
                         self.logger.warning('Could not log in, trying again.')
                         log_in_attempts += 1
-                    if log_in_attempts > 2:
+                    if log_in_attempts >= 2:
                         self.campaign.status = '5'
                         self.campaign.save()
                         self.close()
