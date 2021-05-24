@@ -114,7 +114,7 @@ def advanced_sharing(campaign_id, proxy_id):
 
     logger.info('Starting Campaign')
 
-    with PoshMarkClient(posh_user, logger, proxy) as client:
+    with PoshMarkClient(posh_user, campaign, logger, proxy) as client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped

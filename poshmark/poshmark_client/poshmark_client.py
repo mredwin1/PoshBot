@@ -82,7 +82,7 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, campaign,logger, posh_proxy=None):
+    def __init__(self, posh_user, campaign, logger, posh_proxy=None):
         if posh_proxy:
             proxy = Proxy()
             proxy.proxy_type = ProxyType.MANUAL
