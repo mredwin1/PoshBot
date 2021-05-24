@@ -103,21 +103,14 @@ def advanced_sharing(campaign_id, proxy_id):
     proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = campaign.posh_user
     logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
-    all_campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
-    campaign_listings = [listing for listing in all_campaign_listings if not listing.sold]
+    campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
     listed_items = 0
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
-    meet_your_posher_attempts = 0
-    sold_listings = None
 
     campaign.status = '1'
     campaign.save()
     logger.save()
-
-    if not campaign_listings:
-        all_campaign_listings.update(sold=False)
-        campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
 
     logger.info('Starting Campaign')
 
@@ -146,17 +139,6 @@ def advanced_sharing(campaign_id, proxy_id):
 
                 posh_user.refresh_from_db()
                 if listed_items < 1:
-                    # This will continue to check for the automatic "Meet your Posher" listing before continuing
-                    # while not posh_user.meet_posh and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and meet_your_posher_attempts < 3 and posh_user.is_registered:
-                    #     campaign.refresh_from_db()
-                    #     posh_user.refresh_from_db()
-                    #     if client.check_listing('Meet your Posher'):
-                    #         posh_user.meet_posh = True
-                    #         posh_user.save()
-                    #     else:
-                    #         meet_your_posher_attempts += 1
-                    #         client.sleep(60)
-
                     if posh_user.is_registered:
                         for listing in campaign_listings:
                             titles = client.get_all_listings()
@@ -212,11 +194,8 @@ def advanced_sharing(campaign_id, proxy_id):
                                 else:
                                     break
                         else:
-                            sold_listings = listing_titles['sold_listings']
-                            for listing_title in sold_listings:
-                                listing = Listing.objects.get(title=listing_title, campaign__id=campaign_id)
-                                listing.sold = True
-                                listing.save()
+                            campaign.status = '3'
+                            campaign.save()
 
                     if logged_hour_message:
                         logged_hour_message = False
@@ -231,17 +210,17 @@ def advanced_sharing(campaign_id, proxy_id):
 
     logger.info('Campaign Ended')
     campaign.refresh_from_db()
-    if campaign.status == '1':
+    if campaign.status == '1' or campaign.status == '5':
         campaign.status = '2'
         campaign.save()
-        restart_task.delay(campaign.id, sold_listings)
+        restart_task.delay(campaign.id)
     elif campaign.status == '3':
         campaign.status = '2'
         campaign.save()
 
 
 @shared_task
-def restart_task(campaign_id, sold_listings=None):
+def restart_task(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     old_posh_user = campaign.posh_user
     run_again = True
@@ -263,9 +242,6 @@ def restart_task(campaign_id, sold_listings=None):
 
             old_posh_user.delete()
         elif old_posh_user.status == PoshUser.INACTIVE:
-            run_again = False
-
-        if sold_listings:
             run_again = False
 
         if run_again:

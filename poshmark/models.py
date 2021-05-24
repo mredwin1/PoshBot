@@ -276,6 +276,7 @@ class Campaign(models.Model):
         ('2', 'Idle'),
         ('3', 'Stopping'),
         ('4', 'Starting'),
+        ('5', 'Restarting'),
     ]
 
     BASIC_SHARING = '0'

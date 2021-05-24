@@ -99,6 +99,7 @@ def campaign_status_return(value):
         '2': 'IDLE',
         '3': 'STOPPING',
         '4': 'STARTING',
+        '5': 'RESTARTING',
     }
 
     return statuses[value]
@@ -113,6 +114,7 @@ def campaign_color_return(value):
         '2': 'text-secondary',
         '3': 'text-warning',
         '4': 'text-info',
+        '5': 'text-dark',
     }
 
     return statuses[value]

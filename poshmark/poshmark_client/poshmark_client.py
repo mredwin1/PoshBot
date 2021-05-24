@@ -82,7 +82,7 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, logger, posh_proxy=None):
+    def __init__(self, posh_user, campaign,logger, posh_proxy=None):
         if posh_proxy:
             proxy = Proxy()
             proxy.proxy_type = ProxyType.MANUAL
@@ -93,6 +93,7 @@ class PoshMarkClient:
             proxy.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
+        self.campaign = campaign
         self.last_login = None
         self.login_error = None
         self.logger = logger
@@ -542,11 +543,11 @@ class PoshMarkClient:
         try:
             self.logger.info(f'Logging {self.posh_user.username} in')
 
-            if not self.web_driver.current_url == 'https://poshmark.com/':
-                self.web_driver.get('https://poshmark.com/')
-                self.sleep(5)
+            self.web_driver.get('https://poshmark.com/')
 
-            self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
+            self.sleep(5)
+
+            self.logger.info(f'At poshmark homepage - Current URL: {self.web_driver.current_url}')
             self.logger.info(f'locating login button')
 
             log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
@@ -592,10 +593,16 @@ class PoshMarkClient:
         """Ensures the current url for the web driver is at users poshmark closet"""
         try:
             current_time = datetime.datetime.now()
+            log_in_attempts = 0
             if self.last_login is None or self.last_login <= current_time - datetime.timedelta(hours=1) or self.login_error:
                 if not self.check_logged_in():
-                    while not self.log_in():
+                    while not self.log_in() and log_in_attempts > 2:
                         self.logger.warning('Could not log in, trying again.')
+                        log_in_attempts += 1
+                    if log_in_attempts > 2:
+                        self.campaign.status = '5'
+                        self.campaign.save()
+                        self.close()
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
                 self.logger.info(f"Going to {self.posh_user.username}'s closet")
@@ -628,9 +635,8 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
-            if not self.check_logged_in():
-                while not self.log_in():
-                    self.logger.warning('Could not log in, trying again.')
+            self.logger.warning('Encountered error while going to closet, trying again.')
+            self.go_to_closet()
 
     def get_all_listings(self):
         """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
@@ -657,7 +663,7 @@ class PoshMarkClient:
 
                     if not icon:
                         shareable_listings.append(title.text)
-                    elif icon.text == 'Sold':
+                    elif icon.text == 'SOLD':
                         sold_listings.append(title.text)
 
                 if shareable_listings:
@@ -773,11 +779,19 @@ class PoshMarkClient:
         try:
             if listing:
                 self.logger.info(f'Listing the following item: {listing.title}')
+
+                if not self.check_logged_in():
+                    self.log_in()
             else:
                 self.logger.info('Creating a fake listing')
 
-            if not self.check_logged_in():
-                self.log_in()
+                self.go_to_closet()
+
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if '[FKE]' in title.text:
+                        return title.text
 
             self.sleep(1, 3)
 
@@ -915,7 +929,7 @@ class PoshMarkClient:
                 # Send all the information to their respected fields
                 lowercase = string.ascii_lowercase
                 uppercase = string.ascii_uppercase
-                title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
+                title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} [FKE] {''.join([random.choice(lowercase) for i in range(5)])}"
                 title_field.send_keys(title)
                 self.sleep(1, 2)
 
