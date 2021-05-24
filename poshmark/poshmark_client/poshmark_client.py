@@ -635,8 +635,6 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
-            self.logger.warning('Encountered error while going to closet, trying again.')
-            self.go_to_closet()
 
     def get_all_listings(self):
         """Goes to a user's closet and returns a list of all the listings, excluding Ones that have an inventory tag"""
