@@ -193,7 +193,7 @@ def advanced_sharing(campaign_id, proxy_id):
                                         client.sleep(sleep_amount)
                                 else:
                                     break
-                        else:
+                        elif not listing_titles['shareable_listings'] and listing_title['sold_listings']:
                             campaign.status = '3'
                             campaign.save()
 
