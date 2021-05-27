@@ -142,19 +142,20 @@ def advanced_sharing(campaign_id, proxy_id):
                     if posh_user.is_registered:
                         for listing in campaign_listings:
                             titles = client.get_all_listings()
-                            all_titles = titles['shareable_listings'] + titles['sold_listings']
-                            listed_item_titles = all_titles if all_titles else []
-                            if listing.title not in listed_item_titles:
-                                title = client.list_item()
-                                client.sleep(20)
-                                if title:
-                                    if client.check_listing(title):
-                                        if client.share_item(title):
-                                            client.update_listing(title, listing)
-                                            listed_items += 1
-                                            break
-                                        else:
-                                            client.delete_listing(title)
+                            if titles:
+                                all_titles = titles['shareable_listings'] + titles['sold_listings']
+                                listed_item_titles = all_titles if all_titles else []
+                                if listing.title not in listed_item_titles:
+                                    title = client.list_item()
+                                    client.sleep(20)
+                                    if title:
+                                        if client.check_listing(title):
+                                            if client.share_item(title):
+                                                client.update_listing(title, listing)
+                                                listed_items += 1
+                                                break
+                                            else:
+                                                client.delete_listing(title)
                             else:
                                 listed_items += 1
                                 logger.warning(f'{listing.title} already listed, not re listing')
@@ -193,9 +194,6 @@ def advanced_sharing(campaign_id, proxy_id):
                                         client.sleep(sleep_amount)
                                 else:
                                     break
-                        elif not listing_titles['shareable_listings'] and listing_title['sold_listings']:
-                            campaign.status = '3'
-                            campaign.save()
 
                     if logged_hour_message:
                         logged_hour_message = False
