@@ -605,33 +605,18 @@ class PoshMarkClient:
                         self.close()
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
-                self.logger.info(f"Going to {self.posh_user.username}'s closet")
-
-                self.sleep(1, 3)
-
-                profile_dropdown = self.locate(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
-                profile_dropdown.click()
-
-                self.logger.info('Clicked profile dropdown')
-
-                self.sleep(1)
-
-                my_closet_button = self.locate(By.XPATH, f'//a[@href="/closet/{self.posh_user.username}"]')
-                my_closet_button.click()
-
-                self.logger.info('Clicked my closet button')
-
+                self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
             else:
                 self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
                 self.web_driver.refresh()
-
-            self.sleep(3, 5)
 
             show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
             if self.is_present(By.XPATH, show_all_listings_xpath):
                 show_all_listings = self.locate(By.XPATH, show_all_listings_xpath)
                 if show_all_listings.is_displayed():
                     show_all_listings.click()
+
+            self.sleep(2)
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
@@ -796,14 +781,11 @@ class PoshMarkClient:
                             self.logger.info(f'Using this instead of making another')
                             return title.text
 
-            self.sleep(1, 3)
+            self.web_driver.get('https://poshmark.com/create-listing')
 
-            sell_button = self.locate(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
-            sell_button.click()
+            self.logger.info(f'Current URL: {self.web_driver.current_url}')
 
-            self.logger.info('Clicked "SELL ON POSHMARK" button')
-
-            self.sleep(1, 2)
+            self.sleep(2)
 
             if self.is_present(By.XPATH, '//*[@id="app"]/main/div[1]/div/div[2]'):
                 self.logger.error('Error encountered when on the new listing page')
@@ -820,8 +802,6 @@ class PoshMarkClient:
                 )
                 category_dropdown.click()
 
-                self.sleep(2)
-
                 space_index = listing.category.find(' ') if listing else ''
                 primary_category = listing.category[:space_index] if listing else 'Men'
                 secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
@@ -831,8 +811,6 @@ class PoshMarkClient:
                         category.click()
                         break
 
-                self.sleep(1, 3)
-
                 secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                 for category in secondary_categories[1:]:
                     if category.text == secondary_category:
@@ -840,8 +818,6 @@ class PoshMarkClient:
                         break
 
                 self.logger.info('Category set')
-
-                self.sleep(1)
 
                 self.logger.info('Setting subcategory')
 
@@ -854,8 +830,6 @@ class PoshMarkClient:
                         break
 
                 self.logger.info('Subcategory set')
-
-                self.sleep(2)
 
                 # Set size (This must be done after the category has been selected)
                 self.logger.info('Setting size')
@@ -886,8 +860,6 @@ class PoshMarkClient:
 
                 self.logger.info('Size set')
 
-                self.sleep(1, 2)
-
                 # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
                 # the rest, otherwise errors come up.
                 self.logger.info('Uploading photos')
@@ -897,8 +869,6 @@ class PoshMarkClient:
 
                 apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
                 apply_button.click()
-
-                self.sleep(1)
 
                 if len(listing_photos) > 1:
                     upload_photos_field = self.locate(By.ID, 'img-file-input')
@@ -934,7 +904,6 @@ class PoshMarkClient:
                 uppercase = string.ascii_uppercase
                 title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} [FKE] {''.join([random.choice(lowercase) for i in range(5)])}"
                 title_field.send_keys(title)
-                self.sleep(1, 2)
 
                 description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
 
@@ -943,13 +912,10 @@ class PoshMarkClient:
                     ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
                         Keys.ENTER).perform()
 
-                self.sleep(1, 2)
                 original_prize = str(listing.original_price) if listing else '35'
                 original_price_field.send_keys(original_prize)
-                self.sleep(1, 2)
                 listing_price = str(listing.listing_price) if listing else '25'
                 listing_price_field.send_keys(listing_price)
-                self.sleep(1, 2)
                 brand = listing.brand if listing else 'Saks Fifth Avenue'
                 brand_field.send_keys(brand)
 
@@ -960,8 +926,6 @@ class PoshMarkClient:
                             'clickable'
                         )
                         self.web_driver.execute_script("arguments[0].click();", tags_button)
-
-                self.sleep(1, 3)
 
                 next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
                 next_button.click()
@@ -1013,8 +977,6 @@ class PoshMarkClient:
                         )
                         category_dropdown.click()
 
-                        self.sleep(2)
-
                         space_index = listing.category.find(' ')
                         primary_category = listing.category[:space_index]
                         secondary_category = listing.category[space_index + 1:]
@@ -1024,8 +986,6 @@ class PoshMarkClient:
                                 category.click()
                                 break
 
-                        self.sleep(1, 3)
-
                         secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                         for category in secondary_categories[1:]:
                             if category.text == secondary_category:
@@ -1033,8 +993,6 @@ class PoshMarkClient:
                                 break
 
                         self.logger.info('Category Updated')
-
-                        self.sleep(1)
 
                         self.logger.info('Updating subcategory')
 
@@ -1047,8 +1005,6 @@ class PoshMarkClient:
                                 break
 
                         self.logger.info('Subcategory updated')
-
-                        self.sleep(2)
 
                         # Set size (This must be done after the category has been selected)
                         self.logger.info('Updating size')
@@ -1078,8 +1034,6 @@ class PoshMarkClient:
                         done_button.click()
 
                         self.logger.info('Size updated')
-
-                        self.sleep(1, 2)
 
                         # Update photos
                         self.logger.info('Uploading photos')
@@ -1139,8 +1093,6 @@ class PoshMarkClient:
                         title_field.clear()
                         title_field.send_keys(listing.title)
 
-                        self.sleep(1, 2)
-
                         description_field.clear()
                         for part in listing.description.split('\n'):
                             description_field.send_keys(part)
@@ -1148,15 +1100,12 @@ class PoshMarkClient:
                                 Keys.SHIFT).key_up(
                                 Keys.ENTER).perform()
 
-                        self.sleep(1, 2)
                         original_prize = str(listing.original_price)
                         original_price_field.clear()
                         original_price_field.send_keys(original_prize)
-                        self.sleep(1, 2)
                         listing_price = str(listing.listing_price)
                         listing_price_field.clear()
                         listing_price_field.send_keys(listing_price)
-                        self.sleep(1, 2)
                         brand_field.clear()
                         brand_field.send_keys(listing.brand)
 
@@ -1167,8 +1116,6 @@ class PoshMarkClient:
                                 'clickable'
                             )
                             self.web_driver.execute_script("arguments[0].click();", tags_button)
-
-                        self.sleep(1, 2)
 
                         update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                         update_button.click()

@@ -149,14 +149,9 @@ def advanced_sharing(campaign_id, proxy_id):
                                     title = client.list_item()
                                     client.sleep(20)
                                     if title:
-                                        if client.check_listing(title):
-                                            if client.share_item(title):
-                                                client.update_listing(title, listing)
-                                                listed_items += 1
-                                                break
-                                            else:
-                                                client.delete_listing(title)
-                                
+                                        client.update_listing(title, listing)
+                                        listed_items += 1
+                                        break
                                 else:
                                     listed_items += 1
                                     logger.warning(f'{listing.title} already listed, not re listing')
