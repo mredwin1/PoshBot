@@ -114,7 +114,7 @@ def advanced_sharing(campaign_id, proxy_id):
 
     logger.info('Starting Campaign')
 
-    with PoshMarkClient(posh_user, campaign, logger, proxy) as client:
+    with PoshMarkClient(posh_user, campaign, logger, proxy) as proxy_client:
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
@@ -128,11 +128,11 @@ def advanced_sharing(campaign_id, proxy_id):
                 posh_user.refresh_from_db()
                 now = datetime.datetime.now(pytz.utc)
                 while not posh_user.is_registered and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                    client.register()
+                    proxy_client.register()
                     posh_user.refresh_from_db()
 
                     if posh_user.status == PoshUser.ACTIVE:
-                        client.update_profile()
+                        proxy_client.update_profile()
                     if posh_user.status != PoshUser.INACTIVE:
                         posh_user.status = PoshUser.INUSE
                         posh_user.save()
@@ -141,14 +141,14 @@ def advanced_sharing(campaign_id, proxy_id):
                 if listed_items < 1:
                     if posh_user.is_registered:
                         for listing in campaign_listings:
-                            titles = client.get_all_listings()
+                            titles = proxy_client.get_all_listings()
                             if titles:
                                 all_titles = titles['shareable_listings'] + titles['sold_listings']
                                 listed_item_titles = all_titles if all_titles else []
                                 if listing.title not in listed_item_titles:
-                                    title = client.list_item()
+                                    title = proxy_client.list_item()
                                     if title:
-                                        client.update_listing(title, listing)
+                                        proxy_client.update_listing(title, listing)
                                         listed_items += 1
                                         break
                                 else:
@@ -162,7 +162,7 @@ def advanced_sharing(campaign_id, proxy_id):
         proxy.current_connections -= 1
         proxy.save()
 
-        with PoshMarkClient(posh_user, campaign, logger) as client:
+        with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
             while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
@@ -173,12 +173,12 @@ def advanced_sharing(campaign_id, proxy_id):
                     posh_user.refresh_from_db()
                     now = datetime.datetime.now(pytz.utc)
 
-                    listing_titles = client.get_all_listings()
+                    listing_titles = no_proxy_client.get_all_listings()
                     if listing_titles:
                         if listing_titles['shareable_listings']:
                             for listing_title in listing_titles['shareable_listings']:
                                 pre_share_time = time.time()
-                                if client.share_item(listing_title):
+                                if no_proxy_client.share_item(listing_title):
                                     positive_negative = 1 if random.random() < 0.5 else -1
                                     deviation = random.randint(0, max_deviation) * positive_negative
                                     post_share_time = time.time()
@@ -186,7 +186,7 @@ def advanced_sharing(campaign_id, proxy_id):
                                     sleep_amount = (campaign.delay - elapsed_time) + deviation
 
                                     if elapsed_time < sleep_amount:
-                                        client.sleep(sleep_amount)
+                                        no_proxy_client.sleep(sleep_amount)
                                 else:
                                     break
 

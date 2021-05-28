@@ -91,6 +91,10 @@ class PoshMarkClient:
             proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
             capabilities = webdriver.DesiredCapabilities.CHROME
             proxy.add_to_capabilities(capabilities)
+        else:
+            proxy = Proxy()
+            capabilities = webdriver.DesiredCapabilities.CHROME
+            proxy.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
         self.campaign = campaign
