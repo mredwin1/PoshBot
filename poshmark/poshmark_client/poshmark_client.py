@@ -91,10 +91,6 @@ class PoshMarkClient:
             proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=posh_proxy.ip, port=posh_proxy.port)
             capabilities = webdriver.DesiredCapabilities.CHROME
             proxy.add_to_capabilities(capabilities)
-        else:
-            proxy = Proxy()
-            capabilities = webdriver.DesiredCapabilities.CHROME
-            proxy.add_to_capabilities(capabilities)
 
         self.posh_user = posh_user
         self.campaign = campaign
@@ -1209,9 +1205,7 @@ class PoshMarkClient:
             offers_nav.click()
 
     def check_ip(self, filename=None):
-        self.web_driver.get('https://www.whatsmyip.org/more-info-about-you/')
-        self.sleep(5)
-        if filename:
-            self.web_driver.save_screenshot(f'/media/{filename}.png')
-        else:
-            self.web_driver.save_screenshot('/media/ip.png')
+        self.web_driver.get('https://www.whatsmyip.org/')
+        host_name = self.locate(By.ID, 'hostname')
+
+        self.logger.debug(f'Hostname: {host_name}')
