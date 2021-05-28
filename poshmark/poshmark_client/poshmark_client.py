@@ -589,6 +589,8 @@ class PoshMarkClient:
             self.last_login = datetime.datetime.now()
             self.login_error = None
 
+            self.sleep(5)
+
             return True
 
         except Exception as e:
@@ -677,6 +679,8 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def update_profile(self):
         """Updates a user profile with their profile picture and header picture"""
