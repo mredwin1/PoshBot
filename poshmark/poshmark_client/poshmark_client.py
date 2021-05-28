@@ -119,7 +119,7 @@ class PoshMarkClient:
     def open(self):
         """Used to open the selenium web driver session"""
         self.web_driver = webdriver.Chrome('/poshmark/poshmark_client/chromedriver', options=self.web_driver_options)
-        self.web_driver.implicitly_wait(5)
+        self.web_driver.implicitly_wait(10)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
@@ -129,7 +129,7 @@ class PoshMarkClient:
 
     def locate(self, by, locator, location_type=None):
         """Locates the first elements with the given By"""
-        wait = WebDriverWait(self.web_driver, 10)
+        wait = WebDriverWait(self.web_driver, 20)
         if location_type:
             if location_type == 'visibility':
                 return wait.until(EC.visibility_of_element_located((by, locator)))
@@ -142,7 +142,7 @@ class PoshMarkClient:
 
     def locate_all(self, by, locator, location_type=None):
         """Locates all web elements with the given By and returns a list of them"""
-        wait = WebDriverWait(self.web_driver, 10)
+        wait = WebDriverWait(self.web_driver, 20)
         if location_type:
             if location_type == 'visibility':
                 return wait.until(EC.visibility_of_all_elements_located((by, locator)))
@@ -405,21 +405,8 @@ class PoshMarkClient:
                 self.logger.info(f'Registering {self.posh_user.username}')
                 self.posh_user.status = '4'
                 self.posh_user.save()
-                # Start at home page so it is more realistic
-                self.web_driver.get('https://poshmark.com')
-                self.logger.info(f'At poshmark homepage - {self.web_driver.current_url}')
-                self.logger.info('Locating sign up button')
-
-                # Random wait for more realism
-                self.sleep(1, 5)
-
-                # Pick one of the two signup buttons for more randomness and click it
-                sign_up_button_xpath = random.choice(['//*[@id="content"]/div/div[1]/div/div[2]/div/div/a',
-                                                      '//*[@id="app"]/header/nav/div/div/a[2]'])
-                signup_button = self.locate(By.XPATH, sign_up_button_xpath)
-                signup_button.click()
-                self.logger.info(f'Clicked sign up button - Current URL: {self.web_driver.current_url}')
-                self.sleep(1, 4)
+                self.web_driver.get('https://poshmark.com/signup')
+                self.logger.info(f'At signup page - {self.web_driver.current_url}')
 
                 # Get all fields for sign up
                 first_name_field = self.locate(By.ID, 'firstName')
@@ -432,15 +419,10 @@ class PoshMarkClient:
                 # Send keys and select gender
                 self.logger.info('Filling out form')
                 first_name_field.send_keys(self.posh_user.first_name)
-                self.sleep(1, 2)
                 last_name_field.send_keys(self.posh_user.last_name)
-                self.sleep(1, 2)
                 email_field.send_keys(self.posh_user.email)
-                self.sleep(2, 5)
                 username_field.send_keys(self.posh_user.username)
-                self.sleep(1, 5)
                 password_field.send_keys(self.posh_user.password)
-                self.sleep(1, 2)
                 gender_field.click()
                 self.sleep(1)
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
@@ -450,8 +432,6 @@ class PoshMarkClient:
                 for element in gender_options:
                     if element.text == gender:
                         element.click()
-
-                self.sleep(1, 3)
 
                 # Submit the form
                 done_button.click()
@@ -465,9 +445,6 @@ class PoshMarkClient:
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
-
-                    # Sleep for realism
-                    self.sleep(5)
 
                     self.web_driver.save_screenshot('/media/register.png')
 
@@ -526,6 +503,46 @@ class PoshMarkClient:
                     self.posh_user.status = '2'
                     self.posh_user.save()
                 elif error_code is None:
+                    # Check if Posh User is now registered
+                    attempts = 0
+                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                    while attempts < 5 and response.status_code != requests.codes.ok:
+                        response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                        self.logger.warning(
+                            f'Closet for {self.posh_user.username} is still not available - Trying again')
+                        attempts += 1
+                        self.sleep(5)
+
+                    if response.status_code == requests.codes.ok:
+                        self.posh_user.status = '1'
+                        self.posh_user.save()
+                        self.logger.info(
+                            f'Successfully registered {self.posh_user.username}, status changed to "Active"')
+
+                        # Next Section - Profile
+                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+                        next_button.click()
+
+                        # Next Section - Select Brands (will not select brands)
+                        self.sleep(1, 3)  # Sleep for realism
+                        self.logger.info('Selecting random brands')
+                        brands = self.web_driver.find_elements_by_class_name('content-grid-item')
+                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+
+                        # Select random brands then click next
+                        for x in range(random.randint(3, 5)):
+                            try:
+                                brand = random.choice(brands)
+                                brand.click()
+                            except IndexError:
+                                pass
+                        next_button.click()
+
+                        # Next Section - All Done Page
+                        self.sleep(1, 3)  # Sleep for realism
+                        start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
+                        start_shopping_button.click()
+
                     self.posh_user.is_registered = True
                     self.posh_user.status = '1'
                     self.posh_user.save()
@@ -543,19 +560,9 @@ class PoshMarkClient:
         try:
             self.logger.info(f'Logging {self.posh_user.username} in')
 
-            self.web_driver.get('https://poshmark.com/')
+            self.web_driver.get('https://poshmark.com/login')
 
-            self.sleep(5)
-
-            self.logger.info(f'At poshmark homepage - Current URL: {self.web_driver.current_url}')
-            self.logger.info(f'locating login button')
-
-            log_in_nav = self.locate(By.XPATH, '//a[@href="/login"]')
-            log_in_nav.click()
-
-            self.logger.info(f'Clicked login button - Current URL: {self.web_driver.current_url}')
-
-            self.sleep(1, 3)
+            self.logger.info(f'At login page - Current URL: {self.web_driver.current_url}')
 
             username_field = self.locate(By.ID, 'login_form_username_email')
             password_field = self.locate(By.ID, 'login_form_password')
@@ -564,7 +571,7 @@ class PoshMarkClient:
 
             username_field.send_keys(self.posh_user.username)
 
-            self.sleep(1, 2)
+            self.sleep(1)
 
             password_field.send_keys(self.posh_user.password)
             password_field.send_keys(Keys.RETURN)
@@ -605,33 +612,18 @@ class PoshMarkClient:
                         self.close()
 
             if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
-                self.logger.info(f"Going to {self.posh_user.username}'s closet")
-
-                self.sleep(1, 3)
-
-                profile_dropdown = self.locate(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
-                profile_dropdown.click()
-
-                self.logger.info('Clicked profile dropdown')
-
-                self.sleep(1)
-
-                my_closet_button = self.locate(By.XPATH, f'//a[@href="/closet/{self.posh_user.username}"]')
-                my_closet_button.click()
-
-                self.logger.info('Clicked my closet button')
-
+                self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
             else:
                 self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
                 self.web_driver.refresh()
-
-            self.sleep(3, 5)
 
             show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
             if self.is_present(By.XPATH, show_all_listings_xpath):
                 show_all_listings = self.locate(By.XPATH, show_all_listings_xpath)
                 if show_all_listings.is_displayed():
                     show_all_listings.click()
+
+            self.sleep(2)
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
@@ -796,14 +788,11 @@ class PoshMarkClient:
                             self.logger.info(f'Using this instead of making another')
                             return title.text
 
-            self.sleep(1, 3)
+            self.web_driver.get('https://poshmark.com/create-listing')
 
-            sell_button = self.locate(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
-            sell_button.click()
+            self.logger.info(f'Current URL: {self.web_driver.current_url}')
 
-            self.logger.info('Clicked "SELL ON POSHMARK" button')
-
-            self.sleep(1, 2)
+            self.sleep(2)
 
             if self.is_present(By.XPATH, '//*[@id="app"]/main/div[1]/div/div[2]'):
                 self.logger.error('Error encountered when on the new listing page')
@@ -820,8 +809,6 @@ class PoshMarkClient:
                 )
                 category_dropdown.click()
 
-                self.sleep(2)
-
                 space_index = listing.category.find(' ') if listing else ''
                 primary_category = listing.category[:space_index] if listing else 'Men'
                 secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
@@ -831,8 +818,6 @@ class PoshMarkClient:
                         category.click()
                         break
 
-                self.sleep(1, 3)
-
                 secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                 for category in secondary_categories[1:]:
                     if category.text == secondary_category:
@@ -840,8 +825,6 @@ class PoshMarkClient:
                         break
 
                 self.logger.info('Category set')
-
-                self.sleep(1)
 
                 self.logger.info('Setting subcategory')
 
@@ -854,8 +837,6 @@ class PoshMarkClient:
                         break
 
                 self.logger.info('Subcategory set')
-
-                self.sleep(2)
 
                 # Set size (This must be done after the category has been selected)
                 self.logger.info('Setting size')
@@ -886,8 +867,6 @@ class PoshMarkClient:
 
                 self.logger.info('Size set')
 
-                self.sleep(1, 2)
-
                 # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
                 # the rest, otherwise errors come up.
                 self.logger.info('Uploading photos')
@@ -897,8 +876,6 @@ class PoshMarkClient:
 
                 apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
                 apply_button.click()
-
-                self.sleep(1)
 
                 if len(listing_photos) > 1:
                     upload_photos_field = self.locate(By.ID, 'img-file-input')
@@ -934,7 +911,6 @@ class PoshMarkClient:
                 uppercase = string.ascii_uppercase
                 title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} [FKE] {''.join([random.choice(lowercase) for i in range(5)])}"
                 title_field.send_keys(title)
-                self.sleep(1, 2)
 
                 description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
 
@@ -943,13 +919,10 @@ class PoshMarkClient:
                     ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
                         Keys.ENTER).perform()
 
-                self.sleep(1, 2)
                 original_prize = str(listing.original_price) if listing else '35'
                 original_price_field.send_keys(original_prize)
-                self.sleep(1, 2)
                 listing_price = str(listing.listing_price) if listing else '25'
                 listing_price_field.send_keys(listing_price)
-                self.sleep(1, 2)
                 brand = listing.brand if listing else 'Saks Fifth Avenue'
                 brand_field.send_keys(brand)
 
@@ -960,8 +933,6 @@ class PoshMarkClient:
                             'clickable'
                         )
                         self.web_driver.execute_script("arguments[0].click();", tags_button)
-
-                self.sleep(1, 3)
 
                 next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
                 next_button.click()
@@ -1013,8 +984,6 @@ class PoshMarkClient:
                         )
                         category_dropdown.click()
 
-                        self.sleep(2)
-
                         space_index = listing.category.find(' ')
                         primary_category = listing.category[:space_index]
                         secondary_category = listing.category[space_index + 1:]
@@ -1024,8 +993,6 @@ class PoshMarkClient:
                                 category.click()
                                 break
 
-                        self.sleep(1, 3)
-
                         secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                         for category in secondary_categories[1:]:
                             if category.text == secondary_category:
@@ -1033,8 +1000,6 @@ class PoshMarkClient:
                                 break
 
                         self.logger.info('Category Updated')
-
-                        self.sleep(1)
 
                         self.logger.info('Updating subcategory')
 
@@ -1047,8 +1012,6 @@ class PoshMarkClient:
                                 break
 
                         self.logger.info('Subcategory updated')
-
-                        self.sleep(2)
 
                         # Set size (This must be done after the category has been selected)
                         self.logger.info('Updating size')
@@ -1078,8 +1041,6 @@ class PoshMarkClient:
                         done_button.click()
 
                         self.logger.info('Size updated')
-
-                        self.sleep(1, 2)
 
                         # Update photos
                         self.logger.info('Uploading photos')
@@ -1139,8 +1100,6 @@ class PoshMarkClient:
                         title_field.clear()
                         title_field.send_keys(listing.title)
 
-                        self.sleep(1, 2)
-
                         description_field.clear()
                         for part in listing.description.split('\n'):
                             description_field.send_keys(part)
@@ -1148,15 +1107,12 @@ class PoshMarkClient:
                                 Keys.SHIFT).key_up(
                                 Keys.ENTER).perform()
 
-                        self.sleep(1, 2)
                         original_prize = str(listing.original_price)
                         original_price_field.clear()
                         original_price_field.send_keys(original_prize)
-                        self.sleep(1, 2)
                         listing_price = str(listing.listing_price)
                         listing_price_field.clear()
                         listing_price_field.send_keys(listing_price)
-                        self.sleep(1, 2)
                         brand_field.clear()
                         brand_field.send_keys(listing.brand)
 
@@ -1167,8 +1123,6 @@ class PoshMarkClient:
                                 'clickable'
                             )
                             self.web_driver.execute_script("arguments[0].click();", tags_button)
-
-                        self.sleep(1, 2)
 
                         update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                         update_button.click()
