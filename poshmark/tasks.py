@@ -147,7 +147,6 @@ def advanced_sharing(campaign_id, proxy_id):
                                 listed_item_titles = all_titles if all_titles else []
                                 if listing.title not in listed_item_titles:
                                     title = client.list_item()
-                                    client.sleep(20)
                                     if title:
                                         client.update_listing(title, listing)
                                         listed_items += 1
