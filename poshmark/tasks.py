@@ -115,7 +115,6 @@ def advanced_sharing(campaign_id, proxy_id):
     logger.info('Starting Campaign')
 
     with PoshMarkClient(posh_user, campaign, logger, proxy) as proxy_client:
-        proxy_client.check_ip()
         now = datetime.datetime.now(pytz.utc)
         end_time = now + datetime.timedelta(days=1)
         # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
@@ -164,7 +163,6 @@ def advanced_sharing(campaign_id, proxy_id):
         proxy.save()
 
         with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
-            no_proxy_client.check_ip()
             while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
