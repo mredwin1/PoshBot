@@ -83,13 +83,15 @@ class Captcha:
 
 class PoshMarkClient:
     def __init__(self, posh_user, campaign, logger, posh_proxy=None):
+        proxy = Proxy()
         hostname = posh_proxy.ip if posh_proxy else ''
         port = posh_proxy.port if posh_proxy else ''
-        proxy = Proxy()
         proxy.proxy_type = ProxyType.MANUAL if posh_proxy else ProxyType.SYSTEM
 
-        proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-        proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+        if posh_proxy:
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+
         capabilities = webdriver.DesiredCapabilities.CHROME
         proxy.add_to_capabilities(capabilities)
 
