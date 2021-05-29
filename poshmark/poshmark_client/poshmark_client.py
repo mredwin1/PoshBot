@@ -698,7 +698,7 @@ class PoshMarkClient:
 
             self.logger.info('Clicked on edit profile button')
 
-            self.sleep(5)
+            self.sleep(2)
 
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
@@ -707,7 +707,7 @@ class PoshMarkClient:
             while not profile_picture_exists and attempts < 6:
                 self.logger.info(str(profile_picture_path))
                 self.logger.warning(f'Could not find profile picture file. Attempt # {attempts}')
-                self.sleep(5)
+                self.sleep(2)
                 profile_picture_exists = Path(profile_picture_path).is_file()
                 attempts += 1
             else:
@@ -718,7 +718,7 @@ class PoshMarkClient:
                                                   '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
                     profile_picture.send_keys(profile_picture_path)
 
-                    self.sleep(5)
+                    self.sleep(2)
 
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div/button[2]')
@@ -726,7 +726,7 @@ class PoshMarkClient:
 
                     self.logger.info('Profile picture uploaded')
 
-                    self.sleep(5)
+                    self.sleep(2)
 
             attempts = 1
             header_picture_path = self.posh_user.header_picture.path
@@ -734,7 +734,7 @@ class PoshMarkClient:
             while not header_picture_exists and attempts < 6:
                 self.logger.info(str(header_picture_path))
                 self.logger.warning(f'Could not find header picture file. Attempt # {attempts}')
-                self.sleep(5)
+                self.sleep(2)
                 header_picture_exists = Path(header_picture_path).is_file()
                 attempts += 1
             else:
@@ -745,7 +745,7 @@ class PoshMarkClient:
                                                  '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/label/input')
                     header_picture.send_keys(header_picture_path)
 
-                    self.sleep(5)
+                    self.sleep(2)
 
                     apply_button = self.locate(
                         By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[2]/div/div[2]/div[2]/div/button[2]')
@@ -753,12 +753,14 @@ class PoshMarkClient:
 
                     self.logger.info('Header picture uploaded')
 
-                    self.sleep(5)
+                    self.sleep(2)
 
             save_button = self.locate(By.CLASS_NAME, 'btn--primary')
             save_button.click()
 
             self.logger.info('Profile saved')
+
+            self.sleep(5)
 
             self.posh_user.status = '1'
             self.posh_user.save()
