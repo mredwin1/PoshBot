@@ -86,7 +86,7 @@ class EditCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        form = self.form_class(self.request, campaign)
+        form = self.form_class(request=self.request, campaign=campaign)
 
         return render(self.request, 'poshmark/campaigns.html', {'form': form})
 
@@ -94,7 +94,7 @@ class EditCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        form = self.form_class(self.request, campaign, data=self.request.POST)
+        form = self.form_class(request=self.request, campaign=campaign, data=self.request.POST)
 
         if form.is_valid():
             if form.has_changed():
@@ -264,16 +264,17 @@ class GetListingInformation(View, LoginRequiredMixin):
         data = {}
         if listing_ids:
             for listing_id in listing_ids:
-                listing_info = []
-                listing = Listing.objects.get(id=int(listing_id))
+                if listing_id:
+                    listing_info = []
+                    listing = Listing.objects.get(id=int(listing_id))
 
-                listing_info.append(static('poshmark/images/listing.jpg'))
-                listing_info.append(listing.title)
-                listing_info.append(listing.listing_price)
-                listing_info.append(listing.original_price)
-                listing_info.append(listing.size)
+                    listing_info.append(static('poshmark/images/listing.jpg'))
+                    listing_info.append(listing.title)
+                    listing_info.append(listing.listing_price)
+                    listing_info.append(listing.original_price)
+                    listing_info.append(listing.size)
 
-                data[listing_id] = listing_info
+                    data[listing_id] = listing_info
 
         return JsonResponse(data, status=200, safe=False)
 

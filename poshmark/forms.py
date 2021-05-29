@@ -190,6 +190,7 @@ class EditListingForm(CreateListing):
             listing_photo = ListingPhotos(listing=self.listing)
             listing_photo.photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
 
+
 class CreateCampaign(forms.Form):
     title = forms.CharField()
     times = forms.CharField(widget=forms.HiddenInput())
@@ -340,15 +341,24 @@ class CreateBasicCampaignForm(forms.Form):
 
 class EditCampaignForm(CreateCampaign):
     def __init__(self, request, campaign, *args, **kwargs):
-        super(CreateCampaign, self).__init__(request, *args, **kwargs)
+        super(EditCampaignForm, self).__init__(request,  *args, **kwargs)
         self.request = request
         self.campaign = campaign
 
         listings = Listing.objects.filter(campaign=campaign)
         listings_list = [str(listing.id) for listing in listings]
 
+        times = campaign.times.split(',')
+        local_tz = pytz.timezone('US/Eastern')
+        datetimes = []
+
+        for time in times:
+            local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=datetime.timezone.utc)
+            utc_time = (local_time.astimezone(local_tz) + datetime.timedelta(hours=1)).strftime('%I %p')
+            datetimes.append(utc_time)
+
         self.fields['title'].initial = campaign.title
-        self.fields['times'].initial = campaign.times
+        self.fields['times'].initial = ','.join(datetimes)
         self.fields['listings'].initial = ','.join(listings_list)
         if campaign.posh_user:
             self.fields['posh_user'].initial = campaign.posh_user.id
@@ -358,8 +368,6 @@ class EditCampaignForm(CreateCampaign):
         self.fields['generate_users'].initial = campaign.generate_users
 
     def clean(self):
-        super(CreateCampaign, self).clean()
-
         posh_user_field = 'posh_user'
         if posh_user_field in self.cleaned_data.keys():
             posh_user_id = self.cleaned_data[posh_user_field]
@@ -393,7 +401,8 @@ class EditCampaignForm(CreateCampaign):
                 listing_objects = []
 
                 for listing_id in listing_ids:
-                    listing_objects.append(Listing.objects.get(id=int(listing_id)))
+                    if listing_id:
+                        listing_objects.append(Listing.objects.get(id=int(listing_id)))
 
                 self.cleaned_data[listings_field] = listing_objects
             else:
@@ -414,13 +423,12 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.posh_user.save()
         self.campaign.save()
 
-        if self.cleaned_data['listings']:
-            if self.cleaned_data['listings']:
-                old_listings = Listing.objects.filter(campaign=self.campaign)
-                for old_listing in old_listings:
-                    old_listing.campaign = None
-                    old_listing.save()
+        old_listings = Listing.objects.filter(campaign=self.campaign)
+        for old_listing in old_listings:
+            old_listing.campaign = None
+            old_listing.save()
 
-                for listing in self.cleaned_data['listings']:
-                    listing.campaign = self.campaign
-                    listing.save()
+        if self.cleaned_data['listings']:
+            for listing in self.cleaned_data['listings']:
+                listing.campaign = self.campaign
+                listing.save()
