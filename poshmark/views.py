@@ -82,19 +82,19 @@ def delete_posh_user(request, posh_user_id):
 class EditCampaign(View, LoginRequiredMixin):
     form_class = EditCampaignForm
 
-    def get(self, request, *args, **kwargs):
+    def get(self, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        form = self.form_class(request, campaign)
+        form = self.form_class(self.request, campaign)
 
-        return render(request, 'poshmark/campaigns.html', {'form': form})
+        return render(self.request, 'poshmark/campaigns.html', {'form': form})
 
-    def post(self, request, *args, **kwargs):
+    def post(self, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
 
-        form = self.form_class(request, campaign, data=request.POST)
+        form = self.form_class(self.request, campaign, data=self.request.POST)
 
         if form.is_valid():
             if form.has_changed():
@@ -102,25 +102,25 @@ class EditCampaign(View, LoginRequiredMixin):
 
             return redirect('view-campaigns')
         else:
-            return render(request, 'poshmark/campaigns.html', {'form': form})
+            return render(self.request, 'poshmark/campaigns.html', {'form': form})
 
 
 class EditListing(View, LoginRequiredMixin):
     form_class = EditListingForm
 
-    def get(self, request, *args, **kwargs):
+    def get(self, *args, **kwargs):
         listing_id = self.kwargs['listing_id']
         listing = Listing.objects.get(id=listing_id)
 
-        form = self.form_class(request, listing)
+        form = self.form_class(self.request, listing)
 
-        return render(request, 'poshmark/listings.html', {'form': form})
+        return render(self.request, 'poshmark/listings.html', {'form': form})
 
-    def post(self, request, *args, **kwargs):
+    def post(self, *args, **kwargs):
         listing_id = self.kwargs['listing_id']
         listing = Listing.objects.get(id=listing_id)
 
-        form = self.form_class(request, listing, data=request.POST)
+        form = self.form_class(self.request, listing, data=self.request.POST)
 
         if form.is_valid():
             if form.has_changed():
@@ -128,7 +128,7 @@ class EditListing(View, LoginRequiredMixin):
 
             return redirect('view-listings')
         else:
-            return render(request, 'poshmark/listings.html', {'form': form})
+            return render(self.request, 'poshmark/listings.html', {'form': form})
 
 
 class PoshUserListView(ListView, LoginRequiredMixin):
