@@ -986,7 +986,7 @@ class PoshMarkClient:
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
-                        self.sleep(1, 2)
+                        self.sleep(3)
 
                         edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
                         edit_listing_button.click()
