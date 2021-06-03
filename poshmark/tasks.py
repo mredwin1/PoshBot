@@ -142,6 +142,8 @@ def advanced_sharing(campaign_id, proxy_id):
                     if posh_user.is_registered:
                         for listing in campaign_listings:
                             while not proxy_client.check_listing(listing.title) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                                campaign.refresh_from_db()
+                                posh_user.refresh_from_db()
                                 title = proxy_client.list_item()
                                 if title:
                                     proxy_client.update_listing(title, listing)
