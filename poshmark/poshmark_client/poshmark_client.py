@@ -1155,7 +1155,7 @@ class PoshMarkClient:
                         )
                         list_item_button.click()
 
-                        self.sleep(5)
+                        self.sleep(10)
 
                         self.logger.info('Updated successfully')
 
@@ -1202,6 +1202,8 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def check_news(self):
         """If the PoshUser is logged in it will check their new else it will log them in then check their news"""
