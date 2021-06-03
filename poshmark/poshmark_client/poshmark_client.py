@@ -998,8 +998,11 @@ class PoshMarkClient:
                         category_dropdown = self.locate(
                             By.XPATH,
                             '//*[@id="content"]/div/div[1]/div/section[3]/div/div[2]/div[1]/div/div[1]/div'
+
                         )
                         category_dropdown.click()
+
+                        self.sleep(1)
 
                         space_index = listing.category.find(' ')
                         primary_category = listing.category[:space_index]
@@ -1010,6 +1013,8 @@ class PoshMarkClient:
                                 category.click()
                                 break
 
+                        self.sleep(1)
+
                         secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                         for category in secondary_categories[1:]:
                             if category.text == secondary_category:
@@ -1017,6 +1022,8 @@ class PoshMarkClient:
                                 break
 
                         self.logger.info('Category Updated')
+
+                        self.sleep(1)
 
                         self.logger.info('Updating subcategory')
 
