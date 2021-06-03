@@ -991,7 +991,7 @@ class PoshMarkClient:
                         edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
                         edit_listing_button.click()
 
-                        self.sleep(1, 2)
+                        self.sleep(5)
 
                         # Update Category and Sub Category
                         self.logger.info('Updating category')
@@ -1088,7 +1088,7 @@ class PoshMarkClient:
                             for photo in listing_photos:
                                 upload_photos_field.clear()
                                 upload_photos_field.send_keys(photo)
-                                self.sleep(1)
+                                self.sleep(3)
 
                         self.logger.info('Photos uploaded')
 
