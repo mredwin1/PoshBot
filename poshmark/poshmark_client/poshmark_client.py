@@ -1017,7 +1017,7 @@ class PoshMarkClient:
 
                         secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                         for category in secondary_categories[1:]:
-                            self.logger.debug(category.text, secondary_category)
+                            self.logger.debug(f'{category.text}, {secondary_category}')
                             if category.text == secondary_category:
                                 category.find_element_by_xpath('..').click()
                                 break
