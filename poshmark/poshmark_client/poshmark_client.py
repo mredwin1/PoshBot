@@ -993,6 +993,8 @@ class PoshMarkClient:
 
                         self.sleep(5)
 
+                        self.web_driver.execute_script("window.scrollTo(0, 1280);")
+
                         # Update Category and Sub Category
                         self.logger.info('Updating category')
                         category_dropdown = self.locate(
