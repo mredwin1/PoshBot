@@ -299,7 +299,7 @@ class StartCampaign(View, LoginRequiredMixin):
         campaign = Campaign.objects.get(id=campaign_id)
         listings = Listing.objects.filter(campaign=campaign)
 
-        if campaign.posh_user and listings:
+        if campaign.posh_user and listings and campaign.status == '2':
             if campaign.mode == Campaign.BASIC_SHARING:
                 if campaign.auto_run:
                     chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()

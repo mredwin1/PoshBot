@@ -20,5 +20,5 @@ def campaign_deleted(sender, instance, *args, **kwargs):
 @receiver(post_save, sender=Campaign)
 def campaign_saved(sender, instance, *args, **kwargs):
     import logging
-    logging.info(instance.status)
-    logging.info(instance.posh_user.status)
+    logging.info(f'Campaign Status: {instance.status}')
+    logging.info(f'Posh User Status: {instance.posh_user.status}')

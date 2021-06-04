@@ -21,7 +21,6 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
-    campaign = Campaign.objects.get(id=campaign_id)
     proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     while proxy is None:
@@ -36,9 +35,13 @@ def start_campaign(campaign_id):
 
     proxy.current_connections += 1
     proxy.save()
+    campaign = Campaign.objects.get(id=campaign_id)
     import logging
-    logging.info('========================!Stating the campaign!========================')
-    task = advanced_sharing.delay(campaign_id, proxy.id)
+    if campaign.status == '2':
+        logging.info('========================!Stating the campaign!========================')
+        advanced_sharing.delay(campaign_id, proxy.id)
+    else:
+        logging.error('This campaign is not idle, cannot start.')
 
 
 @shared_task

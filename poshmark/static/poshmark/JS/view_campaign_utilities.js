@@ -75,7 +75,7 @@ $(document).ready(function () {
                     status_div.removeClass('text-secondary').addClass('text-info');
                     status_div.text('STARTING');
                     start_button.prop('disabled', true);
-                    stop_button.prop('disabled', false);
+                    stop_button.prop('disabled', true);
                 } else if (data.error) {
                     alert(data.error)
                 }
