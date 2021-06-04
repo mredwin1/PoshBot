@@ -37,11 +37,11 @@ def start_campaign(campaign_id):
     proxy.save()
     campaign = Campaign.objects.get(id=campaign_id)
     import logging
-    if campaign.status == '2':
+    if campaign.status == '5':
         logging.info('========================!Stating the campaign!========================')
         advanced_sharing.delay(campaign_id, proxy.id)
     else:
-        logging.error('This campaign is not idle, cannot start.')
+        logging.error('This campaign does not have status starting, cannot start.')
 
 
 @shared_task
