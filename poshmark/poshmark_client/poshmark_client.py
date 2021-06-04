@@ -575,6 +575,7 @@ class PoshMarkClient:
 
             attempts = 1
             while self.web_driver.current_url != 'https://poshmark.com/login' and attempts > 5:
+                self.logger.warning(f'Could not go to log in page. Currently at {self.web_driver.current_url}. Trying again')
                 self.web_driver.get('https://poshmark.com/login')
 
             if attempts <= 5:
