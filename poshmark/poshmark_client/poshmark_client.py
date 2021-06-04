@@ -573,6 +573,16 @@ class PoshMarkClient:
 
             self.web_driver.get('https://poshmark.com/login')
 
+            attempts = 1
+            while self.web_driver.current_url != 'https://poshmark.com/login' and attempts > 5:
+                self.web_driver.get('https://poshmark.com/login')
+
+            if attempts <= 5:
+                self.logger.error('Could not go to log in page')
+                self.login_error = True
+
+                return False
+
             self.logger.info(f'At login page - Current URL: {self.web_driver.current_url}')
 
             username_field = self.locate(By.ID, 'login_form_username_email')
