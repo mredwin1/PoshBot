@@ -298,27 +298,18 @@ class StartCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
         listings = Listing.objects.filter(campaign=campaign)
-        task = None
-        task_id = None
 
         if campaign.posh_user and listings:
             if campaign.mode == Campaign.BASIC_SHARING:
                 if campaign.auto_run:
-                    task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
+                    chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
                 else:
-                    task = basic_sharing.delay(campaign_id)
+                    basic_sharing.delay(campaign_id)
             elif campaign.mode == Campaign.ADVANCED_SHARING:
-                task = start_campaign.delay(campaign_id)
-
-            if task:
-                task_id = task.task_id
-                campaign.task_id = task.task_id
-
-                campaign.refresh_from_db()
-                campaign.save()
+                start_campaign.delay(campaign_id)
 
             data = {
-                'task_id': task_id
+                'task_id': 'task_id'
             }
         else:
             data = {
