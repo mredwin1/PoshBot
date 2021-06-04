@@ -22,6 +22,8 @@ def log_cleanup():
 @shared_task
 def start_campaign(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
+    campaign.status = '4'
+    campaign.save()
     proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     while proxy is None:
@@ -138,19 +140,18 @@ def advanced_sharing(campaign_id, proxy_id):
                         posh_user.save()
 
                 posh_user.refresh_from_db()
-                if listed_items < 1:
-                    if posh_user.is_registered:
-                        for listing in campaign_listings:
-                            while not proxy_client.check_listing(listing.title) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                                campaign.refresh_from_db()
-                                posh_user.refresh_from_db()
-                                title = proxy_client.list_item()
-                                if title:
-                                    proxy_client.update_listing(title, listing)
-                                    listed_items += 1
-                            else:
+                if posh_user.is_registered:
+                    for listing in campaign_listings:
+                        while not proxy_client.check_listing(listing.title) and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
+                            campaign.refresh_from_db()
+                            posh_user.refresh_from_db()
+                            title = proxy_client.list_item()
+                            if title:
+                                proxy_client.update_listing(title, listing)
                                 listed_items += 1
-                                logger.warning(f'{listing.title} already listed, not re listing')
+                        else:
+                            listed_items += 1
+                            logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.refresh_from_db()
     posh_user.refresh_from_db()
