@@ -156,14 +156,17 @@ def advanced_sharing(campaign_id, proxy_id):
                                 listed_items += 1
                                 logger.warning(f'{listing.title} already listed, not re listing')
 
-    proxy.refresh_from_db()
+    
     posh_user.refresh_from_db()
     logger.debug(posh_user.is_registered)
     logger.debug(campaign.status)
     if posh_user.is_registered:
+        proxy.refresh_from_db()
+        logger.debug(proxy.current_connections)
         proxy.registered_accounts += 1
         proxy.current_connections -= 1
         proxy.save()
+        logger.debug(proxy.current_connections)
 
         with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
             while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
@@ -210,6 +213,7 @@ def advanced_sharing(campaign_id, proxy_id):
                         f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
                     logged_hour_message = True
     else:
+        proxy.refresh_from_db()
         proxy.current_connections -= 1
         proxy.save()
 
