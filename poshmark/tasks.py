@@ -22,8 +22,6 @@ def log_cleanup():
 @shared_task
 def start_campaign(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
-    campaign.status = '4'
-    campaign.save()
     proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
 
     while proxy is None:
@@ -38,7 +36,8 @@ def start_campaign(campaign_id):
 
     proxy.current_connections += 1
     proxy.save()
-
+    import logging
+    logging.info('========================!Stating the campaign!========================')
     task = advanced_sharing.delay(campaign_id, proxy.id)
 
 
