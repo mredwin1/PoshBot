@@ -579,7 +579,7 @@ class PoshMarkClient:
                 self.web_driver.get('https://poshmark.com/login')
 
             if attempts <= 5:
-                self.logger.error('Could not go to log in page')
+                self.logger.error(f'Tried {attempts} times and could not go to log in page.')
                 self.login_error = True
 
                 return False
