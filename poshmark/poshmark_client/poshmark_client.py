@@ -620,6 +620,7 @@ class PoshMarkClient:
                         self.logger.warning('Could not log in, trying again.')
                         log_in_attempts += 1
                     if log_in_attempts >= 2:
+                        self.campaign.refresh_from_db()
                         self.campaign.status = '5'
                         self.campaign.save()
                         self.close()

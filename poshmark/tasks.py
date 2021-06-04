@@ -155,6 +155,8 @@ def advanced_sharing(campaign_id, proxy_id):
 
     proxy.refresh_from_db()
     posh_user.refresh_from_db()
+    logger.debug(posh_user.is_registered)
+    logger.debug(campaign.status)
     if posh_user.is_registered:
         proxy.registered_accounts += 1
         proxy.current_connections -= 1
