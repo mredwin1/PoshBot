@@ -150,8 +150,9 @@ def advanced_sharing(campaign_id, proxy_id):
                                 proxy_client.update_listing(title, listing)
                                 listed_items += 1
                         else:
-                            listed_items += 1
-                            logger.warning(f'{listing.title} already listed, not re listing')
+                            if listed_items < 1:
+                                listed_items += 1
+                                logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.refresh_from_db()
     posh_user.refresh_from_db()
