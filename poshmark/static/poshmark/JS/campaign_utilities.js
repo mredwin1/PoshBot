@@ -148,7 +148,6 @@ $(document).ready(function () {
                 input_field.val(times_added);
             }
         } else {
-
             if (current_button.hasClass('btn-outline-dark')) {
                 current_button.addClass('btn-dark').removeClass('btn-outline-dark');
                 if (times_added) {
@@ -164,7 +163,14 @@ $(document).ready(function () {
                 let times_added_list = times_added.split(',');
 
                 $(times_added_list).each(function (index, value) {
-                    if (value === current_button.text()) {
+                    let temp_text = current_button.text()
+                    let text
+                    if (temp_text.length !== 5) {
+                        text = '0'.concat(temp_text)
+                    } else {
+                        text = temp_text
+                    }
+                    if (value === text) {
                        times_added_list.splice(index, 1)
                     }
                 });
