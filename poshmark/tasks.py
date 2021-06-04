@@ -193,9 +193,9 @@ def advanced_sharing(campaign_id, proxy_id):
                                         client.sleep(sleep_amount)
                                 else:
                                     break
-                        else:
-                            campaign.status = '3'
-                            campaign.save()
+                        elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                            posh_user.status = PoshUser.INACTIVE
+                            posh_user.save()
 
                     if logged_hour_message:
                         logged_hour_message = False

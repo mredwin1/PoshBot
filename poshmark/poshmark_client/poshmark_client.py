@@ -643,6 +643,7 @@ class PoshMarkClient:
         try:
             shareable_listings = []
             sold_listings = []
+            reserved_listings = []
 
             self.logger.info('Getting all listings')
 
@@ -665,6 +666,8 @@ class PoshMarkClient:
                         shareable_listings.append(title.text)
                     elif icon.text == 'SOLD':
                         sold_listings.append(title.text)
+                    elif icon.text == 'RESERVED':
+                        reserved_listings.append(title.text)
 
                 if shareable_listings:
                     self.logger.info(f"Found the following listings: {','.join(shareable_listings)}")
@@ -678,7 +681,8 @@ class PoshMarkClient:
 
             listings = {
                 'shareable_listings': shareable_listings,
-                'sold_listings': sold_listings
+                'sold_listings': sold_listings,
+                'reserved_listings': reserved_listings
             }
             self.logger.debug(listings)
             return listings
