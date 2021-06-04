@@ -1034,7 +1034,7 @@ class PoshMarkClient:
                         for category in secondary_categories[1:]:
                             self.logger.debug(f'{category.text}, {secondary_category}')
                             if category.text == secondary_category:
-                                category.find_element_by_xpath('..').click()
+                                category.click()
                                 break
 
                         self.logger.info('Category Updated')
