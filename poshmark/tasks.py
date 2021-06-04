@@ -180,18 +180,24 @@ def advanced_sharing(campaign_id, proxy_id):
                     if listing_titles:
                         if listing_titles['shareable_listings']:
                             for listing_title in listing_titles['shareable_listings']:
-                                pre_share_time = time.time()
-                                if no_proxy_client.share_item(listing_title):
-                                    positive_negative = 1 if random.random() < 0.5 else -1
-                                    deviation = random.randint(0, max_deviation) * positive_negative
-                                    post_share_time = time.time()
-                                    elapsed_time = round(post_share_time - pre_share_time, 2)
-                                    sleep_amount = (campaign.delay - elapsed_time) + deviation
-
-                                    if elapsed_time < sleep_amount:
-                                        no_proxy_client.sleep(sleep_amount)
-                                else:
+                                if '[FKE]' in listing_title:
+                                    campaign.refresh_from_db()
+                                    campaign.status = '5'
+                                    campaign.save()
                                     break
+                                else:
+                                    pre_share_time = time.time()
+                                    if no_proxy_client.share_item(listing_title):
+                                        positive_negative = 1 if random.random() < 0.5 else -1
+                                        deviation = random.randint(0, max_deviation) * positive_negative
+                                        post_share_time = time.time()
+                                        elapsed_time = round(post_share_time - pre_share_time, 2)
+                                        sleep_amount = (campaign.delay - elapsed_time) + deviation
+
+                                        if elapsed_time < sleep_amount:
+                                            no_proxy_client.sleep(sleep_amount)
+                                    else:
+                                        break
                         elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                             posh_user.status = PoshUser.INACTIVE
                             posh_user.save()
