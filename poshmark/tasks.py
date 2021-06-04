@@ -37,7 +37,7 @@ def start_campaign(campaign_id):
     proxy.save()
     campaign = Campaign.objects.get(id=campaign_id)
     import logging
-    if campaign.status == '5':
+    if campaign.status == '4':
         logging.info('========================!Stating the campaign!========================')
         advanced_sharing.delay(campaign_id, proxy.id)
     else:
