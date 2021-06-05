@@ -978,9 +978,18 @@ class PoshMarkClient:
                 )
                 list_item_button.click()
 
-                self.logger.info('Item listed successfully')
+                sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
 
-                self.sleep(2, 3)
+                attempts = 0
+
+                while not sell_button and attempts <= 20:
+                    self.logger.error('Not done listing item. Checking again...')
+                    sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
+                else:
+                    if attempts > 20:
+                        self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
+                    else:
+                        self.logger.info('Item listed successfully')
 
                 return title
 
@@ -1172,7 +1181,18 @@ class PoshMarkClient:
                         )
                         list_item_button.click()
 
-                        self.sleep(10)
+                        sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
+
+                        attempts = 0
+
+                        while not sell_button and attempts <= 20:
+                            self.logger.error('Not done updating listing. Checking again...')
+                            sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
+                        else:
+                            if attempts > 20:
+                                self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
+                            else:
+                                self.logger.info('Updated successfully')
 
                         self.logger.info('Updated successfully')
 
