@@ -15,10 +15,3 @@ def campaign_deleted(sender, instance, *args, **kwargs):
         if instance.posh_user.status == PoshUser.INUSE:
             instance.posh_user.status = PoshUser.ACTIVE
             instance.posh_user.save()
-
-
-@receiver(post_save, sender=Campaign)
-def campaign_saved(sender, instance, *args, **kwargs):
-    import logging
-    logging.info(f'Campaign Status: {instance.status}')
-    logging.info(f'Posh User Status: {instance.posh_user.status}')

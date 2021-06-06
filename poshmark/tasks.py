@@ -36,9 +36,7 @@ def start_campaign(campaign_id):
     proxy.current_connections += 1
     proxy.save()
     campaign = Campaign.objects.get(id=campaign_id)
-    import logging
     if campaign.status == '4':
-        logging.info('========================!Stating the campaign!========================')
         advanced_sharing.delay(campaign_id, proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
