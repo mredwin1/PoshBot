@@ -111,6 +111,7 @@ class CreateListing(forms.Form):
     brand = forms.CharField()
     original_price = forms.IntegerField()
     listing_price = forms.IntegerField()
+    lowest_price = forms.IntegerField()
 
     def __init__(self, request, *args, **kwargs):
         super(CreateListing, self).__init__(*args, **kwargs)
@@ -133,6 +134,7 @@ class CreateListing(forms.Form):
             tags=self.cleaned_data['tags'],
             original_price=self.cleaned_data['original_price'],
             listing_price=self.cleaned_data['listing_price'],
+            lowest_price=self.cleaned_data['lowest_price'],
             user=self.request.user,
         )
 
@@ -165,6 +167,7 @@ class EditListingForm(CreateListing):
         self.fields['tags'].initial = listing.tags
         self.fields['original_price'].initial = listing.original_price
         self.fields['listing_price'].initial = listing.listing_price
+        self.fields['lowest_price'].initial = listing.lowest_price
 
     def save(self):
         self.listing.title = self.cleaned_data['title']
@@ -176,19 +179,24 @@ class EditListingForm(CreateListing):
         self.listing.tags = self.cleaned_data['tags']
         self.listing.original_price = self.cleaned_data['original_price']
         self.listing.listing_price = self.cleaned_data['listing_price']
+        self.listing.lowest_price = self.cleaned_data['lowest_price']
 
-        self.listing.cover_photo.delete()
-        letters = string.ascii_lowercase
+        self.listing.save()
 
-        self.listing.cover_photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(self.files['cover_photo'].read()), save=True)
+        if 'cover_photo' in self.files.keys():
+            self.listing.cover_photo.delete()
+            letters = string.ascii_lowercase
 
-        listing_photos = ListingPhotos.objects.filter(listing=self.listing)
-        for listing_photo in listing_photos:
-            listing_photo.delete()
+            self.listing.cover_photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(self.files['cover_photo'].read()), save=True)
 
-        for file_content in self.files.getlist('other_photos'):
-            listing_photo = ListingPhotos(listing=self.listing)
-            listing_photo.photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
+        if self.files.getlist('other_photos'):
+            listing_photos = ListingPhotos.objects.filter(listing=self.listing)
+            for listing_photo in listing_photos:
+                listing_photo.delete()
+
+            for file_content in self.files.getlist('other_photos'):
+                listing_photo = ListingPhotos(listing=self.listing)
+                listing_photo.photo.save(f"{self.listing.id}_{''.join(random.choice(letters)for i in range (5))}.png", ContentFile(file_content.read()), save=True)
 
 
 class CreateCampaign(forms.Form):

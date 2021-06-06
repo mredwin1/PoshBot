@@ -41,7 +41,7 @@ def create_posh_user(request):
 @login_required
 def create_listing(request):
     if request.method == 'GET':
-        form = CreateListing(request)
+        form = CreateListing(request, initial={'lowest_price': 250})
 
         return render(request, 'poshmark/listings.html', {'form': form})
     else:
@@ -58,7 +58,7 @@ def create_listing(request):
 @login_required
 def create_campaign(request):
     if request.method == 'GET':
-        form = CreateCampaign(request)
+        form = CreateCampaign(request, initial={'times': '04 AM,05 AM,06 AM,08 AM,07 AM,09 AM,03 PM,01 PM,02 PM,12 PM,11 AM,10 AM,04 PM,05 PM,06 PM,07 PM,08 PM,09 PM,03 AM,02 AM,01 AM,12 AM,11 PM,10 PM'})
 
         return render(request, 'poshmark/campaigns.html', {'form': form})
     else:
@@ -88,7 +88,12 @@ class EditCampaign(View, LoginRequiredMixin):
 
         form = self.form_class(request=self.request, campaign=campaign)
 
-        return render(self.request, 'poshmark/campaigns.html', {'form': form})
+        data = {
+            'form': form,
+            'campaign': campaign
+        }
+
+        return render(self.request, 'poshmark/campaigns.html', data)
 
     def post(self, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
@@ -102,7 +107,12 @@ class EditCampaign(View, LoginRequiredMixin):
 
             return redirect('view-campaigns')
         else:
-            return render(self.request, 'poshmark/campaigns.html', {'form': form})
+            data = {
+                'form': form,
+                'campaign': campaign
+            }
+
+            return render(self.request, 'poshmark/campaigns.html', data)
 
 
 class EditListing(View, LoginRequiredMixin):
@@ -114,7 +124,12 @@ class EditListing(View, LoginRequiredMixin):
 
         form = self.form_class(self.request, listing)
 
-        return render(self.request, 'poshmark/listings.html', {'form': form})
+        data = {
+            'form': form,
+            'listing': listing
+        }
+
+        return render(self.request, 'poshmark/listings.html', data)
 
     def post(self, *args, **kwargs):
         listing_id = self.kwargs['listing_id']
@@ -128,7 +143,12 @@ class EditListing(View, LoginRequiredMixin):
 
             return redirect('view-listings')
         else:
-            return render(self.request, 'poshmark/listings.html', {'form': form})
+            data = {
+                'form': form,
+                'listing': listing
+            }
+
+            return render(self.request, 'poshmark/listings.html', data)
 
 
 class PoshUserListView(ListView, LoginRequiredMixin):

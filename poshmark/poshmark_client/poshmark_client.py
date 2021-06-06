@@ -9,7 +9,7 @@ import string
 
 from pathlib import Path
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -1252,13 +1252,132 @@ class PoshMarkClient:
                 news_nav = self.locate(By.XPATH, '//a[@href="/news"]')
                 news_nav.click()
 
-    def check_offers(self):
-        self.logger.info('Checking news')
-        if not self.check_logged_in():
-            self.log_in()
-        else:
-            offers_nav = self.locate(By.XPATH, '//a[@href="/offers/my_offers"]')
-            offers_nav.click()
+    def check_offers(self, listing):
+        try:
+            self.logger.info(f'Checking offers for {listing.title}')
+            self.web_driver.get('https://poshmark.com/offers/my_offers')
+
+            if self.is_present(By.CLASS_NAME, 'active-offers__content'):
+                offers = self.locate_all(By.CLASS_NAME, 'active-offers__content')
+
+                for offer in offers:
+                    if listing.title in offer.text:
+                        self.logger.info('Offers found')
+                        offer.click()
+
+                        active_offers = self.locate_all(By.CLASS_NAME, 'active-offers__content')
+                        offer_page_url = self.web_driver.current_url
+
+                        self.logger.info(f'There are currently {len(active_offers)} active offers')
+                        for x in range(len(active_offers)):
+                            active_offers = self.locate_all(By.CLASS_NAME, 'active-offers__content')
+                            active_offer = active_offers[x]
+                            active_offer.click()
+
+                            self.sleep(2)
+                            try:
+                                self.locate_all(By.CLASS_NAME, 'btn--primary')
+
+                                sender_offer = None
+                                receiver_offer = None
+                                chat_bubbles = self.locate_all(By.CLASS_NAME, 'ai--fs')
+                                for chat_bubble in reversed(chat_bubbles):
+                                    try:
+                                        bubble = chat_bubble.find_element_by_xpath('.//*')
+                                        if sender_offer and receiver_offer:
+                                            break
+                                        elif 'sender' in bubble.get_attribute('class') and not sender_offer:
+                                            text = bubble.text
+                                            if 'offered' in text:
+                                                index = text.find('$')
+
+                                                sender_offer = int(text[index + 1:])
+                                            elif 'cancelled' in text:
+                                                self.logger.warning(f'Seller cancelled. Message: "{text}"')
+                                                break
+                                            else:
+                                                self.logger.warning(f'Unknown message sent by seller. Message: "{text}"')
+                                                break
+                                        elif 'receiver' in bubble.get_attribute('class') and not receiver_offer:
+                                            text = bubble.text
+                                            if 'declined' in text:
+                                                receiver_offer = listing.listing_price
+                                            elif 'offered' or 'listed' in text:
+                                                index = text.find('$')
+
+                                                receiver_offer = int(text[index + 1:])
+                                            else:
+                                                self.logger.warning(f'Unknown message sent by seller. Message: "{text}"')
+                                                break
+                                    except NoSuchElementException:
+                                        pass
+
+                                if sender_offer >= listing.lowest_price:
+                                    primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                    for button in primary_buttons:
+                                        if button.text == 'Accept':
+                                            button.click()
+                                            break
+
+                                    self.sleep(2)
+
+                                    primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                    for button in primary_buttons:
+                                        if button.text == 'Yes':
+                                            button.click()
+                                            self.logger.info(f'Accepted offer at ${sender_offer}.')
+                                            self.sleep(5)
+                                            break
+                                else:
+                                    secondary_buttons = self.locate_all(By.CLASS_NAME, 'btn--tertiary')
+
+                                    if receiver_offer < listing.lowest_price - 4:
+                                        for button in secondary_buttons:
+                                            if button.text == 'Decline':
+                                                button.click()
+                                                break
+
+                                        self.sleep(1)
+                                        primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                        for button in primary_buttons:
+                                            if button.text == 'Yes':
+                                                button.click()
+                                                self.sleep(5)
+                                                break
+                                    else:
+                                        for button in secondary_buttons:
+                                            if button.text == 'Counter':
+                                                button.click()
+                                                break
+                                        if receiver_offer <= listing.lowest_price:
+                                            new_offer = receiver_offer - 1
+                                        else:
+                                            new_offer = round(receiver_offer - (receiver_offer * .05))
+                                            if new_offer < listing.lowest_price:
+                                                new_offer = listing.lowest_price
+
+                                        counter_offer = new_offer
+
+                                        counter_offer_input = self.locate(By.CLASS_NAME, 'form__text--input')
+                                        counter_offer_input.send_keys(str(counter_offer))
+                                        self.sleep(2)
+                                        primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                        for button in primary_buttons:
+                                            if button.text == 'Submit':
+                                                button.click()
+                                                self.logger.info(f'Buyer offered ${sender_offer}, countered offer sent for ${counter_offer}')
+                                                self.sleep(5)
+                                                break
+                            except TimeoutException:
+                                self.logger.warning('Nothing to do on the current offer, seems buyer has not counter offered.')
+                            self.web_driver.get(offer_page_url)
+            else:
+                self.logger.warning('No offers at the moment')
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def check_ip(self, filename=None):
         self.web_driver.get('https://www.whatsmyip.org/')

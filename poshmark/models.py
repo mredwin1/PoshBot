@@ -329,6 +329,7 @@ class Listing(models.Model):
 
     original_price = models.IntegerField()
     listing_price = models.IntegerField()
+    lowest_price = models.IntegerField(default=250)
 
     campaign = models.ForeignKey(Campaign, on_delete=models.SET_NULL, null=True)
 

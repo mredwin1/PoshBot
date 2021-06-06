@@ -16,9 +16,9 @@
 {% endblock %}
 {% block content %}
     <div class="content-section">
-        <form method="POST" data-generate-info-url="{% url 'add-campaign' %}" id="CampaignForm" autocomplete="off">
+        <form method="POST" data-generate-info-url="{% if request.resolver_match.url_name == 'add-campaign' %}{% url 'add-campaign' %}{% else %}{% url 'edit-campaign' campaign.id %}{% endif %}" id="CampaignForm" autocomplete="off">
             {% csrf_token %}
-            <h1>Campaign</h1>
+            <h1>{% if request.resolver_match.url_name == 'add-campaign' %}Add{% else %}Edit{% endif %} Campaign</h1>
             <hr class="mb-5 mt-3">
             <div class="form-group row justify-content-end mb-4">
                 <div class="col-6">

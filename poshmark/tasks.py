@@ -191,6 +191,8 @@ def advanced_sharing(campaign_id, proxy_id):
                                 else:
                                     pre_share_time = time.time()
                                     if no_proxy_client.share_item(listing_title):
+                                        current_listing = Listing.objects.get(title=listing_title)
+                                        no_proxy_client.check_offers(current_listing)
                                         positive_negative = 1 if random.random() < 0.5 else -1
                                         deviation = random.randint(0, max_deviation) * positive_negative
                                         post_share_time = time.time()
