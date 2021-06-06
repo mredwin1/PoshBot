@@ -1,23 +1,17 @@
 $(document).ready(function () {
-    $.fn.inputFilter = function(inputFilter) {
-        return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
-          if (inputFilter(this.value)) {
-            this.oldValue = this.value;
-            this.oldSelectionStart = this.selectionStart;
-            this.oldSelectionEnd = this.selectionEnd;
-          } else if (this.hasOwnProperty("oldValue")) {
-            this.value = this.oldValue;
-            this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-          } else {
-            this.value = "";
-          }
-        });
-    };
-    $('#id_main_category').change(function () {
+    function main_cat_change() {
         let main_category = $('#id_main_category').val();
         let secondary_category = $('#id_secondary_category');
-
+        let subcategory = $('#id_subcategory');
+        let secondary_category_initial = secondary_category.data('initial-value')
+        let secondary_category_val = ''
         let choices;
+
+
+        if (secondary_category_initial) {
+            secondary_category_val = secondary_category_initial
+        }
+
         if (main_category === 'Women') {
             choices = ['Accessories', 'Bags', 'Dresses', 'Initimates & Sleepwear', 'Jackets & Coats', 'Jeans', 'Jewelry',
                 'Makeup', 'Pants & Jumpsuits', 'Shoes', 'Shorts', 'Skirts', 'Sweaters', 'Swim', 'Tops', 'Skincare',
@@ -36,27 +30,48 @@ $(document).ready(function () {
         }
 
         secondary_category.empty();
-        if (secondary_category.val() === '') {
-            secondary_category.append(`<option disabled selected>Select a Category</option>`);
+        subcategory.empty();
+        if (secondary_category_val === '') {
+            secondary_category.append(`<option selected>Select a Category</option>`);
+            subcategory.append(`<option selected>Select a Subcategory</option>`);
         } else {
-            secondary_category.append(`<option disabled>Select a Category</option>`);
+            secondary_category.append(`<option id="second_none">Select a Category</option>`);
         }
         $.each(choices, function(index, value) {
-            if (secondary_category.val() === value) {
+            if (secondary_category_val === value) {
                 secondary_category.append(`<option value="${value}" selected>${value}</option>`);
             } else {
                 secondary_category.append(`<option value="${value}">${value}</option>`);
             }
 
         });
-
-    });
-    $('#id_secondary_category').change(function () {
-        let main_category = $('#id_main_category').val();
-        let secondary_category = $('#id_secondary_category').val();
-        let category = main_category + ' ' + secondary_category;
-        let subcategory = $('#id_subcategory');
+        secondary_category.data('initial-value', '')
+    }
+    function second_cat_change() {
+        let main_category = $('#id_main_category')
+        let second_category = $('#id_secondary_category')
+        let subcategory = $('#id_subcategory')
+        let second_category_initial = second_category.data('initial-value')
+        let subcategory_initial = subcategory.data('initial-value')
+        let main_category_val = main_category.val();
+        let secondary_category_val = second_category.val();
+        let subcategory_val = '';
+        let category;
+        let second_none = $('#second_none')
         let choices;
+
+        if (second_category_initial) {
+            secondary_category_val = second_category_initial
+        }
+
+        if (subcategory_initial) {
+            subcategory_val = subcategory_initial
+        }
+
+        category = main_category_val + ' ' + secondary_category_val
+
+        second_none.prop('disabled', true)
+
         if (category === 'Women Accessories') {
             choices = ['Belts', 'Face Masks', 'Glasses', 'Gloves & Mittens', 'Hair Accessories', 'Hats',
                 'Hosiery & Socks', 'Key & Card Holders', 'Laptop Cases', 'Phone Cases', 'Scarves & Wraps', 'Sunglasses',
@@ -263,19 +278,38 @@ $(document).ready(function () {
         }
 
         subcategory.empty();
-        if (subcategory.val() === '') {
-            subcategory.append(`<option disabled selected>Select a Subcategory</option>`);
+        if (subcategory_val === '') {
+            subcategory.append(`<option selected>Select a Subcategory</option>`);
         } else {
-            subcategory.append(`<option disabled>Select a Subcategory</option>`);
+            subcategory.append(`<option>Select a Subcategory</option>`);
         }
         $.each(choices, function(index, value) {
-            if (subcategory.val() === value) {
+            if (subcategory_val === value) {
                 subcategory.append(`<option value="${value}" selected>${value}</option>`);
             } else {
                 subcategory.append(`<option value="${value}">${value}</option>`);
             }
         });
-
+    }
+    $.fn.inputFilter = function(inputFilter) {
+        return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
+            if (inputFilter(this.value)) {
+                this.oldValue = this.value;
+                this.oldSelectionStart = this.selectionStart;
+                this.oldSelectionEnd = this.selectionEnd;
+            } else if (this.hasOwnProperty("oldValue")) {
+                this.value = this.oldValue;
+                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+            } else {
+                this.value = "";
+            }
+        });
+    };
+    $('#id_main_category').change(function () {
+        main_cat_change()
+    });
+    $('#id_secondary_category').change(function () {
+        second_cat_change()
     });
     $('#yes_button').click(function () {
         let no_button = $('#no_button');
@@ -305,4 +339,7 @@ $(document).ready(function () {
     $("#id_listing_price").inputFilter(function(value) {
         return /^\d*$/.test(value);    // Allow digits only, using a RegExp
     });
+
+    main_cat_change()
+    second_cat_change()
 });
