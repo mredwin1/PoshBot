@@ -1281,9 +1281,7 @@ class PoshMarkClient:
                                         elif 'sender' in bubble.get_attribute('class') and not sender_offer:
                                             text = bubble.text
                                             if 'offered' in text:
-                                                index = text.find('$')
-
-                                                sender_offer = int(text[index + 1:])
+                                                sender_offer = int(re.findall(r'\d+', text)[-1])
                                             elif 'cancelled' in text:
                                                 self.logger.warning(f'Seller cancelled. Message: "{text}"')
                                                 break
@@ -1295,9 +1293,7 @@ class PoshMarkClient:
                                             if 'declined' in text:
                                                 receiver_offer = listing.listing_price
                                             elif 'offered' or 'listed' in text:
-                                                index = text.find('$')
-
-                                                receiver_offer = int(text[index + 1:])
+                                                receiver_offer = int(re.findall(r'\d+', text)[-1])
                                             else:
                                                 self.logger.warning(f'Unknown message sent by seller. Message: "{text}"')
                                                 break
