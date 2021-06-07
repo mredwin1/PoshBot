@@ -1416,7 +1416,7 @@ class PoshMarkClient:
                         offer_input = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div/form/div[1]/input')
                         offer_input.send_keys(str(offer))
 
-                        self.sleep(1)
+                        self.sleep(2)
 
                         shipping_dropdown = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div/form/div[2]/div[1]/div/div/div/div[1]/div')
                         shipping_dropdown.click()
@@ -1437,6 +1437,9 @@ class PoshMarkClient:
                         self.logger.info('Offers successfully sent!')
 
                         return True
+            else:
+                self.logger.warning(f'The following listing was not found: {listing.title}')
+                self.logger.warning(f'Offers not sent to likers')
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
