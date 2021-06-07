@@ -191,8 +191,8 @@ def advanced_sharing(campaign_id, proxy_id):
 
                                         logger.debug(now)
                                         logger.debug(end_time.replace(hour=11, minute=0, second=0))
-                                        # if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
-                                        sent_offer = no_proxy_client.send_offer_to_likers(current_listing)
+                                        if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
+                                            sent_offer = no_proxy_client.send_offer_to_likers(current_listing)
 
                                         positive_negative = 1 if random.random() < 0.5 else -1
                                         deviation = random.randint(0, max_deviation) * positive_negative
