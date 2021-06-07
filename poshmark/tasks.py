@@ -1,5 +1,5 @@
 import datetime
-
+import logging
 import pytz
 import random
 import time
@@ -108,6 +108,7 @@ def advanced_sharing(campaign_id, proxy_id):
     campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
     listed_items = 0
     logged_hour_message = False
+    sent_offer = False
     max_deviation = round(campaign.delay / 2)
 
     campaign.status = '1'
@@ -191,6 +192,10 @@ def advanced_sharing(campaign_id, proxy_id):
                                     if no_proxy_client.share_item(listing_title):
                                         current_listing = Listing.objects.get(title=listing_title)
                                         no_proxy_client.check_offers(current_listing)
+
+                                        if not sent_offer and now > end_time.replace(hour=7, minute=0, second=0):
+                                            sent_offer = no_proxy_client.send_offer_to_likers(current_listing)
+
                                         positive_negative = 1 if random.random() < 0.5 else -1
                                         deviation = random.randint(0, max_deviation) * positive_negative
                                         post_share_time = time.time()

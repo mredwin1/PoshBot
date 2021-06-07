@@ -1379,6 +1379,70 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
+    def send_offer_to_likers(self, listing):
+        """Will send offers to all likers for a given listing"""
+        try:
+            self.logger.info(f'Sending offers to all likers for the following item: {listing.title}')
+
+            self.go_to_closet()
+
+            if self.check_listing(listing.title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing.title:
+                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                        listing_button.click()
+
+                        self.sleep(2)
+
+                        offer_button = self.locate(
+                            By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div/button'
+                        )
+                        offer_button.click()
+
+                        offer_to_likers_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div/div[2]/div/button')
+                        offer_to_likers_button.click()
+
+                        self.sleep(1)
+
+                        offer = round(listing.lowest_price + (listing.lowest_price * .05))
+                        ten_off = int(listing.listing_price - (listing.listing_price * .1))
+                        if offer > ten_off:
+                            offer = ten_off
+
+                        self.logger.info(f'Sending offers to likers for ${offer}')
+
+                        offer_input = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div/form/div[1]/input')
+                        offer_input.send_keys(str(offer))
+
+                        self.sleep(1)
+
+                        shipping_dropdown = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div/form/div[2]/div[1]/div/div/div/div[1]/div')
+                        shipping_dropdown.click()
+
+                        shipping_options = self.locate_all(By.CLASS_NAME, 'dropdown__menu__item')
+
+                        for shipping_option in shipping_options:
+                            if shipping_option.text == 'FREE':
+                                shipping_option.click()
+                                break
+
+                        apply_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[1]/div[2]/div[3]/div/button[2]')
+                        apply_button.click()
+
+                        done_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[5]/div[2]/div/div[2]/div[2]/div[3]/button')
+                        done_button.click()
+
+                        self.logger.info('Offers successfully sent!')
+
+                        return True
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
+
     def check_ip(self, filename=None):
         self.web_driver.get('https://www.whatsmyip.org/')
         host_name = self.locate(By.ID, 'hostname')
