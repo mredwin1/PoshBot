@@ -188,8 +188,6 @@ class PoshMarkClient:
         if not present_error_classes:
             self.logger.info('No known errors encountered')
 
-        self.logger.debug(present_error_classes)
-
         for present_error_class in present_error_classes:
             if 'form__error' in present_error_class:
                 errors = self.locate_all(By.CLASS_NAME, present_error_class)
@@ -199,7 +197,6 @@ class PoshMarkClient:
                 return 'ERROR_FORM_ERROR'
             else:
                 error = self.locate(By.CLASS_NAME, present_error_class)
-                self.logger.debug(error.text)
                 if error.text == 'Invalid Username or Password':
                     self.logger.error(f'Invalid Username or Password')
                     self.posh_user.status = '2'
@@ -676,10 +673,6 @@ class PoshMarkClient:
                     except NoSuchElementException:
                         icon = None
 
-                    # DEBUGGING
-                    if icon:
-                        self.logger.debug(icon.text)
-
                     if not icon:
                         shareable_listings.append(title.text)
                     elif icon.text == 'SOLD':
@@ -1041,7 +1034,6 @@ class PoshMarkClient:
 
                         secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                         for category in secondary_categories[1:]:
-                            self.logger.debug(f'{category.text}, {secondary_category}')
                             if category.text == secondary_category:
                                 category.click()
                                 break

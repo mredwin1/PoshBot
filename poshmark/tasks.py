@@ -157,15 +157,11 @@ def advanced_sharing(campaign_id, proxy_id):
 
     
     posh_user.refresh_from_db()
-    logger.debug(posh_user.is_registered)
-    logger.debug(campaign.status)
     if posh_user.is_registered:
         proxy.refresh_from_db()
-        logger.debug(proxy.current_connections)
         proxy.registered_accounts += 1
         proxy.current_connections -= 1
         proxy.save()
-        logger.debug(proxy.current_connections)
 
         with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
             while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
