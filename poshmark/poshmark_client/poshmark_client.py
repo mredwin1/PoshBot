@@ -1302,64 +1302,69 @@ class PoshMarkClient:
                                     except NoSuchElementException:
                                         pass
 
-                                if sender_offer >= listing.lowest_price:
-                                    primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
-                                    for button in primary_buttons:
-                                        if button.text == 'Accept':
-                                            button.click()
-                                            break
-
-                                    self.sleep(2)
-
-                                    primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
-                                    for button in primary_buttons:
-                                        if button.text == 'Yes':
-                                            button.click()
-                                            self.logger.info(f'Accepted offer at ${sender_offer}.')
-                                            self.sleep(5)
-                                            break
-                                else:
-                                    secondary_buttons = self.locate_all(By.CLASS_NAME, 'btn--tertiary')
-
-                                    if receiver_offer < listing.lowest_price - 4:
-                                        for button in secondary_buttons:
-                                            if button.text == 'Decline':
+                                if sender_offer:
+                                    if sender_offer >= listing.lowest_price:
+                                        primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                        for button in primary_buttons:
+                                            if button.text == 'Accept':
                                                 button.click()
                                                 break
 
-                                        self.sleep(1)
+                                        self.sleep(2)
+
                                         primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
                                         for button in primary_buttons:
                                             if button.text == 'Yes':
                                                 button.click()
+                                                self.logger.info(f'Accepted offer at ${sender_offer}.')
                                                 self.sleep(5)
                                                 break
                                     else:
-                                        for button in secondary_buttons:
-                                            if button.text == 'Counter':
-                                                button.click()
-                                                break
-                                        if receiver_offer <= listing.lowest_price:
-                                            new_offer = receiver_offer - 1
+                                        secondary_buttons = self.locate_all(By.CLASS_NAME, 'btn--tertiary')
+
+                                        if receiver_offer < listing.lowest_price - 4:
+                                            for button in secondary_buttons:
+                                                if button.text == 'Decline':
+                                                    button.click()
+                                                    break
+
+                                            self.sleep(1)
+                                            primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                            for button in primary_buttons:
+                                                if button.text == 'Yes':
+                                                    button.click()
+                                                    self.sleep(5)
+                                                    break
                                         else:
-                                            new_offer = round(receiver_offer - (receiver_offer * .05))
-                                            if new_offer < listing.lowest_price:
-                                                new_offer = listing.lowest_price
+                                            for button in secondary_buttons:
+                                                if button.text == 'Counter':
+                                                    button.click()
+                                                    break
+                                            if receiver_offer <= listing.lowest_price:
+                                                new_offer = receiver_offer - 1
+                                            else:
+                                                new_offer = round(receiver_offer - (receiver_offer * .05))
+                                                if new_offer < listing.lowest_price:
+                                                    new_offer = listing.lowest_price
 
-                                        counter_offer = new_offer
+                                            counter_offer = new_offer
 
-                                        counter_offer_input = self.locate(By.CLASS_NAME, 'form__text--input')
-                                        counter_offer_input.send_keys(str(counter_offer))
-                                        self.sleep(2)
-                                        primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
-                                        for button in primary_buttons:
-                                            if button.text == 'Submit':
-                                                button.click()
-                                                self.logger.info(f'Buyer offered ${sender_offer}, countered offer sent for ${counter_offer}')
-                                                self.sleep(5)
-                                                break
+                                            counter_offer_input = self.locate(By.CLASS_NAME, 'form__text--input')
+                                            counter_offer_input.send_keys(str(counter_offer))
+                                            self.sleep(2)
+                                            primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                            for button in primary_buttons:
+                                                if button.text == 'Submit':
+                                                    button.click()
+                                                    self.logger.info(f'Buyer offered ${sender_offer}, countered offer sent for ${counter_offer}')
+                                                    self.sleep(5)
+                                                    break
+                                else:
+                                    self.logger.warning('Nothing to do on the current offer')
+                                    self.logger.debug(f'Our Offer: ${receiver_offer} Sender Offer: ${sender_offer}')
                             except TimeoutException:
-                                self.logger.warning('Nothing to do on the current offer, seems buyer has not counter offered.')
+                                self.logger.warning(
+                                    'Nothing to do on the current offer, seems buyer has not counter offered.')
                             self.web_driver.get(offer_page_url)
             else:
                 self.logger.warning('No offers at the moment')
