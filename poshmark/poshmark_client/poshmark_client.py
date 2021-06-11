@@ -462,6 +462,7 @@ class PoshMarkClient:
                         self.sleep(5)
 
                     if response.status_code == requests.codes.ok:
+                        self.posh_user.is_registered = True
                         self.posh_user.status = '1'
                         self.posh_user.save()
                         self.logger.info(
@@ -490,10 +491,6 @@ class PoshMarkClient:
                         self.sleep(1, 3)  # Sleep for realism
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
-
-                        self.posh_user.is_registered = True
-                        self.posh_user.status = '1'
-                        self.posh_user.save()
 
                         self.logger.info('Registration Complete')
                     else:
@@ -517,6 +514,7 @@ class PoshMarkClient:
                         self.sleep(5)
 
                     if response.status_code == requests.codes.ok:
+                        self.posh_user.is_registered = True
                         self.posh_user.status = '1'
                         self.posh_user.save()
                         self.logger.info(
@@ -546,9 +544,6 @@ class PoshMarkClient:
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
 
-                        self.posh_user.is_registered = True
-                        self.posh_user.status = '1'
-                        self.posh_user.save()
                         self.logger.info('Registration Complete')
                     else:
                         self.posh_user.is_registered = False
@@ -557,11 +552,11 @@ class PoshMarkClient:
                         self.logger.info('Registration was not successful')
 
             except Exception as e:
-                self.logger.error(f'Error encountered - Changing status back to {previous_status}')
                 self.logger.error(f'{traceback.format_exc()}')
-
-                self.posh_user.status = previous_status
-                self.posh_user.save()
+                if not self.posh_user.is_registered:
+                    self.logger.error(f'User did not get registered - Changing status back to {previous_status}')
+                    self.posh_user.status = previous_status
+                    self.posh_user.save()
 
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
