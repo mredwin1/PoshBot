@@ -46,7 +46,7 @@ def start_campaign(campaign_id):
 def basic_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
+    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user, user=posh_user.user)
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
     now = datetime.datetime.now(pytz.utc)
@@ -118,7 +118,7 @@ def advanced_sharing(campaign_id, proxy_id):
     campaign = Campaign.objects.get(id=campaign_id)
     proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
+    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user, user=posh_user.user)
     campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
     listed_items = 0
     logged_hour_message = False
