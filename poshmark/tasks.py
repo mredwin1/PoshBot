@@ -49,19 +49,20 @@ def basic_sharing(campaign_id):
     logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user)
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
-
+    now = datetime.datetime.now(pytz.utc)
+    end_time = now + datetime.timedelta(days=1)
+    sent_offer = False
     campaign.status = '1'
     campaign.save()
     logger.save()
 
     logger.info('Starting Campaign')
-    with PoshMarkClient(posh_user, logger) as client:
-        now = datetime.datetime.now(pytz.utc)
-        end_time = (now + datetime.timedelta(days=1)).replace(hour=7, minute=55, microsecond=0)
+    with PoshMarkClient(posh_user, campaign, logger) as client:
         while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
             campaign.refresh_from_db()
             posh_user.refresh_from_db()
             now = datetime.datetime.now(pytz.utc)
+            # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
                 campaign.refresh_from_db()
                 posh_user.refresh_from_db()
@@ -73,6 +74,11 @@ def basic_sharing(campaign_id):
                         for listing_title in listing_titles['shareable_listings']:
                             pre_share_time = time.time()
                             if client.share_item(listing_title):
+                                client.check_offers(listing_title=listing_title)
+
+                                if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
+                                    sent_offer = client.send_offer_to_likers(listing_title=listing_title)
+
                                 positive_negative = 1 if random.random() < 0.5 else -1
                                 deviation = random.randint(0, max_deviation) * positive_negative
                                 post_share_time = time.time()
@@ -83,17 +89,25 @@ def basic_sharing(campaign_id):
                                     client.sleep(sleep_amount)
                             else:
                                 break
+                    elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                        posh_user.status = PoshUser.INACTIVE
+                        posh_user.save()
 
                 if logged_hour_message:
                     logged_hour_message = False
 
             if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
-                logger.info(f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                logger.info(
+                    f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                logged_hour_message = True
 
     logger.info('Campaign Ended')
 
-    if campaign.status == '1':
-        return campaign_id
+    campaign.refresh_from_db()
+    if campaign.status == '1' or campaign.status == '5':
+        campaign.status = '2'
+        campaign.save()
+        restart_task.delay(campaign.id)
     elif campaign.status == '3':
         campaign.status = '2'
         campaign.save()
@@ -239,10 +253,7 @@ def restart_task(campaign_id):
     run_again = True
 
     if campaign.mode == Campaign.BASIC_SHARING:
-        if campaign.auto_run:
-            task = chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
-        else:
-            task = basic_sharing.delay(campaign_id)
+        basic_sharing.delay(campaign_id)
     elif campaign.mode == Campaign.ADVANCED_SHARING:
         if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
             new_posh_user = old_posh_user.generate_random_posh_user()

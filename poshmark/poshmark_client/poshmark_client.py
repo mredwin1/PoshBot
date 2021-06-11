@@ -1244,18 +1244,23 @@ class PoshMarkClient:
                 news_nav = self.locate(By.XPATH, '//a[@href="/news"]')
                 news_nav.click()
 
-    def check_offers(self, listing):
+    def check_offers(self, listing=None, listing_title=None):
         try:
-            self.logger.info(f'Checking offers for {listing.title}')
+            listing_title = listing.title if listing else listing_title
+            lowest_price = listing.lowest_price if listing else self.campaign.lowest_price
+            self.logger.info(f'Checking offers for {listing_title}')
             self.web_driver.get('https://poshmark.com/offers/my_offers')
 
             if self.is_present(By.CLASS_NAME, 'active-offers__content'):
                 offers = self.locate_all(By.CLASS_NAME, 'active-offers__content')
 
                 for offer in offers:
-                    if listing.title in offer.text:
+                    if listing_title in offer.text:
                         self.logger.info('Offers found')
                         offer.click()
+
+                        listing_price_text = self.locate(By.XPATH, '//*[@id="content"]/div/div[2]/div[2]/div[1]/div/div[2]/h5[2]').text
+                        listing_price = int(re.findall(r'\d+', listing_price_text)[-1])
 
                         active_offers = self.locate_all(By.CLASS_NAME, 'active-offers__content')
                         offer_page_url = self.web_driver.current_url
@@ -1291,7 +1296,7 @@ class PoshMarkClient:
                                         elif 'receiver' in bubble.get_attribute('class') and not receiver_offer:
                                             text = bubble.text
                                             if 'declined' in text:
-                                                receiver_offer = listing.listing_price
+                                                receiver_offer = listing_price
                                             elif 'offered' or 'listed' in text:
                                                 receiver_offer = int(re.findall(r'\d+', text)[-1])
                                             else:
@@ -1301,7 +1306,7 @@ class PoshMarkClient:
                                         pass
 
                                 if sender_offer:
-                                    if sender_offer >= listing.lowest_price:
+                                    if sender_offer >= lowest_price:
                                         primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
                                         for button in primary_buttons:
                                             if button.text == 'Accept':
@@ -1320,7 +1325,7 @@ class PoshMarkClient:
                                     else:
                                         secondary_buttons = self.locate_all(By.CLASS_NAME, 'btn--tertiary')
 
-                                        if receiver_offer < listing.lowest_price - 4:
+                                        if receiver_offer < lowest_price - 4:
                                             for button in secondary_buttons:
                                                 if button.text == 'Decline':
                                                     button.click()
@@ -1338,12 +1343,12 @@ class PoshMarkClient:
                                                 if button.text == 'Counter':
                                                     button.click()
                                                     break
-                                            if receiver_offer <= listing.lowest_price:
+                                            if receiver_offer <= lowest_price:
                                                 new_offer = receiver_offer - 1
                                             else:
                                                 new_offer = round(receiver_offer - (receiver_offer * .05))
-                                                if new_offer < listing.lowest_price:
-                                                    new_offer = listing.lowest_price
+                                                if new_offer < lowest_price:
+                                                    new_offer = lowest_price
 
                                             counter_offer = new_offer
 
@@ -1361,8 +1366,7 @@ class PoshMarkClient:
                                     self.logger.warning('Nothing to do on the current offer')
                                     self.logger.debug(f'Our Offer: ${receiver_offer} Sender Offer: ${sender_offer}')
                             except TimeoutException:
-                                self.logger.warning(
-                                    'Nothing to do on the current offer, seems buyer has not counter offered.')
+                                self.logger.warning('Nothing to do on the current offer, seems buyer has not counter offered.')
                             self.web_driver.get(offer_page_url)
             else:
                 self.logger.warning('No offers at the moment')
@@ -1372,18 +1376,22 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
-    def send_offer_to_likers(self, listing):
+    def send_offer_to_likers(self, listing=None, listing_title=None):
         """Will send offers to all likers for a given listing"""
         try:
-            self.logger.info(f'Sending offers to all likers for the following item: {listing.title}')
+            listing_title = listing.title if listing else listing_title
+            lowest_price = listing.lowest_price if listing else self.campaign.lowest_price
+            self.logger.info(f'Sending offers to all likers for the following item: {listing_title}')
 
             self.go_to_closet()
 
-            if self.check_listing(listing.title):
+            if self.check_listing(listing_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
                 for listed_item in listed_items:
                     title = listed_item.find_element_by_class_name('tile__title')
-                    if title.text == listing.title:
+                    if title.text == listing_title:
+                        listing_price = listed_item.find_element_by_class_name('fw--bold').text[1:]
+
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
@@ -1399,8 +1407,8 @@ class PoshMarkClient:
 
                         self.sleep(1)
 
-                        offer = round(listing.lowest_price + (listing.lowest_price * .05))
-                        ten_off = int(listing.listing_price - (listing.listing_price * .1))
+                        offer = round(lowest_price + (lowest_price * .05))
+                        ten_off = int(listing_price - (listing_price * .1))
                         if offer > ten_off:
                             offer = ten_off
 

@@ -321,10 +321,7 @@ class StartCampaign(View, LoginRequiredMixin):
 
         if campaign.posh_user and listings and campaign.status == '2':
             if campaign.mode == Campaign.BASIC_SHARING:
-                if campaign.auto_run:
-                    chain(basic_sharing.s(campaign_id), restart_task.s()).apply_async()
-                else:
-                    basic_sharing.delay(campaign_id)
+                basic_sharing.delay(campaign_id)
             elif campaign.mode == Campaign.ADVANCED_SHARING:
                 start_campaign.delay(campaign_id)
 
