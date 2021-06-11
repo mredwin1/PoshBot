@@ -5,6 +5,7 @@ import random
 import time
 
 from django.utils import timezone
+from django.db.models import Q
 from celery import shared_task, chain
 
 from .models import PoshUser, Log, Campaign, Listing, PoshProxy
@@ -21,22 +22,33 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
-    proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
+    proxy = PoshProxy.objects.filter(Q(connection1__isnull=True) | Q(connection2__isnull=True)).first()
 
-    while proxy is None:
+    while not proxy:
         time.sleep(30)
-        proxy = PoshProxy.objects.filter(current_connections__lt=2).first()
+        proxy = PoshProxy.objects.filter(Q(connection1__isnull=True) | Q(connection2__isnull=True)).first()
 
     if proxy.registered_accounts >= proxy.max_accounts:
-        while proxy.current_connections != 0:
+        while proxy.connection1 or proxy.connection2:
             time.sleep(30)
+            now = datetime.datetime.now()
+            import logging
+            logging.info(now)
+            logging.info(proxy.connection1_datetime_added)
+            logging.info(proxy.connection2_datetime_added)
+            if (now - proxy.connection1_datetime_added).seconds >= 900:
+                proxy.connection1 = None
+                proxy.save()
+            if (now - proxy.connection2_datetime_added).seconds >= 900:
+                proxy.connection2 = None
+                proxy.save()
             proxy.refresh_from_db()
         proxy.reset_ip()
 
-    proxy.current_connections += 1
     proxy.save()
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
+        proxy.add_connection(campaign.posh_user)
         advanced_sharing.delay(campaign_id, proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
@@ -73,22 +85,20 @@ def basic_sharing(campaign_id):
                     if listing_titles['shareable_listings']:
                         for listing_title in listing_titles['shareable_listings']:
                             pre_share_time = time.time()
-                            if client.share_item(listing_title):
-                                client.check_offers(listing_title=listing_title)
+                            client.share_item(listing_title)
+                            client.check_offers(listing_title=listing_title)
 
-                                if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
-                                    sent_offer = client.send_offer_to_likers(listing_title=listing_title)
+                            if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
+                                sent_offer = client.send_offer_to_likers(listing_title=listing_title)
 
-                                positive_negative = 1 if random.random() < 0.5 else -1
-                                deviation = random.randint(0, max_deviation) * positive_negative
-                                post_share_time = time.time()
-                                elapsed_time = round(post_share_time - pre_share_time, 2)
-                                sleep_amount = (campaign.delay - elapsed_time) + deviation
+                            positive_negative = 1 if random.random() < 0.5 else -1
+                            deviation = random.randint(0, max_deviation) * positive_negative
+                            post_share_time = time.time()
+                            elapsed_time = round(post_share_time - pre_share_time, 2)
+                            sleep_amount = (campaign.delay - elapsed_time) + deviation
 
-                                if elapsed_time < sleep_amount:
-                                    client.sleep(sleep_amount)
-                            else:
-                                break
+                            if elapsed_time < sleep_amount:
+                                client.sleep(sleep_amount)
                     elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                         posh_user.status = PoshUser.INACTIVE
                         posh_user.save()
@@ -170,12 +180,12 @@ def advanced_sharing(campaign_id, proxy_id):
                                 listed_items += 1
                                 logger.warning(f'{listing.title} already listed, not re listing')
 
+    proxy.remove_connection(posh_user)
     
     posh_user.refresh_from_db()
     if posh_user.is_registered:
         proxy.refresh_from_db()
         proxy.registered_accounts += 1
-        proxy.current_connections -= 1
         proxy.save()
 
         with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
@@ -200,25 +210,22 @@ def advanced_sharing(campaign_id, proxy_id):
                                     break
                                 else:
                                     pre_share_time = time.time()
-                                    if no_proxy_client.share_item(listing_title):
-                                        current_listing = Listing.objects.get(title=listing_title)
-                                        no_proxy_client.check_offers(listing=current_listing)
+                                    no_proxy_client.share_item(listing_title)
 
-                                        logger.debug(now)
-                                        logger.debug(end_time.replace(hour=11, minute=0, second=0))
-                                        if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
-                                            sent_offer = no_proxy_client.send_offer_to_likers(listing=current_listing)
+                                    current_listing = Listing.objects.get(title=listing_title)
+                                    no_proxy_client.check_offers(listing=current_listing)
 
-                                        positive_negative = 1 if random.random() < 0.5 else -1
-                                        deviation = random.randint(0, max_deviation) * positive_negative
-                                        post_share_time = time.time()
-                                        elapsed_time = round(post_share_time - pre_share_time, 2)
-                                        sleep_amount = (campaign.delay - elapsed_time) + deviation
+                                    if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
+                                        sent_offer = no_proxy_client.send_offer_to_likers(listing=current_listing)
 
-                                        if elapsed_time < sleep_amount:
-                                            no_proxy_client.sleep(sleep_amount)
-                                    else:
-                                        break
+                                    positive_negative = 1 if random.random() < 0.5 else -1
+                                    deviation = random.randint(0, max_deviation) * positive_negative
+                                    post_share_time = time.time()
+                                    elapsed_time = round(post_share_time - pre_share_time, 2)
+                                    sleep_amount = (campaign.delay - elapsed_time) + deviation
+
+                                    if elapsed_time < sleep_amount:
+                                        no_proxy_client.sleep(sleep_amount)
                         elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                             posh_user.status = PoshUser.INACTIVE
                             posh_user.save()
@@ -230,10 +237,6 @@ def advanced_sharing(campaign_id, proxy_id):
                     logger.info(
                         f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
                     logged_hour_message = True
-    else:
-        proxy.refresh_from_db()
-        proxy.current_connections -= 1
-        proxy.save()
 
     logger.info('Campaign Ended')
     campaign.refresh_from_db()
