@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from django.db.utils import OperationalError
 
 from users.models import User
-from poshmark.models import Campaign, PoshProxy
+from poshmark.models import Campaign, ProxyConnection
 
 
 class Command(BaseCommand):
@@ -71,11 +71,9 @@ class Command(BaseCommand):
             campaign.status = '2'
             campaign.save()
 
-        logging.info('Setting proxy connections to 0')
-        posh_proxies = PoshProxy.objects.all()
-        for posh_proxy in posh_proxies:
-            posh_proxy.current_connections = 0
-            posh_proxy.save()
+        logging.info('Removing all proxy connections')
+        connections = ProxyConnection.objects.all()
+        connections.delete()
 
         logging.info('Starting server...')
         os.system("gunicorn --preload -b 0.0.0.0:80 PoshBot.wsgi:application --threads 8 -w 4")
