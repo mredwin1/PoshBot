@@ -1275,8 +1275,8 @@ class PoshMarkClient:
                             try:
                                 self.locate_all(By.CLASS_NAME, 'btn--primary')
 
-                                sender_offer = None
-                                receiver_offer = None
+                                sender_offer = 0
+                                receiver_offer = 0
                                 chat_bubbles = self.locate_all(By.CLASS_NAME, 'ai--fs')
                                 for chat_bubble in reversed(chat_bubbles):
                                     try:
@@ -1306,7 +1306,7 @@ class PoshMarkClient:
                                         pass
 
                                 if sender_offer:
-                                    if sender_offer >= lowest_price:
+                                    if sender_offer >= lowest_price or sender_offer >= receiver_offer - 1:
                                         primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
                                         for button in primary_buttons:
                                             if button.text == 'Accept':
