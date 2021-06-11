@@ -40,6 +40,9 @@ def start_campaign(campaign_id):
                     logging.info(elapsed_time)
                     if elapsed_time > 900:
                         deleted = True
+                        broken_campaign = Campaign.objects.get(posh_user=connection.posh_user)
+                        broken_campaign.status = '5'
+                        broken_campaign.save()
                         connection.delete()
                 if not deleted:
                     time.sleep(30)
