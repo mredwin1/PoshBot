@@ -455,15 +455,10 @@ class LogEntry(models.Model):
 
 
 class PoshProxy(models.Model):
-    connection1 = models.OneToOneField(PoshUser, on_delete=models.SET_NULL, blank=True, null=True)
-    connection2 = models.OneToOneField(PoshUser, on_delete=models.SET_NULL, blank=True, null=True)
-
-    connection1_datetime_added = models.DateTimeField(blank=True, null=True)
-    connection2_datetime_added = models.DateTimeField(blank=True, null=True)
-
     ip_reset_url = models.CharField(max_length=200, default='', blank=True)
 
     max_accounts = models.IntegerField()
+    max_connections = models.IntegerField(default=2)
     registered_accounts = models.IntegerField()
 
     ip = models.GenericIPAddressField()
@@ -484,18 +479,20 @@ class PoshProxy(models.Model):
         self.save()
 
     def add_connection(self, posh_user):
-        if self.connection1:
-            self.connection2 = posh_user
-            self.connection2_datetime_added = timezone.now()
-        else:
-            self.connection1 = posh_user
-            self.connection1_datetime_added = timezone.now()
-        self.save()
+        new_connection = ProxyConnection(
+            posh_proxy=self,
+            posh_user=posh_user,
+            datetime=timezone.now()
+        )
+        new_connection.save()
 
-    def remove_connection(self, posh_user):
-        if self.connection1 == posh_user:
-            self.connection1 = None
-            self.connection1_datetime_added = None
-        else:
-            self.connection2 = None
-            self.connection2_datetime_added = None
+    @staticmethod
+    def remove_connection(posh_user):
+        connection = ProxyConnection.objects.get(posh_user=posh_user)
+        connection.delete()
+
+
+class ProxyConnection(models.Model):
+    posh_proxy = models.ForeignKey(PoshProxy, on_delete=models.CASCADE)
+    posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
+    datetime = models.DateTimeField()

@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.db.models import Q
 from celery import shared_task, chain
 
-from .models import PoshUser, Log, Campaign, Listing, PoshProxy
+from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 
@@ -22,34 +22,36 @@ def log_cleanup():
 
 @shared_task
 def start_campaign(campaign_id):
-    proxy = PoshProxy.objects.filter(Q(connection1__isnull=True) | Q(connection2__isnull=True)).first()
+    selected_proxy = None
 
-    while not proxy:
-        time.sleep(30)
-        proxy = PoshProxy.objects.filter(Q(connection1__isnull=True) | Q(connection2__isnull=True)).first()
+    while not selected_proxy:
+        proxies = PoshProxy.objects.all()
+        for proxy in proxies:
+            connections = ProxyConnection.objects.filter(posh_proxy=proxy)
+            if len(connections) < proxy.max_connections:
+                selected_proxy = proxy
+            else:
+                now = timezone.now()
+                deleted = False
+                for connection in connections:
+                    if (now - connection.datetime).seconds > 900:
+                        deleted = True
+                        connection.delete()
+                if not deleted:
+                    time.sleep(30)
 
-    if proxy.registered_accounts >= proxy.max_accounts:
-        while proxy.connection1 or proxy.connection2:
+    if selected_proxy.registered_accounts >= selected_proxy.max_accounts:
+        connections = ProxyConnection.objects.filter(posh_proxy=selected_proxy)
+        if connections:
             time.sleep(30)
-            now = datetime.datetime.now()
-            import logging
-            logging.info(now)
-            logging.info(proxy.connection1_datetime_added)
-            logging.info(proxy.connection2_datetime_added)
-            if (now - proxy.connection1_datetime_added).seconds >= 900:
-                proxy.connection1 = None
-                proxy.save()
-            if (now - proxy.connection2_datetime_added).seconds >= 900:
-                proxy.connection2 = None
-                proxy.save()
-            proxy.refresh_from_db()
-        proxy.reset_ip()
+            selected_proxy.refresh_from_db()
+        else:
+            selected_proxy.reset_ip()
 
-    proxy.save()
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
-        proxy.add_connection(campaign.posh_user)
-        advanced_sharing.delay(campaign_id, proxy.id)
+        selected_proxy.add_connection(campaign.posh_user)
+        advanced_sharing.delay(campaign_id, selected_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
