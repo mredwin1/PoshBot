@@ -492,7 +492,6 @@ class PoshProxy(models.Model):
         if connection:
             connection.delete()
 
-
     def __str__(self):
         return f'Proxy #{self.id}'
 
