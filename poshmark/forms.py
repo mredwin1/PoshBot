@@ -264,6 +264,9 @@ class CreateCampaign(forms.Form):
             pass
 
         self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
+        
+        if self.cleaned_data['lowest_price'] is None:
+            self.cleaned_data['lowest_price'] = 0
 
     def save(self):
         new_campaign = Campaign(
