@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PoshUser, Log, Listing, Campaign, PoshProxy
+from .models import PoshUser, Log, Listing, Campaign, PoshProxy, ProxyConnection
 
 
 class PoshUserAdmin(admin.ModelAdmin):
@@ -31,3 +31,4 @@ admin.site.register(Log)
 admin.site.register(Listing)
 admin.site.register(Campaign)
 admin.site.register(PoshProxy)
+admin.site.register(ProxyConnection)
