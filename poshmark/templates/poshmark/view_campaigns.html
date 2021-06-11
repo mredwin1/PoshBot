@@ -41,11 +41,13 @@
                 <button type="button" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Basic Campaign" id="addBasicCampaign">+</button>
             </div>
         </div>
-        <div class="col-1">
-            <div class="d-flex align-items-center justify-content-center h-100">
-                <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">++</a>
+        {% if perms.can_have_advanced_campaing %}
+            <div class="col-1">
+                <div class="d-flex align-items-center justify-content-center h-100">
+                    <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">++</a>
+                </div>
             </div>
-        </div>
+        {% endif %}
     </div>
     <hr>
     {% for group_campaign in object_list %}
