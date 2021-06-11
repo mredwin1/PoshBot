@@ -34,7 +34,11 @@ def start_campaign(campaign_id):
                 now = timezone.now()
                 deleted = False
                 for connection in connections:
-                    if (now - connection.datetime).seconds > 900:
+                    elapsed_time = (now - connection.datetime).seconds
+                    logging.info(now)
+                    logging.info(connection.datetime)
+                    logging.info(elapsed_time)
+                    if elapsed_time > 900:
                         deleted = True
                         connection.delete()
                 if not deleted:
