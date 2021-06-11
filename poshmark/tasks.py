@@ -42,11 +42,12 @@ def start_campaign(campaign_id):
 
     if selected_proxy.registered_accounts >= selected_proxy.max_accounts:
         connections = ProxyConnection.objects.filter(posh_proxy=selected_proxy)
-        if connections:
+
+        while connections:
             time.sleep(30)
-            selected_proxy.refresh_from_db()
-        else:
-            selected_proxy.reset_ip()
+            connections = ProxyConnection.objects.filter(posh_proxy=selected_proxy)
+
+        selected_proxy.reset_ip()
 
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
