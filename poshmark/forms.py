@@ -264,7 +264,7 @@ class CreateCampaign(forms.Form):
             pass
 
         self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
-        
+
         if self.cleaned_data['lowest_price'] is None:
             self.cleaned_data['lowest_price'] = 0
 
@@ -424,6 +424,9 @@ class EditCampaignForm(CreateCampaign):
                 self.add_error(listings_field, 'This field is required.')
 
         self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
+
+        if self.cleaned_data['lowest_price'] is None:
+            self.cleaned_data['lowest_price'] = 0
 
     def save(self):
         self.campaign.posh_user = self.cleaned_data['posh_user']
