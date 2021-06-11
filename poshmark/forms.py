@@ -208,6 +208,7 @@ class CreateCampaign(forms.Form):
     delay = forms.FloatField()
     auto_run = forms.BooleanField(required=False)
     generate_users = forms.BooleanField(required=False)
+    lowest_price = forms.IntegerField(required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(CreateCampaign, self).__init__(*args, **kwargs)
@@ -275,6 +276,7 @@ class CreateCampaign(forms.Form):
             auto_run=self.cleaned_data['auto_run'],
             generate_users=self.cleaned_data['generate_users'],
             mode=self.cleaned_data['mode'],
+            lowest_price=self.cleaned_data['lowest_price'],
         )
 
         new_campaign.save()
@@ -290,6 +292,7 @@ class CreateCampaign(forms.Form):
 class CreateBasicCampaignForm(forms.Form):
     title = forms.CharField(label='Title')
     delay = forms.FloatField(label='Delay')
+    lowest_price = forms.IntegerField(label='Lowest Price')
     username = forms.CharField(label='Username')
     password = forms.CharField(label='Password')
 
@@ -374,6 +377,7 @@ class EditCampaignForm(CreateCampaign):
         self.fields['delay'].initial = round(campaign.delay / 60, 2)
         self.fields['auto_run'].initial = campaign.auto_run
         self.fields['generate_users'].initial = campaign.generate_users
+        self.fields['lowest_price'].initial = campaign.lowest_price
 
     def clean(self):
         posh_user_field = 'posh_user'
@@ -426,6 +430,7 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.auto_run = self.cleaned_data['auto_run']
         self.campaign.generate_users = self.cleaned_data['generate_users']
         self.campaign.mode = self.cleaned_data['mode']
+        self.campaign.lowest_price = self.cleaned_data['lowest_price']
 
         self.campaign.posh_user.status = PoshUser.INUSE
         self.campaign.posh_user.save()

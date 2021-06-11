@@ -293,7 +293,7 @@ class Campaign(models.Model):
     times = models.CharField(max_length=255)
 
     delay = models.IntegerField()
-    lowest_price = models.IntegerField(blank=True)
+    lowest_price = models.IntegerField(blank=True, default=250)
 
     auto_run = models.BooleanField(default=False)
     generate_users = models.BooleanField(default=False)

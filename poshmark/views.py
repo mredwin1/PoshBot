@@ -318,23 +318,24 @@ class StartCampaign(View, LoginRequiredMixin):
         campaign_id = self.kwargs['campaign_id']
         campaign = Campaign.objects.get(id=campaign_id)
         listings = Listing.objects.filter(campaign=campaign)
+        data = {}
 
-        if campaign.posh_user and listings and campaign.status == '2':
+        if campaign.posh_user and campaign.status == '2':
             if campaign.mode == Campaign.BASIC_SHARING:
                 basic_sharing.delay(campaign_id)
             elif campaign.mode == Campaign.ADVANCED_SHARING:
-                start_campaign.delay(campaign_id)
+                if listings:
+                    start_campaign.delay(campaign_id)
+                else:
+                    data['error'] = 'No listings in the campaign'
+        else:
+            data['error'] = 'No posh user found in the campaign'
 
+        if 'error' not in data.keys():
             campaign.status = '4'
             campaign.save()
 
-            data = {
-                'task_id': 'task_id'
-            }
-        else:
-            data = {
-                'error': 'No posh user or listing found in the campaign'
-            }
+            data['task_id'] = 'task_id'
 
         return JsonResponse(data=data, status=200, safe=False)
 

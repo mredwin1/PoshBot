@@ -15,7 +15,7 @@ $(document).ready(function () {
 
         listings_field.val("");
         listings_field.val(listing_ids_list);
-    };
+    }
     function highlight_selection() {
         let clicked = $(this);
         let parent = clicked.parent();
@@ -95,6 +95,9 @@ $(document).ready(function () {
     };
     $("#id_delay").inputFilter(function(value) {
         return /(^\d*$)|(\.$)|(^\d*\.\d*$)/.test(value);    // Allow digits only, using a RegExp
+    });
+    $("#id_lowest_price").inputFilter(function(value) {
+        return /(^\d)/.test(value);    // Allow digits only, using a RegExp
     });
     $('.time').click( function (event) {
         let current_button = $(this);
@@ -184,13 +187,18 @@ $(document).ready(function () {
         let mode = $(this).val();
         let listing_items = $('#listing');
         let generate_users = $('#generate_users');
+        let lowest_price_container = $('#lowest_price_container')
 
         if (mode === '0') {
             listing_items.hide();
             generate_users.hide();
+            lowest_price_container.show();
+            lowest_price_container.prop('required', true);
         } else if (mode === '1') {
             listing_items.show();
             generate_users.show();
+            lowest_price_container.hide();
+            lowest_price_container.prop('required', false);
         }
     });
     $('#mainModal').on('show.bs.modal', function (event) {
