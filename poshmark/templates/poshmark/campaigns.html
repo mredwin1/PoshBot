@@ -48,7 +48,7 @@
                 <label for="{{ form.title.id_for_label }}" class="col-2 col-form-label">TITLE</label>
                 <input type="text" id="{{ form.title.auto_id }}" value="{% if form.title.value %}{{ form.title.value }}{% endif %}" name="{{ form.title.name }}" class="form-control col-6" placeholder="Title" maxlength="30" required>
                 {{ form.title.errors }}
-                <label for="{{ form.lowest_price.id_for_label }}" class="col-2 col-form-label">LOWEST PRICE</label>
+                <label for="{{ form.lowest_price.id_for_label }}" class="col-2 col-form-label" id="lowest_price_label">LOWEST PRICE</label>
                 <input type="text" id="{{ form.lowest_price.auto_id }}" value="{% if form.lowest_price.value %}{{ form.lowest_price.value }}{% endif %}" name="{{ form.lowest_price.name }}" class="form-control col-2">
                 {{ form.lowest_price.errors }}
             </div>

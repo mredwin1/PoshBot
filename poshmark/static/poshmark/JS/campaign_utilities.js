@@ -187,18 +187,21 @@ $(document).ready(function () {
         let mode = $(this).val();
         let listing_items = $('#listing');
         let generate_users = $('#generate_users');
-        let lowest_price_container = $('#lowest_price_container')
+        let lowest_price_label = $('#lowest_price_label')
+        let lowest_price_input = $('#id_lowest_price')
 
         if (mode === '0') {
             listing_items.hide();
             generate_users.hide();
-            lowest_price_container.show();
-            lowest_price_container.prop('required', true);
+            lowest_price_label.show();
+            lowest_price_input.show();
+            lowest_price_input.prop('required', true);
         } else if (mode === '1') {
             listing_items.show();
             generate_users.show();
-            lowest_price_container.hide();
-            lowest_price_container.prop('required', false);
+            lowest_price_label.hide();
+            lowest_price_input.hide();
+            lowest_price_input.prop('required', false);
         }
     });
     $('#mainModal').on('show.bs.modal', function (event) {
