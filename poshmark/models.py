@@ -493,10 +493,13 @@ class PoshProxy(models.Model):
             connection.delete()
 
 
+    def __str__(self):
+        return f'Proxy #{self.id}'
+
 class ProxyConnection(models.Model):
     posh_proxy = models.ForeignKey(PoshProxy, on_delete=models.CASCADE)
     posh_user = models.OneToOneField(PoshUser, on_delete=models.CASCADE)
     datetime = models.DateTimeField()
 
     def __str__(self):
-        return f'{self.posh_user.username}'
+        return f'{self.posh_user.username} on {self.posh_proxy}'
