@@ -1385,8 +1385,9 @@ class PoshMarkClient:
                 for listed_item in listed_items:
                     title = listed_item.find_element_by_class_name('tile__title')
                     if title.text == listing_title:
-                        listing_price = listed_item.find_element_by_class_name('fw--bold').text[1:]
-
+                        listing_price_text = listed_item.find_element_by_class_name('fw--bold').text
+                        listing_price = int(re.findall(r'\d+', listing_price_text)[-1])
+                        
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
