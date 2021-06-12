@@ -9,7 +9,7 @@ $(document).ready(function () {
 
         $(listing_ids_list).each(function (index, value) {
             if (value === id) {
-               listing_ids_list.splice(index, 1)
+                listing_ids_list.splice(index, 1)
             }
         });
 
@@ -75,22 +75,22 @@ $(document).ready(function () {
                     }
 
                     modal_container.append(li)
-                    })
-               },
+                })
+            },
         });
     }
     $.fn.inputFilter = function(inputFilter) {
         return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
-          if (inputFilter(this.value)) {
-            this.oldValue = this.value;
-            this.oldSelectionStart = this.selectionStart;
-            this.oldSelectionEnd = this.selectionEnd;
-          } else if (this.hasOwnProperty("oldValue")) {
-            this.value = this.oldValue;
-            this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-          } else {
-            this.value = "";
-          }
+            if (inputFilter(this.value)) {
+                this.oldValue = this.value;
+                this.oldSelectionStart = this.selectionStart;
+                this.oldSelectionEnd = this.selectionEnd;
+            } else if (this.hasOwnProperty("oldValue")) {
+                this.value = this.oldValue;
+                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+            } else {
+                this.value = "";
+            }
         });
     };
     $("#id_delay").inputFilter(function(value) {
@@ -174,7 +174,7 @@ $(document).ready(function () {
                         text = temp_text
                     }
                     if (value === text) {
-                       times_added_list.splice(index, 1)
+                        times_added_list.splice(index, 1)
                     }
                 });
 
@@ -324,6 +324,18 @@ $(document).ready(function () {
         }
         main_modal.modal('hide')
     })
+    $('#poshUserModal').on('show.bs.modal', function (event) {
+        let username_field = $('#id_username')
+        let password_field = $('#id_password')
+        let username_value_field = $('#id_posh_username')
+        let password_value_field = $('#id_posh_password')
+
+        username_field.val('')
+        password_field.val('')
+        username_value_field.val('')
+        password_value_field.val('')
+
+    });
     $('#save_posh_user_changes').click(function () {
         let username = $('#id_username').val()
         let password = $('#id_password').val()
@@ -331,12 +343,15 @@ $(document).ready(function () {
         let username_field = $('#posh_username');
         let username_value_field = $('#id_posh_username')
         let password_value_field = $('#id_posh_password')
+        let modal = $('#poshUserModal')
 
         if (username && password) {
             value_field.val('')
             username_field.val(username)
             username_value_field.val(username)
             password_value_field.val(password)
+
+            modal.modal('hide')
         }
     })
 });
