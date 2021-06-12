@@ -5,8 +5,7 @@ import random
 import time
 
 from django.utils import timezone
-from django.db.models import Q
-from celery import shared_task, chain
+from celery import shared_task
 
 from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient

@@ -7,8 +7,9 @@ from poshmark.models import PoshUser, Campaign
 @receiver(post_save, sender=Campaign)
 def campaign_saved(sender, instance, *args, **kwargs):
     if instance.mode == Campaign.BASIC_SHARING:
-        if instance.posh_user.status == PoshUser.INACTIVE:
-            instance.posh_user.delete()
+        if instance.posh_user:
+            if instance.posh_user.status == PoshUser.INACTIVE:
+                instance.posh_user.delete()
 
 
 @receiver(post_delete, sender=PoshUser)

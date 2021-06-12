@@ -235,8 +235,13 @@ $(document).ready(function () {
         if (modal_container.data('type') === 'posh_user') {
             let value_field = $('#id_posh_user');
             let username_field = $('#posh_username');
+            let username_value_field = $('#id_posh_username')
+            let password_value_field = $('#id_posh_password')
+
             username_field.val(selection.text());
             value_field.val(selection.attr('id'));
+            username_value_field.val('');
+            password_value_field.val('');
         } else {
             let listings_field = $('#id_listings');
             let listing_ids = '';
@@ -318,5 +323,20 @@ $(document).ready(function () {
             });
         }
         main_modal.modal('hide')
+    })
+    $('#save_posh_user_changes').click(function () {
+        let username = $('#id_username').val()
+        let password = $('#id_password').val()
+        let value_field = $('#id_posh_user');
+        let username_field = $('#posh_username');
+        let username_value_field = $('#id_posh_username')
+        let password_value_field = $('#id_posh_password')
+
+        if (username && password) {
+            value_field.val('')
+            username_field.val(username)
+            username_value_field.val(username)
+            password_value_field.val(password)
+        }
     })
 });

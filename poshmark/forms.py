@@ -201,9 +201,11 @@ class EditListingForm(CreateListing):
 
 class CreateCampaign(forms.Form):
     title = forms.CharField()
-    times = forms.CharField(widget=forms.HiddenInput())
-    listings = forms.CharField(widget=forms.HiddenInput(), required=False)
-    posh_user = forms.IntegerField(widget=forms.HiddenInput())
+    times = forms.CharField()
+    listings = forms.CharField(required=False)
+    posh_user = forms.IntegerField(required=False)
+    posh_username = forms.CharField(required=False)
+    posh_password = forms.CharField(required=False)
     mode = forms.CharField(initial='')
     delay = forms.FloatField()
     auto_run = forms.BooleanField(required=False)
@@ -218,18 +220,30 @@ class CreateCampaign(forms.Form):
         super(CreateCampaign, self).clean()
 
         posh_user_field = 'posh_user'
-        if posh_user_field in self.cleaned_data.keys():
+        posh_username_field = 'posh_username'
+        posh_password_field = 'posh_password'
+        if self.cleaned_data[posh_user_field] and not (self.cleaned_data['posh_username'] and self.cleaned_data['posh_password']):
             posh_user_id = self.cleaned_data[posh_user_field]
 
             if posh_user_id:
                 self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
             else:
                 self.add_error(posh_user_field, 'This posh user does not exist.')
-        else:
-            pass
 
+        if posh_username_field and posh_password_field in self.cleaned_data.keys() and not self.cleaned_data[posh_user_field]:
+            try:
+                posh_user = PoshUser.objects.get(username=self.cleaned_data['posh_username'])
+                if posh_user.status != PoshUser.ACTIVE:
+                    self.add_error(posh_username_field, 'This PoshUser is in the system and is not active.')
+                else:
+                    self.add_error(posh_username_field, 'This PoshUser is in the system.')
+            except PoshUser.DoesNotExist:
+                response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data[posh_username_field]}')
+                if response.status_code != requests.codes.ok:
+                    self.add_error(posh_username_field, 'This PoshUser does not exist. '
+                                                  'Please sign up at poshmark.com or add it as a PoshUser.')
         times_field = 'times'
-        if times_field in self.cleaned_data.keys():
+        if self.cleaned_data[times_field]:
             times = self.cleaned_data[times_field].split(',')
             local_tz = pytz.timezone('US/Eastern')
             datetimes = []
@@ -240,8 +254,6 @@ class CreateCampaign(forms.Form):
                 datetimes.append(utc_time)
 
             self.cleaned_data[times_field] = ','.join(datetimes)
-        else:
-            pass
 
         if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
             listings_field = 'listings'
@@ -269,9 +281,20 @@ class CreateCampaign(forms.Form):
             self.cleaned_data['lowest_price'] = 0
 
     def save(self):
+        if self.cleaned_data['posh_user']:
+            posh_user = self.cleaned_data['posh_user']
+        else:
+            posh_user = PoshUser(
+                username=self.cleaned_data['posh_username'],
+                password=self.cleaned_data['posh_password'],
+                user=self.request.user,
+                is_registered=True
+            )
+            posh_user.save()
+
         new_campaign = Campaign(
             user=self.request.user,
-            posh_user=self.cleaned_data['posh_user'],
+            posh_user=posh_user,
             title=self.cleaned_data['title'],
             status='2',
             times=self.cleaned_data['times'],
@@ -318,10 +341,12 @@ class CreateBasicCampaignForm(forms.Form):
             posh_user = PoshUser.objects.get(username=self.cleaned_data['username'])
             if posh_user.status != PoshUser.ACTIVE:
                 self.add_error(username_field, 'This PoshUser is in the system and is not active.')
+            else:
+                self.add_error(username_field, 'This PoshUser is in the system.')
         except PoshUser.DoesNotExist:
             response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data[username_field]}')
             if response.status_code != requests.codes.ok:
-                self.add_error(username_field, 'This  PoshUser does not exists. '
+                self.add_error(username_field, 'This PoshUser does not exist. '
                                                'Please sign up at poshmark.com or add it as a PoshUser.')
 
         self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
@@ -334,7 +359,8 @@ class CreateBasicCampaignForm(forms.Form):
                 username=self.cleaned_data['username'],
                 password=self.cleaned_data['password'],
                 user=self.request.user,
-                status=PoshUser.INUSE
+                status=PoshUser.INUSE,
+                is_registered=True
             )
             posh_user.save()
 
@@ -384,18 +410,31 @@ class EditCampaignForm(CreateCampaign):
 
     def clean(self):
         posh_user_field = 'posh_user'
-        if posh_user_field in self.cleaned_data.keys():
+        posh_username_field = 'posh_username'
+        posh_password_field = 'posh_password'
+        if self.cleaned_data[posh_user_field] and not (self.cleaned_data['posh_username'] and self.cleaned_data['posh_password']):
             posh_user_id = self.cleaned_data[posh_user_field]
 
             if posh_user_id:
                 self.cleaned_data[posh_user_field] = PoshUser.objects.get(id=posh_user_id)
             else:
                 self.add_error(posh_user_field, 'This posh user does not exist.')
-        else:
-            pass
+
+        if posh_username_field and posh_password_field in self.cleaned_data.keys() and not self.cleaned_data[posh_user_field]:
+            try:
+                posh_user = PoshUser.objects.get(username=self.cleaned_data['posh_username'])
+                if posh_user.status != PoshUser.ACTIVE:
+                    self.add_error(posh_username_field, 'This PoshUser is in the system and is not active.')
+                else:
+                    self.add_error(posh_username_field, 'This PoshUser is in the system.')
+            except PoshUser.DoesNotExist:
+                response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data[posh_username_field]}')
+                if response.status_code != requests.codes.ok:
+                    self.add_error(posh_username_field, 'This PoshUser does not exist. '
+                                                        'Please sign up at poshmark.com or add it as a PoshUser.')
 
         times_field = 'times'
-        if times_field in self.cleaned_data.keys():
+        if times_field in self.cleaned_data[times_field]:
             times = self.cleaned_data[times_field].split(',')
             local_tz = pytz.timezone('US/Eastern')
             datetimes = []
@@ -429,7 +468,22 @@ class EditCampaignForm(CreateCampaign):
             self.cleaned_data['lowest_price'] = 0
 
     def save(self):
-        self.campaign.posh_user = self.cleaned_data['posh_user']
+        if self.cleaned_data['posh_user']:
+            posh_user = self.cleaned_data['posh_user']
+        else:
+            posh_user = PoshUser(
+                username=self.cleaned_data['posh_username'],
+                password=self.cleaned_data['posh_password'],
+                user=self.request.user,
+                is_registered=True
+            )
+            posh_user.save()
+
+        if self.campaign.posh_user:
+            self.campaign.posh_user.status = PoshUser.ACTIVE
+            self.campaign.posh_user.save()
+
+        self.campaign.posh_user = posh_user
         self.campaign.title = self.cleaned_data['title']
         self.campaign.times = self.cleaned_data['times']
         self.campaign.delay = self.cleaned_data['delay']
@@ -438,9 +492,10 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.mode = self.cleaned_data['mode']
         self.campaign.lowest_price = self.cleaned_data['lowest_price']
 
-        self.campaign.posh_user.status = PoshUser.INUSE
-        self.campaign.posh_user.save()
-        self.campaign.save()
+        if self.campaign.posh_user:
+            self.campaign.posh_user.status = PoshUser.INUSE
+            self.campaign.posh_user.save()
+            self.campaign.save()
 
         old_listings = Listing.objects.filter(campaign=self.campaign)
         for old_listing in old_listings:
