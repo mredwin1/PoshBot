@@ -18,6 +18,8 @@ from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from poshmark.models import PoshUser
+
 CAPTCHA_API_KEY = os.environ['CAPTCHA_API_KEY']
 
 
@@ -199,7 +201,7 @@ class PoshMarkClient:
                 error = self.locate(By.CLASS_NAME, present_error_class)
                 if error.text == 'Invalid Username or Password':
                     self.logger.error(f'Invalid Username or Password')
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
 
                     return 'ERROR_USERNAME_PASSWORD'
@@ -307,7 +309,7 @@ class PoshMarkClient:
                             return True
             else:
                 if self.check_inactive():
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
                     return False
 
@@ -403,11 +405,8 @@ class PoshMarkClient:
         if self.posh_user.is_registered:
             pass
         else:
-            previous_status = self.posh_user.status
             try:
                 self.logger.info(f'Registering {self.posh_user.username}')
-                self.posh_user.status = '4'
-                self.posh_user.save()
                 self.web_driver.get('https://poshmark.com/signup')
                 self.logger.info(f'At signup page - {self.web_driver.current_url}')
 
@@ -463,8 +462,6 @@ class PoshMarkClient:
 
                     if response.status_code == requests.codes.ok:
                         self.posh_user.is_registered = True
-                        self.posh_user.status = '1'
-                        self.posh_user.save()
                         self.logger.info(
                             f'Successfully registered {self.posh_user.username}, status changed to "Active"')
 
@@ -494,13 +491,10 @@ class PoshMarkClient:
 
                         self.logger.info('Registration Complete')
                     else:
-                        self.posh_user.status = previous_status
-                        self.posh_user.save()
                         self.logger.error(
                             f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
-                        self.logger.error('Status changed to previous status')
                 elif error_code == 'ERROR_FORM_ERROR':
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
                 elif error_code is None:
                     # Check if Posh User is now registered
@@ -515,8 +509,6 @@ class PoshMarkClient:
 
                     if response.status_code == requests.codes.ok:
                         self.posh_user.is_registered = True
-                        self.posh_user.status = '1'
-                        self.posh_user.save()
                         self.logger.info(
                             f'Successfully registered {self.posh_user.username}, status changed to "Active"')
 
@@ -547,16 +539,12 @@ class PoshMarkClient:
                         self.logger.info('Registration Complete')
                     else:
                         self.posh_user.is_registered = False
-                        self.posh_user.status = '0'
-                        self.posh_user.save()
                         self.logger.info('Registration was not successful')
 
             except Exception as e:
                 self.logger.error(f'{traceback.format_exc()}')
                 if not self.posh_user.is_registered:
-                    self.logger.error(f'User did not get registered - Changing status back to {previous_status}')
-                    self.posh_user.status = previous_status
-                    self.posh_user.save()
+                    self.logger.error(f'User did not get registered')
 
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
@@ -682,7 +670,7 @@ class PoshMarkClient:
 
             else:
                 if self.check_inactive():
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
 
             listings = {
@@ -700,11 +688,8 @@ class PoshMarkClient:
 
     def update_profile(self):
         """Updates a user profile with their profile picture and header picture"""
-        previous_status = self.posh_user.status
         try:
             self.logger.info('Updating Profile')
-            self.posh_user.status = '5'
-            self.posh_user.save()
 
             self.go_to_closet()
 
@@ -777,16 +762,12 @@ class PoshMarkClient:
 
             self.sleep(5)
 
-            self.posh_user.status = '1'
+            self.posh_user.profile_updated = True
             self.posh_user.save()
 
             self.logger.info('Posh User status changed to "Active"')
         except Exception as e:
-            self.logger.error(f'Error encountered - Changing status back to {previous_status}')
             self.logger.error(f'{traceback.format_exc()}')
-
-            self.posh_user.status = previous_status
-            self.posh_user.save()
 
     def list_item(self, listing=None):
         """Will list an item on poshmark for the user"""
@@ -819,7 +800,7 @@ class PoshMarkClient:
             if self.is_present(By.XPATH, '//*[@id="app"]/main/div[1]/div/div[2]'):
                 self.logger.error('Error encountered when on the new listing page')
                 if self.check_inactive():
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
                 else:
                     self.logger.info('User is not inactive')
@@ -1187,7 +1168,7 @@ class PoshMarkClient:
             else:
                 if self.check_inactive():
                     self.logger.warning('Setting user status to inactive')
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
 
         except Exception as e:
@@ -1220,7 +1201,7 @@ class PoshMarkClient:
             else:
                 if self.check_inactive():
                     self.logger.warning('Setting user status to inactive')
-                    self.posh_user.status = '2'
+                    self.posh_user.status = PoshUser.INACTIVE
                     self.posh_user.save()
                     return False
 

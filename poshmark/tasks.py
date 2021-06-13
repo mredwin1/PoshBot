@@ -67,7 +67,7 @@ def start_campaign(campaign_id):
 def basic_sharing(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user, user=posh_user.user)
+    logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
     logged_hour_message = False
     max_deviation = round(campaign.delay / 2)
     now = datetime.datetime.now(pytz.utc)
@@ -76,6 +76,9 @@ def basic_sharing(campaign_id):
     campaign.status = '1'
     campaign.save()
     logger.save()
+
+    posh_user.status = PoshUser.RUNNING
+    posh_user.save()
 
     logger.info('Starting Campaign')
     with PoshMarkClient(posh_user, campaign, logger) as client:
@@ -115,12 +118,16 @@ def basic_sharing(campaign_id):
                 if logged_hour_message:
                     logged_hour_message = False
 
-            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
+            if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.RUNNING:
                 logger.info(
                     f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
                 logged_hour_message = True
 
     logger.info('Campaign Ended')
+
+    posh_user.refresh_from_db()
+    posh_user.status = PoshUser.IDLE
+    posh_user.save()
 
     campaign.refresh_from_db()
     if campaign.status == '1' or campaign.status == '5':
@@ -137,12 +144,15 @@ def advanced_sharing(campaign_id, proxy_id):
     campaign = Campaign.objects.get(id=campaign_id)
     proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = campaign.posh_user
-    logger = Log(logger_type=Log.CAMPAIGN, posh_user=posh_user, user=posh_user.user)
+    logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
     campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
     listed_items = 0
     logged_hour_message = False
     sent_offer = False
     max_deviation = round(campaign.delay / 2)
+
+    posh_user.status = PoshUser.REGISTERING
+    posh_user.save()
 
     campaign.status = '1'
     campaign.save()
@@ -167,11 +177,8 @@ def advanced_sharing(campaign_id, proxy_id):
                     proxy_client.register()
                     posh_user.refresh_from_db()
 
-                    if posh_user.status == PoshUser.ACTIVE:
-                        proxy_client.update_profile()
-                    if posh_user.status != PoshUser.INACTIVE:
-                        posh_user.status = PoshUser.INUSE
-                        posh_user.save()
+                while posh_user.is_registered and not posh_user.profile_updated and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                    proxy_client.update_profile()
 
                 posh_user.refresh_from_db()
                 if posh_user.is_registered:
@@ -190,8 +197,10 @@ def advanced_sharing(campaign_id, proxy_id):
                                 logger.warning(f'{listing.title} already listed, not re listing')
 
     proxy.remove_connection(posh_user)
-    
+
     posh_user.refresh_from_db()
+    posh_user.status = PoshUser.RUNNING
+    posh_user.save()
     if posh_user.is_registered:
         proxy.refresh_from_db()
         proxy.registered_accounts += 1
@@ -242,10 +251,15 @@ def advanced_sharing(campaign_id, proxy_id):
                     if logged_hour_message:
                         logged_hour_message = False
 
-                if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.INUSE:
+                if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.RUNNING:
                     logger.info(
                         f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
                     logged_hour_message = True
+
+    posh_user.refresh_from_db()
+    if posh_user.status != PoshUser.INACTIVE:
+        posh_user.status = PoshUser.IDLE
+        posh_user.save()
 
     logger.info('Campaign Ended')
     campaign.refresh_from_db()
@@ -273,7 +287,7 @@ def restart_task(campaign_id):
             campaign.posh_user = new_posh_user
 
             campaign.save()
-            campaign.posh_user.status = PoshUser.INUSE
+            campaign.posh_user.status = PoshUser.IDLE
             campaign.posh_user.save()
 
             old_posh_user.delete()

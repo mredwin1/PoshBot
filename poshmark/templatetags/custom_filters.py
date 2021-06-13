@@ -2,36 +2,32 @@ import pytz
 
 from django import template
 from django.template.defaultfilters import stringfilter
-from poshmark.models import PoshUser,LogEntry, Listing
+from poshmark.models import PoshUser, LogEntry, Listing, Log
 
 register = template.Library()
 
 
 @register.filter
-def status_return(status_code):
+def posh_users_status_return(status_code):
     """Takes a status code and returns it's message"""
-    status = {
-        PoshUser.INUSE: 'In Use',
-        PoshUser.ACTIVE: 'Active',
-        PoshUser.INACTIVE: 'Inactive',
-        PoshUser.WALIAS: 'Waiting for alias email to be verified',
-        PoshUser.REGISTERING: 'Registering',
-        PoshUser.UPROFILE: 'Updating Profile',
+    statuses = {
+        PoshUser.IDLE: 'IDLE',
+        PoshUser.INACTIVE: 'INACTIVE',
+        PoshUser.RUNNING: 'RUNNING',
+        PoshUser.REGISTERING: 'REGISTERING',
     }
 
-    return status[status_code]
+    return statuses[status_code]
 
 
 @register.filter
-def status_color_return(status_code):
+def posh_user_status_color_return(status_code):
     """Takes a status code and returns it's message"""
     statuses = {
-        PoshUser.INUSE: 'border-dark',
-        PoshUser.ACTIVE: 'border-success',
+        PoshUser.IDLE: 'border-secondary',
         PoshUser.INACTIVE: 'border-danger',
-        PoshUser.WALIAS: 'border-primary',
-        PoshUser.REGISTERING: 'border-info',
-        PoshUser.UPROFILE: 'border-warning',
+        PoshUser.RUNNING: 'border-success',
+        PoshUser.REGISTERING: 'border-warning',
     }
 
     return statuses[status_code]
@@ -66,6 +62,14 @@ def log_entry_return(log_entry):
     timestamp_str = localized_timestamp.strftime('%Y-%m-%d %I:%M:%S %p')
 
     return f'{timestamp_str} [{log_levels[log_entry.level]}] {log_entry.message}'
+
+
+@register.filter
+def action_log_return(campaign):
+    log = Log.objects.filter(campaign=campaign).order_by('created_date').last()
+    log_id = log.id if log else None
+
+    return log_id
 
 
 @register.filter

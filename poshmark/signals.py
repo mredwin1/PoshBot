@@ -15,11 +15,3 @@ def campaign_saved(sender, instance, *args, **kwargs):
 @receiver(post_delete, sender=PoshUser)
 def posh_user_deleted(sender, instance, *args, **kwargs):
     instance.delete_alias_email()
-
-
-@receiver(post_delete, sender=Campaign)
-def campaign_deleted(sender, instance, *args, **kwargs):
-    if instance.posh_user:
-        if instance.posh_user.status == PoshUser.INUSE:
-            instance.posh_user.status = PoshUser.ACTIVE
-            instance.posh_user.save()

@@ -76,16 +76,14 @@ class CreatePoshUser(forms.ModelForm):
             new_user.masked_email = alias.masked_email_address
 
             if alias.is_verified:
-                new_user.status = PoshUser.ACTIVE
-            else:
-                new_user.status = PoshUser.WALIAS
+                new_user.status = PoshUser.IDLE
 
         elif not self.cleaned_data['alias'] or not self.cleaned_data['is_registered']:
             new_user.email = self.cleaned_data['email']
             new_user.is_email_verified = True
-            new_user.status = PoshUser.ACTIVE
+            new_user.status = PoshUser.IDLE
         else:
-            new_user.status = PoshUser.ACTIVE
+            new_user.status = PoshUser.IDLE
 
         new_user.is_registered = self.cleaned_data['is_registered']
 
@@ -233,7 +231,7 @@ class CreateCampaign(forms.Form):
         if posh_username_field and posh_password_field in self.cleaned_data.keys() and not self.cleaned_data[posh_user_field]:
             try:
                 posh_user = PoshUser.objects.get(username=self.cleaned_data['posh_username'])
-                if posh_user.status != PoshUser.ACTIVE:
+                if posh_user.status == PoshUser.INACTIVE:
                     self.add_error(posh_username_field, 'This PoshUser is in the system and is not active.')
                 else:
                     self.add_error(posh_username_field, 'This PoshUser is in the system.')
@@ -307,12 +305,13 @@ class CreateCampaign(forms.Form):
 
         new_campaign.save()
 
-        new_campaign.posh_user.status = PoshUser.INUSE
+        new_campaign.posh_user.status = PoshUser.IDLE
         new_campaign.posh_user.save(update_fields=['status'])
 
-        for listing in self.cleaned_data['listings']:
-            listing.campaign = new_campaign
-            listing.save()
+        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
+            for listing in self.cleaned_data['listings']:
+                listing.campaign = new_campaign
+                listing.save()
 
 
 class CreateBasicCampaignForm(forms.Form):
@@ -339,7 +338,7 @@ class CreateBasicCampaignForm(forms.Form):
         username_field = 'username'
         try:
             posh_user = PoshUser.objects.get(username=self.cleaned_data['username'])
-            if posh_user.status != PoshUser.ACTIVE:
+            if posh_user.status == PoshUser.INACTIVE:
                 self.add_error(username_field, 'This PoshUser is in the system and is not active.')
             else:
                 self.add_error(username_field, 'This PoshUser is in the system.')
@@ -359,7 +358,7 @@ class CreateBasicCampaignForm(forms.Form):
                 username=self.cleaned_data['username'],
                 password=self.cleaned_data['password'],
                 user=self.request.user,
-                status=PoshUser.INUSE,
+                status=PoshUser.IDLE,
                 is_registered=True
             )
             posh_user.save()
@@ -423,7 +422,7 @@ class EditCampaignForm(CreateCampaign):
         if posh_username_field and posh_password_field in self.cleaned_data.keys() and not self.cleaned_data[posh_user_field]:
             try:
                 posh_user = PoshUser.objects.get(username=self.cleaned_data['posh_username'])
-                if posh_user.status != PoshUser.ACTIVE:
+                if posh_user.status == PoshUser.INACTIVE:
                     self.add_error(posh_username_field, 'This PoshUser is in the system and is not active.')
                 else:
                     self.add_error(posh_username_field, 'This PoshUser is in the system.')
@@ -480,7 +479,7 @@ class EditCampaignForm(CreateCampaign):
             posh_user.save()
 
         if self.campaign.posh_user:
-            self.campaign.posh_user.status = PoshUser.ACTIVE
+            self.campaign.posh_user.status = PoshUser.IDLE
             self.campaign.posh_user.save()
 
         self.campaign.posh_user = posh_user
@@ -493,7 +492,7 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.lowest_price = self.cleaned_data['lowest_price']
 
         if self.campaign.posh_user:
-            self.campaign.posh_user.status = PoshUser.INUSE
+            self.campaign.posh_user.status = PoshUser.IDLE
             self.campaign.posh_user.save()
             self.campaign.save()
 

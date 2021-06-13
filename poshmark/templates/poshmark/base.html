@@ -4,7 +4,7 @@
     <head>
         <!-- Required meta tags -->
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
 
         <!-- Bootstrap CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
@@ -18,7 +18,7 @@
         <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
 
         <!-- Custom CSS -->
-{#        <link rel="stylesheet" href="{% static 'poshmark/main.css' %}">#}
+        <link rel="stylesheet" href="{% static 'poshmark/main.css' %}">
 
         <!-- favicon -->
 {#        <link rel="shortcut icon" type="image/png" href="{% static 'poshmark/favicon.ico' %}"/>#}
@@ -69,7 +69,7 @@
         {% block secondary_modal %}{% endblock %}
         <header class="site-header">
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3 px-5">
-                <div class="container-fluid px-5 mx-5">
+                <div class="container-fluid px-lg-5 mx-lg-5">
                     <a class="navbar-brand p-0" href="/">
                         <div class="d-flex justify-content-start align-items-center">
                             <h2 class="m-0">Posh Bot</h2>
@@ -91,19 +91,19 @@
                                 <a class="nav-link" href="{% url 'view-campaigns' %}">Campaigns</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'view-action-logs' %}">Action Logs</a>
+                                <a class="nav-link {% if not user.is_superuser and not user.is_staff %}nav-border{% endif %}" href="{% url 'view-action-logs' %}">Action Logs</a>
                             </li>
                             {% if user.is_authenticated %}
                                 {% if user.is_superuser or user.is_staff %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                                    <a class="nav-link nav-border" href="{% url 'admin:index' %}">Admin</a>
                                 </li>
                                 {% endif %}
-                                <li class="nav-item border-left border-light">
+                                <li class="nav-item">
                                     <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                                 </li>
                             {% else %}
-                                <li class="nav-item border-left border-light">
+                                <li class="nav-item">
                                     <a class="nav-link" href="{% url 'login' %}">Login</a>
                                 </li>
                             {% endif %}

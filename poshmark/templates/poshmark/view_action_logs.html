@@ -4,139 +4,50 @@
 {% load tz %}
 {% block content %}
     <div class="row">
-        <div class="col">
+        <div class="col-lg-6 col-md-4 col-12">
             <h1 class="m-0">Action Logs</h1>
         </div>
+        <form class="col-lg-6 col-md-8 col-12 mb-2" method="GET">
+            <div class="row align-items-center h-100">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Username" value="{{ request.GET.username }}" name="username">
+                <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
+                    <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
+                    {% if perms.can_view_all_users %}
+                        {% for username in usernames %}
+                            <option value="{{ username }}" {% if request.GET.username_select == username %}selected{% endif %}>{{ username }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </form>
     </div>
-    <ul class="nav nav-tabs mt-2" id="logTab" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="registration-tab" data-toggle="tab" href="#registration" role="tab" aria-controls="registration-logs" aria-selected="true">Registration</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="campaign-tab" data-toggle="tab" href="#campaign" role="tab" aria-controls="campaign-logs" aria-selected="false">Campaign</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="other-tab" data-toggle="tab" href="#other" role="tab" aria-controls="other-logs" aria-selected="false">Other</a>
-        </li>
-    </ul>
-    <div class="tab-content mt-3" id="logTabContent">
-        <div class="tab-pane fade show active" id="registration" role="tabpanel" aria-labelledby="registration-tab">
-            <div id="accordion">
-                {% for username, log_group in object_list.1.items %}
-                    <div class="card">
-                        <div class="card-header" id="register-heading-{{ username }}">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-register-{{ username }}" aria-expanded="false" aria-controls="collapse-register-{{ username }}">
-                                    {{ username }}
-                                </button>
-                            </h5>
-                        </div>
-                    </div>
-                    <div id="collapse-register-{{ username }}" class="collapse" aria-labelledby="register-heading-{{ username }}" data-parent="#accordion">
-                        <div class="card-body">
-                            {% for log in log_group %}
-                                <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
-                                    <div class="row mx-5 mb-2 p-2 border border-dark rounded">
-                                        <div class="col-2">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-10">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
+    <hr>
+    <div class="pt-2" id="accordion">
+        {% for title, log_group in object_list.items %}
+            <div class="card">
+                <div class="card-header" id="register-heading-{{ title }}">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-register-{{ title }}" aria-expanded="false" aria-controls="collapse-register-{{ title }}">
+                            {{ title }}
+                        </button>
+                    </h5>
+                </div>
             </div>
-        </div>
-        <div class="tab-pane fade" id="campaign" role="tabpanel" aria-labelledby="campaign-tab">
-            <div id="accordion">
-                {% for username, log_group in object_list.2.items %}
-                    <div class="card">
-                        <div class="card-header" id="campaign-heading-{{ username }}">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-campaign-{{ username }}" aria-expanded="false" aria-controls="collapse-campaign-{{ username }}">
-                                    {{ username }}
-                                </button>
-                            </h5>
-                        </div>
+            <div id="collapse-register-{{ title }}" class="collapse" aria-labelledby="register-heading-{{ title }}" data-parent="#accordion">
+                <div class="card-body">
+                    <div class="row justify-content">
+                        {% for log in log_group %}
+                            <a class="col-lg-4 col-sm-6 col-12  text-dark mb-2" href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none">
+                                <div class="border border-dark rounded p-1">
+                                    <h6><b>Username:</b> {{ log.posh_user }}</h6>
+                                    <h6><b>Date Created:</b> {{ log.created_date|timezone:"US/Eastern"|date:"m-d-Y" }}</h6>
+                                    <h6><b>Time Created:</b> {{ log.created_date|timezone:"US/Eastern"|time:"h:i:s A" }}</h6>
+                                </div>
+                            </a>
+                        {% endfor %}
                     </div>
-                    <div id="collapse-campaign-{{ username }}" class="collapse" aria-labelledby="campaign-heading-{{ username }}" data-parent="#accordion">
-                        <div class="card-body">
-                            {% for log in log_group %}
-                                <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
-                                    <div class="row mx-5 mb-2 p-2 border border-dark rounded">
-                                        <div class="col-2">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-10">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
+                </div>
             </div>
-        </div>
-        <div class="tab-pane fade" id="other" role="tabpanel" aria-labelledby="other-tab">
-            <div id="accordion">
-                {% for username, log_group in object_list.0.items %}
-                    <div class="card">
-                        <div class="card-header" id="other-heading-{{ username }}">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-other-{{ username }}" aria-expanded="false" aria-controls="collapse-other-{{ username }}">
-                                    {{ username }}
-                                </button>
-                            </h5>
-                        </div>
-                    </div>
-                    <div id="collapse-other-{{ username }}" class="collapse" aria-labelledby="other-heading-{{ username }}" data-parent="#accordion">
-                        <div class="card-body">
-                            {% for log in log_group %}
-                                <a href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none!important;">
-                                    <div class="row mx-5 mb-2 p-2 border border-dark rounded">
-                                        <div class="col-2">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid rounded-circle" width="25%">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-10">
-                                            <div class="row h-100 align-items-center">
-                                                <div class="col">
-                                                    <h6 class="text-dark m-0"><b>Username:</b> {{ log.posh_user.username }} <b>Date Created:</b> {{ log.created|timezone:"US/Eastern"|date:"d-m-Y" }}</h6>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
+        {% endfor %}
     </div>
-
 {% endblock %}

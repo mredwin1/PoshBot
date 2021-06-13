@@ -1,19 +1,20 @@
 import datetime
 import pytz
 
-from celery import chain
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.templatetags.static import static
+from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, reverse
 from django.views import View
+from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
 
-from .models import PoshUser, Log, LogEntry, Listing, Campaign
+from .models import PoshUser, Log, LogEntry, Listing, Campaign, User
 from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
     EditListingForm
-from .tasks import basic_sharing, restart_task, start_campaign
+from .tasks import basic_sharing, start_campaign
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -71,12 +72,19 @@ def create_campaign(request):
             return render(request, 'poshmark/campaigns.html', {'form': form})
 
 
-@login_required
-def delete_posh_user(request, posh_user_id):
-    posh_user = PoshUser.objects.get(id=posh_user_id)
-    posh_user.delete()
+class DeletePoshUser(DeleteView):
+    model = PoshUser
+    success_url = reverse_lazy('posh-users')
 
-    return redirect('posh-users')
+
+class DeleteListing(DeleteView):
+    model = Listing
+    success_url = reverse_lazy('view-listings')
+
+
+class DeleteCampaign(DeleteView):
+    model = Campaign
+    success_url = reverse_lazy('view-campaigns')
 
 
 class EditCampaign(View, LoginRequiredMixin):
@@ -154,11 +162,26 @@ class EditListing(View, LoginRequiredMixin):
 class PoshUserListView(ListView, LoginRequiredMixin):
     model = PoshUser
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(PoshUserListView, self).get_context_data(**kwargs)
+        context['usernames'] = [user.username for user in User.objects.exclude(id=self.request.user.id)]
+
+        return context
+
     def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            posh_users = PoshUser.objects.all()
+        username = self.request.GET.get('username', '')
+        username_select = self.request.GET.get('username_select', '')
+
+        if username_select:
+            posh_users = PoshUser.objects.filter(user__username=username_select)
         else:
             posh_users = PoshUser.objects.filter(user=self.request.user)
+
+        if username:
+            posh_users = posh_users.filter(username__icontains=username)
+
+        if username_select:
+            posh_users = posh_users.filter(user__username=username_select)
 
         return posh_users
 
@@ -166,31 +189,27 @@ class PoshUserListView(ListView, LoginRequiredMixin):
 class ListingListView(ListView, LoginRequiredMixin):
     model = Listing
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(ListingListView, self).get_context_data(**kwargs)
+        context['usernames'] = [user.username for user in User.objects.exclude(id=self.request.user.id)]
+
+        return context
+
     def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            listings = Listing.objects.all()
+        title = self.request.GET.get('title', '')
+        username_select = self.request.GET.get('username_select', '')
+        if username_select:
+            listings = Listing.objects.filter(user__username=username_select)
         else:
             listings = Listing.objects.filter(user=self.request.user)
 
-        organized_listings = []
-        limited_list = []
-        index = 1
-        count = 1
-        if len(listings) > 4:
-            for listing in listings:
-                limited_list.append(listing)
-                if count == 4 or index == len(listings):
-                    organized_listings.append(limited_list)
-                    limited_list = []
-                    count = 0
-                count += 1
-                index += 1
-        else:
-            for listing in listings:
-                limited_list.append(listing)
-            organized_listings.append(limited_list)
+        if title:
+            listings = listings.filter(title__icontains=title)
 
-        return organized_listings
+        if username_select:
+            listings = listings.filter(user__username=username_select)
+
+        return listings
 
 
 class GeneratePoshUserInfo(View, LoginRequiredMixin):
@@ -205,26 +224,32 @@ class GeneratePoshUserInfo(View, LoginRequiredMixin):
 class ActionLogListView(ListView, LoginRequiredMixin):
     model = Log
 
-    def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            logs = Log.objects.all()
-        else:
-            logs = Log.objects.filter(user=self.request.user)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(ActionLogListView, self).get_context_data(**kwargs)
+        context['usernames'] = [user.username for user in User.objects.exclude(id=self.request.user.id)]
 
-        logs = logs.order_by('logger_type')
+        return context
+
+    def get_queryset(self):
+        username = self.request.GET.get('username', '')
+        username_select = self.request.GET.get('username_select', '')
+        logs = Log.objects.order_by('-created_date')
+
+        if username_select:
+            logs = logs.filter(user__username=username_select)
+        else:
+            logs = logs.filter(user=self.request.user)
+
+        if username:
+            logs = logs.filter(posh_user__icontains=username)
 
         organized_logs = {}
 
         for log in logs:
-            current_logger_type = log.logger_type
-            username = log.posh_user.username
-            if current_logger_type in organized_logs.keys():
-                if username in organized_logs[current_logger_type].keys():
-                    organized_logs[current_logger_type][username].append(log)
-                else:
-                    organized_logs[current_logger_type][username] = [log]
+            if log.campaign.title not in organized_logs.keys():
+                organized_logs[log.campaign.title] = [log]
             else:
-                organized_logs[current_logger_type] = {username: [log]}
+                organized_logs[log.campaign.title].append(log)
 
         return organized_logs
 
@@ -261,7 +286,7 @@ class GetLogEntries(View, LoginRequiredMixin):
 class SearchUserNames(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        posh_users = PoshUser.objects.filter(status=PoshUser.ACTIVE).filter(username__icontains=search).order_by('date_added')
+        posh_users = PoshUser.objects.filter(campaign__isnull=True, user=self.request.user, username__icontains=search).order_by('date_added')
 
         user_names = [f'{posh_user.username}|{posh_user.id}' for posh_user in posh_users]
 
@@ -271,7 +296,7 @@ class SearchUserNames(View, LoginRequiredMixin):
 class SearchListings(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        listings = Listing.objects.filter(title__icontains=search, campaign__isnull=True)
+        listings = Listing.objects.filter(title__icontains=search, campaign__isnull=True, user=self.request.user)
 
         all_listings = [f'{listing.title}|{listing.id}' for listing in listings]
 
@@ -301,73 +326,107 @@ class GetListingInformation(View, LoginRequiredMixin):
 
 class StopCampaign(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
-        campaign_id = self.kwargs['campaign_id']
-        campaign = Campaign.objects.get(id=campaign_id)
+        campaign_ids = self.kwargs['campaign_ids'].split(',')
+        data = {}
+        stopped_campaigns = []
+        for campaign_id in campaign_ids:
+            campaign = Campaign.objects.get(id=int(campaign_id))
+            if campaign.status == '1':
+                logger = Log.objects.filter(campaign=campaign).order_by('created_date').last()
+                logger.warning('Stop signal received')
 
-        logger = Log.objects.filter(posh_user__username=campaign.posh_user.username).order_by('created').last()
-        logger.warning('Stop signal received')
+                campaign.status = '3'
+                campaign.save()
+                stopped_campaigns.append(campaign_id)
 
-        campaign.status = '3'
-        campaign.save()
+        if stopped_campaigns:
+            data['success'] = ','.join(stopped_campaigns)
+        else:
+            data['error'] = 'Campaign could no be stopped: Status not "RUNNING"'
 
-        return JsonResponse(data={'stopped': 'true'}, status=200, safe=False)
+        return JsonResponse(data=data, status=200, safe=False)
 
 
 class StartCampaign(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
-        campaign_id = self.kwargs['campaign_id']
-        campaign = Campaign.objects.get(id=campaign_id)
-        listings = Listing.objects.filter(campaign=campaign)
+        campaign_ids = self.kwargs['campaign_ids'].split(',')
         data = {}
-
-        if campaign.posh_user and campaign.status == '2':
-            if campaign.mode == Campaign.BASIC_SHARING:
-                basic_sharing.delay(campaign_id)
-            elif campaign.mode == Campaign.ADVANCED_SHARING:
-                if listings:
-                    start_campaign.delay(campaign_id)
+        if len(campaign_ids) == 1:
+            campaign = Campaign.objects.get(id=int(campaign_ids[0]))
+            if campaign.posh_user and campaign.status == '2':
+                if campaign.mode == Campaign.BASIC_SHARING:
+                    basic_sharing.delay(int(campaign_ids[0]))
+                elif campaign.mode == Campaign.ADVANCED_SHARING:
+                    listings = Listing.objects.filter(campaign=campaign)
+                    if listings:
+                        start_campaign.delay(int(campaign_ids[0]))
+                    else:
+                        data['error'] = 'Campaign could not be started: No Listings'
+            else:
+                if campaign.posh_user:
+                    data['error'] = 'Campaign could not be started: Not IDLE'
                 else:
-                    data['error'] = 'No listings in the campaign'
+                    data['error'] = 'Campaign could not be started: No Posh User'
+
+            if 'error' not in data.keys():
+                campaign.status = '4'
+                campaign.save()
+
+                data['success'] = 'success'
         else:
-            data['error'] = 'No posh user found in the campaign'
-
-        if 'error' not in data.keys():
-            campaign.status = '4'
-            campaign.save()
-
-            data['task_id'] = 'task_id'
-
+            started_campaigns = []
+            for campaign_id in campaign_ids:
+                campaign = Campaign.objects.get(id=int(campaign_id))
+                if campaign:
+                    if campaign.posh_user and campaign.status == '2':
+                        import logging
+                        logging.info(f'THe following campaign will be started {campaign}')
+                        if campaign.mode == Campaign.BASIC_SHARING:
+                            basic_sharing.delay(int(campaign_id))
+                            started_campaigns.append(campaign_id)
+                        elif campaign.mode == Campaign.ADVANCED_SHARING:
+                            listings = Listing.objects.filter(campaign=campaign)
+                            if listings:
+                                start_campaign.delay(int(campaign_id))
+                                started_campaigns.append(campaign_id)
+            if started_campaigns:
+                data['success'] = ','.join(started_campaigns)
+            else:
+                data['error'] = 'No campaigns to start'
         return JsonResponse(data=data, status=200, safe=False)
 
 
 class CampaignListView(ListView, LoginRequiredMixin):
     model = Campaign
 
-    def get_queryset(self):
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            campaigns = Campaign.objects.all()
+    def get_context_data(self, *, object_list=None, **kwargs):
+        username_select = self.request.GET.get('username_select', '')
+        campaigns = Campaign.objects.exclude(status='2')
+        if username_select:
+            campaigns = campaigns.filter(user__username=username_select)
         else:
-            campaigns = Campaign.objects.filter(user=self.request.user)
+            campaigns = campaigns.filter(user=self.request.user)
 
-        organized_campaigns = []
-        limited_list = []
-        index = 1
-        count = 1
-        if len(campaigns) > 4:
-            for campaign in campaigns:
-                limited_list.append(campaign)
-                if count == 4 or index == len(campaigns):
-                    organized_campaigns.append(limited_list)
-                    limited_list = []
-                    count = 0
-                count += 1
-                index += 1
+        context = super(CampaignListView, self).get_context_data(**kwargs)
+        context['usernames'] = [user.username for user in User.objects.exclude(id=self.request.user.id)]
+        context['total_running'] = len(campaigns)
+
+        return context
+
+    def get_queryset(self):
+        title = self.request.GET.get('title', '')
+        username_select = self.request.GET.get('username_select', '')
+        campaigns = Campaign.objects.order_by('status')
+
+        if username_select:
+            campaigns = campaigns.filter(user__username=username_select)
         else:
-            for campaign in campaigns:
-                limited_list.append(campaign)
-            organized_campaigns.append(limited_list)
-        
-        return organized_campaigns
+            campaigns = campaigns.filter(user=self.request.user)
+
+        if title:
+            campaigns = campaigns.filter(title__icontains=title)
+
+        return campaigns
 
 
 class CreateBasicCampaign(View, LoginRequiredMixin):

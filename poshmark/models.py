@@ -20,20 +20,16 @@ from users.models import User
 
 @cleanup.ignore
 class PoshUser(models.Model):
-    INUSE = '0'
-    ACTIVE = '1'
+    IDLE = '1'
     INACTIVE = '2'
-    WALIAS = '3'
+    RUNNING = '3'
     REGISTERING = '4'
-    UPROFILE = '5'
 
     STATUS_CHOICES = [
-        (INUSE, 'In Use'),
-        (ACTIVE, 'Active'),
+        (IDLE, 'Idle'),
         (INACTIVE, 'Inactive'),
-        (WALIAS, 'Waiting for alias email to be verified'),
+        (RUNNING, 'Campaign running'),
         (REGISTERING, 'Registering'),
-        (UPROFILE, 'Updating Profile'),
     ]
 
     GENDER_CHOICES = [
@@ -51,7 +47,7 @@ class PoshUser(models.Model):
 
     is_email_verified = models.BooleanField(default=False)
     is_registered = models.BooleanField(default=False)
-    meet_posh = models.BooleanField(default=False)
+    profile_updated = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
 
@@ -365,20 +361,10 @@ class ListingPhotos(models.Model):
 
 
 class Log(models.Model):
-    OTHER = '0'
-    REGISTRATION = '1'
-    CAMPAIGN = '2'
-
-    REASON_CHOICES = [
-        (OTHER, 'Other'),
-        (REGISTRATION, 'Registration'),
-        (CAMPAIGN, 'Campaign'),
-    ]
-
-    logger_type = models.CharField(max_length=10, choices=REASON_CHOICES)
-    posh_user = models.ForeignKey(PoshUser, on_delete=models.CASCADE)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    created = models.DateTimeField(editable=False)
+    created_date = models.DateTimeField(editable=False)
+    posh_user = models.CharField(max_length=20, default='')
 
     @staticmethod
     def get_time():
@@ -419,16 +405,11 @@ class Log(models.Model):
     def save(self, *args, **kwargs):
         """On save, update timestamps"""
         if not self.id:
-            self.created = timezone.now()
+            self.created_date = timezone.now()
         return super(Log, self).save(*args, **kwargs)
 
     def __str__(self):
-        logger_types = {
-            self.OTHER: 'Other',
-            self.REGISTRATION: 'Registration',
-            self.CAMPAIGN: 'Campaign'
-        }
-        return f'Log - Username: {self.posh_user.username} Type: {logger_types[self.logger_type]}'
+        return f'Log - Username: {self.campaign.title}'
 
 
 class LogEntry(models.Model):
@@ -494,6 +475,7 @@ class PoshProxy(models.Model):
 
     def __str__(self):
         return f'Proxy #{self.id}'
+
 
 class ProxyConnection(models.Model):
     posh_proxy = models.ForeignKey(PoshProxy, on_delete=models.CASCADE)

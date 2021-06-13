@@ -1,31 +1,47 @@
 {% extends "poshmark/base.html" %}
 {% load static %}
 {% block content %}
+    <script src="{% static 'poshmark/JS/view_listing_utilities.js' %}"></script>
     <div class="row">
-        <div class="col-11">
-            <h1 class="m-0">Listings</h1>
+        <div class="col-lg-6 col-md-5 mb-md-0 mb-2 col-12">
+            <h1 class="m-0" id="title">{{ object_list.count }} Listing{% if object_list.count != 1 %}s{% endif %}</h1>
         </div>
-        <div class="col-1">
+        <form class="col-lg-5 col-md-6 col-10 pr-0" method="GET">
+            <div class="row align-items-center h-100">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Title" value="{{ request.GET.title }}" name="title">
+                <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
+                    <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
+                    {% if perms.can_view_all_users %}
+                        {% for username in usernames %}
+                            <option value="{{ username }}" {% if request.GET.username_select == username %}selected{% endif %}>{{ username }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </form>
+        <div class="col-md-1 col-2">
             <div class="d-flex align-items-center justify-content-center h-100">
-                <a href="{% url 'add-listing' %}" class="btn btn-sm btn-dark text-white" title="New Listing">+</a>
+                <a href="{% url 'add-listing' %}" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Listing">+</a>
             </div>
         </div>
     </div>
     <hr>
-    {% for group_listing in object_list %}
-        <div class="row p-2">
-            {% for listing in group_listing %}
-                <div class="col-3">
-                    <div class="card">
-                        <img class="card-img-top" src="{% static 'poshmark/images/listing.jpg' %}" alt="Listing Image">
-                        <div class="card-body">
-                            <a href="{% url 'edit-listing' listing.id %}"><h5 class="card-title">{{ listing.title }}</h5></a>
-                            <p class="card-text mb-1"><small class="font-weight-bold">${{ listing.listing_price }}</small> <s><small class="text-muted">${{ listing.original_price }}</small></s></p>
-                            <p class="card-text"><small class="text-muted">{{ listing.size }}</small></p>
-                        </div>
+    <div class="row">
+        {% for listing in object_list %}
+            <div class="col-lg-3 col-md-4 col-6 mb-3 listing-container">
+                <div class="card h-100">
+                    <img class="card-img-top" src="{% static 'poshmark/images/listing.jpg' %}" alt="Listing Image">
+                    <div class="card-body position-relative">
+                        <h5 class="card-title">{{ listing.title }}</h5>
+                        <p class="card-text mb-1"><small class="font-weight-bold">${{ listing.listing_price }}</small> <s><small class="text-muted">${{ listing.original_price }}</small></s></p>
+                        <p class="card-text"><small class="text-muted">{{ listing.size }}</small></p>
+                        <i class="fas fa-trash-alt position-absolute" style="top: 5px; right: 40px" id="delete_listing" data-message="You are about to delete {{ listing.title }}" data-url="{% url 'delete-listing' listing.id %}"></i>
+                        <a class="text-dark cursor-pointer" href="{% url 'edit-listing' listing.id %}">
+                            <i class="fas fa-pencil-alt position-absolute" style="top: 5px; right: 10px"></i>
+                        </a>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

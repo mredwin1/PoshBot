@@ -6,7 +6,7 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="id_title" class="col-form-label">Title:</label>
-            <input type="text" class="form-control" maxlength="50" id="id_title" name="title" required>
+            <input type="text" class="form-control" maxlength="30" id="id_title" name="title" required>
         </div>
         <div class="form-group">
             <label for="id_delay" class="col-form-label">Delay:</label>
@@ -33,59 +33,95 @@
 {% block content %}
     <script src="{% static 'poshmark/JS/view_campaign_utilities.js' %}"></script>
     <div class="row">
-        <div class="col-10">
-            <h1 class="m-0">Campaigns</h1>
+        <div class="col-lg-4 col-md-5 col-12 mb-2">
+            <h1 class="m-0" id="title">{{ total_running }}/{{ object_list.count }} Campaigns</h1>
         </div>
-        <div class="col-1">
-            <div class="d-flex align-items-center justify-content-center h-100">
-                <button type="button" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Basic Campaign" id="addBasicCampaign">+</button>
+        <form class="col-lg-5 col-md-7 col-12 mb-2" method="GET">
+            <div class="row align-items-center h-100">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Title" value="{{ request.GET.title }}" name="title">
+                <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
+                    <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
+                    {% if perms.can_view_all_users %}
+                        {% for username in usernames %}
+                            <option value="{{ username }}" {% if request.GET.username_select == username %}selected{% endif %}>{{ username }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+        </form>
+        <div class="col-lg-3 col-12">
+            <div class="d-flex align-items-center justify-content-between h-100">
+                <button class="btn btn-sm btn-dark text-light cursor-pointer" data-toggle="tooltip" data-placement="top" title="Start All" id="start_all">
+                    <i class="fas fa-play" ></i>
+                </button>
+                <button class="btn btn-sm btn-dark text-light cursor-pointer" data-toggle="tooltip" data-placement="top" title="Stop All" id="stop_all">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button class="btn btn-sm btn-dark text-light" data-toggle="tooltip" data-placement="top" title="New Basic Campaign" id="addBasicCampaign">
+                    <i class="fas fa-plus"></i>
+                </button>
+                {% if perms.can_have_advanced_campaing %}
+                    <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-light" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">
+                        <i class="fas fa-plus"></i>
+                        <i class="fas fa-plus"></i>
+                    </a>
+                {% endif %}
             </div>
         </div>
-        {% if perms.can_have_advanced_campaing %}
-            <div class="col-1">
-                <div class="d-flex align-items-center justify-content-center h-100">
-                    <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-white" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">++</a>
-                </div>
-            </div>
-        {% endif %}
     </div>
     <hr>
-    {% for group_campaign in object_list %}
-        <div class="row p-2">
-            {% for campaign in group_campaign %}
-                <div class="col-3">
-                    <div class="card">
-                        <div class="card-header bg-transparent ">
-                            <div class="d-inline-flex">
-                                <div class="mr-2 font-weight-bold">
-                                    STATUS:
-                                </div>
-                                <div class="{{ campaign.status|campaign_color_return }}">
-                                    {{ campaign.status|campaign_status_return }}
-                                </div>
+    <div class="row p-2">
+        {% for campaign in object_list %}
+            <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-2 campaign-container" data-id="{{ campaign.id }}">
+                <div class="card h-100">
+                    <div class="card-header bg-transparent justify-content-between">
+                        <div class="row">
+                            <div class="col my-auto pl-1 pr-0">
+                                <span class="mr-2 font-weight-bold">STATUS:</span>
+                                <span class="{{ campaign.status|campaign_color_return }} status">{{ campaign.status|campaign_status_return }}</span>
+                            </div>
+                            <div class="col-2 text-center pl-0 pr-1">
+                                {% if campaign.posh_user %}
+                                    <a href="https://poshmark.com/closet/{{ campaign.posh_user.username }}" target="_blank">
+                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border {{ campaign.posh_user.status|posh_user_status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ campaign.posh_user.status|posh_users_status_return }}" style="border-width: medium!important;">
+                                    </a>
+                                {% else %}
+                                    <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border border-secondary rounded-circle" data-toggle="tooltip" data-placement="top" title="No User Assigned" style="border-width: medium!important;">
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="card-body">
-                            <a href="{% url 'edit-campaign' campaign.id %}">
-                                <h5 class="card-title">{{ campaign.title }}</h5>
-                            </a>
-                            <a href="https://poshmark.com/closet/{{ campaign.posh_user.username }}" target="_blank">
-                                <h5 class="card-title">{{ campaign.posh_user.username }}</h5>
-                            </a>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <div class="row">
-                                <div class="col">
-                                    <button type="button" class="btn btn-dark btn-block start" data-start-url="{% url 'start-campaign' campaign.id %}" {% if campaign.status != '2' %}disabled{% endif %}>Start</button>
-                                </div>
-                                <div class="col">
-                                    <button type="button" class="btn btn-dark btn-block stop" data-stop-url="{% url 'stop-campaign' campaign.id %}" {% if campaign.status != '1' %}disabled{% endif %}>Stop</button>
-                                </div>
+                    </div>
+                    <img class="card-img-top" src="{% static 'poshmark/images/listing.jpg' %}" alt="Listing Image">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ campaign.title }}</h5>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="row h-100">
+                            <div class="col px-md-1 text-center">
+                                <i class="fas fa-play cursor-pointer start" data-start-url="{% if campaign.status != '1' %}{% url 'start-campaign' campaign.id|stringformat:"i" %}{% endif %}" data-toggle="tooltip" data-placement="top" title="Start"></i>
+                            </div>
+                            <div class="col px-md-1 text-center">
+                                <i class="fas fa-stop cursor-pointer stop" data-stop-url="{% if campaign.status == '1' %}{% url 'stop-campaign' campaign.id|stringformat:"i" %}{% endif %}" data-toggle="tooltip" data-placement="top" title="Stop"></i>
+                            </div>
+                            <div class="col px-md-1 text-center">
+                                <i class="fas fa-trash-alt cursor-pointer" id="delete_campaign" data-message="You are about to delete {{ campaign.title }}" data-url="{% url 'delete-campaign' campaign.id %}" data-toggle="tooltip" data-placement="top" title="Delete"></i>
+                            </div>
+                            <div class="col px-md-1 text-center">
+                                <a class="text-dark cursor-pointer" href="{% url 'edit-campaign' campaign.id %}" data-toggle="tooltip" data-placement="top" title="Edit">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                            </div>
+                            <div class="col px-md-1 text-center">
+                                {% with log_id=campaign|action_log_return %}
+                                    <a class="text-dark{% if log_id %} cursor-pointer{% endif %}" href="{% if log_id %}{% url 'view-action-log-details' log_id %}{% endif %}" data-toggle="tooltip" data-placement="top" title="{% if log_id %}View Action Log{% else %}No Log Available{% endif %}">
+                                        <i class="fas fa-clipboard-list"></i>
+                                    </a>
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+        {% endfor %}
         </div>
-    {% endfor %}
 {% endblock content %}
