@@ -373,6 +373,7 @@ class CreateBasicCampaignForm(forms.Form):
             delay=self.cleaned_data['delay'],
             mode=Campaign.BASIC_SHARING,
             auto_run=True,
+            lowest_price=self.cleaned_data['lowest_price']
         )
 
         new_campaign.save()
