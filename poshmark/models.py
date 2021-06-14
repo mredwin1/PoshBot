@@ -180,7 +180,7 @@ class PoshUser(models.Model):
             gender=self.gender,
             user=self.user,
             email=new_email,
-            status=PoshUser.ACTIVE,
+            status=PoshUser.IDLE ,
             profile_picture=self.profile_picture,
             header_picture=self.header_picture,
         )
