@@ -147,7 +147,7 @@ def advanced_sharing(campaign_id, proxy_id):
     proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = campaign.posh_user
     logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
-    campaign_listings = Listing.objects.filter(campaign__id=campaign_id)
+    campaign_listings = Listing.objects.filter(campaign=campaign)
     listed_items = 0
     logged_hour_message = False
     sent_offer = False

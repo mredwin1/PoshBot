@@ -771,6 +771,8 @@ class PoshMarkClient:
             self.logger.info('Posh User status changed to "Active"')
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def list_item(self, listing=None):
         """Will list an item on poshmark for the user"""
