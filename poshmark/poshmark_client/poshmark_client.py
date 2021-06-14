@@ -465,6 +465,7 @@ class PoshMarkClient:
 
                     if response.status_code == requests.codes.ok:
                         self.posh_user.is_registered = True
+                        self.posh_user.save()
                         self.logger.info(
                             f'Successfully registered {self.posh_user.username}, status changed to "Active"')
 
@@ -512,8 +513,9 @@ class PoshMarkClient:
 
                     if response.status_code == requests.codes.ok:
                         self.posh_user.is_registered = True
+                        self.posh_user.save()
                         self.logger.info(
-                            f'Successfully registered {self.posh_user.username}, status changed to "Active"')
+                            f'Successfully registered {self.posh_user.username}')
 
                         # Next Section - Profile
                         next_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -542,6 +544,7 @@ class PoshMarkClient:
                         self.logger.info('Registration Complete')
                     else:
                         self.posh_user.is_registered = False
+                        self.posh_user.save()
                         self.logger.info('Registration was not successful')
 
             except Exception as e:
