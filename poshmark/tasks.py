@@ -77,8 +77,9 @@ def basic_sharing(campaign_id):
     campaign.save()
     logger.save()
 
-    posh_user.status = PoshUser.RUNNING
-    posh_user.save()
+    if posh_user.status != PoshUser.INACTIVE:
+        posh_user.status = PoshUser.RUNNING
+        posh_user.save()
 
     logger.info('Starting Campaign')
     with PoshMarkClient(posh_user, campaign, logger) as client:
@@ -126,8 +127,9 @@ def basic_sharing(campaign_id):
     logger.info('Campaign Ended')
 
     posh_user.refresh_from_db()
-    posh_user.status = PoshUser.IDLE
-    posh_user.save()
+    if posh_user.status != PoshUser.INACTIVE:
+        posh_user.status = PoshUser.IDLE
+        posh_user.save()
 
     campaign.refresh_from_db()
     if campaign.status == '1' or campaign.status == '5':
@@ -151,8 +153,9 @@ def advanced_sharing(campaign_id, proxy_id):
     sent_offer = False
     max_deviation = round(campaign.delay / 2)
 
-    posh_user.status = PoshUser.REGISTERING
-    posh_user.save()
+    if posh_user.status != PoshUser.INACTIVE:
+        posh_user.status = PoshUser.REGISTERING
+        posh_user.save()
 
     campaign.status = '1'
     campaign.save()
@@ -199,8 +202,10 @@ def advanced_sharing(campaign_id, proxy_id):
     proxy.remove_connection(posh_user)
 
     posh_user.refresh_from_db()
-    posh_user.status = PoshUser.RUNNING
-    posh_user.save()
+    if posh_user.status != PoshUser.INACTIVE:
+        posh_user.status = PoshUser.RUNNING
+        posh_user.save()
+
     if posh_user.is_registered:
         proxy.refresh_from_db()
         proxy.registered_accounts += 1
