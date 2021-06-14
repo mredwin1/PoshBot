@@ -410,9 +410,6 @@ class PoshMarkClient:
                 self.web_driver.get('https://poshmark.com/signup')
                 self.logger.info(f'At signup page - {self.web_driver.current_url}')
 
-                with open('/shared_volume/signup.html', 'w') as f:
-                    f.write(self.web_driver.page_source)
-
                 # Get all fields for sign up
                 first_name_field = self.locate(By.ID, 'firstName')
                 last_name_field = self.locate(By.ID, 'lastName')

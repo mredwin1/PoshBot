@@ -379,8 +379,8 @@ class StartCampaign(View, LoginRequiredMixin):
                 campaign = Campaign.objects.get(id=int(campaign_id))
                 if campaign:
                     if campaign.posh_user and campaign.status == '2':
-                        import logging
-                        logging.info(f'THe following campaign will be started {campaign}')
+                        campaign.status = '4'
+                        campaign.save()
                         if campaign.mode == Campaign.BASIC_SHARING:
                             basic_sharing.delay(int(campaign_id))
                             started_campaigns.append(campaign_id)
