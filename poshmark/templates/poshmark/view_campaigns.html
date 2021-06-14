@@ -60,12 +60,10 @@
                 <button class="btn btn-sm btn-dark text-light" data-toggle="tooltip" data-placement="top" title="New Basic Campaign" id="addBasicCampaign">
                     <i class="fas fa-plus"></i>
                 </button>
-                {% if perms.can_have_advanced_campaing %}
-                    <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-light" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">
-                        <i class="fas fa-plus"></i>
-                        <i class="fas fa-plus"></i>
-                    </a>
-                {% endif %}
+                <a href="{% url 'add-campaign' %}" class="btn btn-sm btn-dark text-light" data-toggle="tooltip" data-placement="top" title="New Custom Campaign">
+                    <i class="fas fa-plus"></i>
+                    <i class="fas fa-plus"></i>
+                </a>
             </div>
         </div>
     </div>
