@@ -970,6 +970,8 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def update_listing(self, current_title, listing):
         """Will update the listing with the current title with all of the information for the listing that was passed,
@@ -1178,6 +1180,8 @@ class PoshMarkClient:
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def share_item(self, listing_title):
         """Will share an item in the closet"""
