@@ -35,7 +35,7 @@
                         <h5 class="card-title">{{ listing.title }}</h5>
                         <p class="card-text mb-1"><small class="font-weight-bold">${{ listing.listing_price }}</small> <s><small class="text-muted">${{ listing.original_price }}</small></s></p>
                         <p class="card-text"><small class="text-muted">{{ listing.size }}</small></p>
-                        <i class="fas fa-trash-alt position-absolute delete" style="top: 5px; right: 40px" data-message="You are about to delete {{ listing.title }}" data-url="{% url 'delete-listing' listing.id %}"></i>
+                        <i class="fas fa-trash-alt position-absolute cursor-pointer delete" style="top: 5px; right: 40px" data-message="You are about to delete {{ listing.title }}" data-url="{% url 'delete-listing' listing.id %}"></i>
                         <a class="text-dark cursor-pointer" href="{% url 'edit-listing' listing.id %}">
                             <i class="fas fa-pencil-alt position-absolute" style="top: 5px; right: 10px"></i>
                         </a>
