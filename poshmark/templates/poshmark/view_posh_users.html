@@ -112,7 +112,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <span class="cursor-pointer position-absolute" aria-hidden="true" id="delete_posh_user" data-message="You are about to delete {{ posh_user.username }}" data-url="{% url 'delete-posh-user' posh_user.id %}" style="top: 5px; right: 10px">&times;</span>
+                    <span class="cursor-pointer position-absolute delete" aria-hidden="true" data-message="You are about to delete {{ posh_user.username }}" data-url="{% url 'delete-posh-user' posh_user.id %}" style="top: 5px; right: 10px">&times;</span>
                 </div>
             </div>
         {% endfor %}

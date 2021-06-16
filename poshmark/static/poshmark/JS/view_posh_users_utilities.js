@@ -14,7 +14,7 @@ $(document).ready(function () {
         }
         return cookieValue;
     }
-    $('#delete_posh_user').click(function () {
+    $('delete').click(function () {
         let message = $(this).data('message')
         if (confirm(message)) {
             let delete_url = $(this).data('url')

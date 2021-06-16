@@ -102,7 +102,7 @@
                                 <i class="fas fa-stop cursor-pointer stop" data-stop-url="{% if campaign.status == '1' %}{% url 'stop-campaign' campaign.id|stringformat:"i" %}{% endif %}" data-toggle="tooltip" data-placement="top" title="Stop"></i>
                             </div>
                             <div class="col px-md-1 text-center">
-                                <i class="fas fa-trash-alt cursor-pointer" id="delete_campaign" data-message="You are about to delete {{ campaign.title }}" data-url="{% url 'delete-campaign' campaign.id %}" data-toggle="tooltip" data-placement="top" title="Delete"></i>
+                                <i class="fas fa-trash-alt cursor-pointer delete" data-message="You are about to delete {{ campaign.title }}" data-url="{% url 'delete-campaign' campaign.id %}" data-toggle="tooltip" data-placement="top" title="Delete"></i>
                             </div>
                             <div class="col px-md-1 text-center">
                                 <a class="text-dark cursor-pointer" href="{% url 'edit-campaign' campaign.id %}" data-toggle="tooltip" data-placement="top" title="Edit">
