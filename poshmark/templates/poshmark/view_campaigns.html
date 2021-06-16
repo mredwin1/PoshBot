@@ -111,7 +111,7 @@
                             </div>
                             <div class="col px-md-1 text-center">
                                 {% with log_id=campaign|action_log_return %}
-                                    <a class="text-dark{% if log_id %} cursor-pointer{% endif %}" href="{% if log_id %}{% url 'view-action-log-details' log_id %}{% endif %}" data-toggle="tooltip" data-placement="top" title="{% if log_id %}View Action Log{% else %}No Log Available{% endif %}">
+                                    <a class="text-dark{% if log_id %} cursor-pointer{% endif %}" href="{% if log_id %}{% url 'view-action-log-details' log_id %}{% endif %}" target="_blank" data-toggle="tooltip" data-placement="top" title="{% if log_id %}View Action Log{% else %}No Log Available{% endif %}">
                                         <i class="fas fa-clipboard-list"></i>
                                     </a>
                                 {% endwith %}
