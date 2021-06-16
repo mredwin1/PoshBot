@@ -81,7 +81,7 @@
                             <div class="col-2 text-center pl-0 pr-1">
                                 {% if campaign.posh_user %}
                                     <a href="https://poshmark.com/closet/{{ campaign.posh_user.username }}" target="_blank">
-                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border {{ campaign.posh_user.status|posh_user_status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ campaign.posh_user.status|posh_users_status_return }}" style="border-width: medium!important;">
+                                        <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border {{ campaign.posh_user.status|posh_user_status_color_return }} rounded-circle" data-toggle="tooltip" data-placement="top" title="{{ campaign.posh_user.username }} | {{ campaign.posh_user.status|posh_users_status_return }}" style="border-width: medium!important;">
                                     </a>
                                 {% else %}
                                     <img src="{% static '/poshmark/images/blank_profile_picture.jpg' %}" alt="" class="img-fluid border border-secondary rounded-circle" data-toggle="tooltip" data-placement="top" title="No User Assigned" style="border-width: medium!important;">
