@@ -400,8 +400,13 @@ class CampaignListView(ListView, LoginRequiredMixin):
     model = Campaign
 
     def get_context_data(self, *, object_list=None, **kwargs):
+        title = self.request.GET.get('title', '')
         username_select = self.request.GET.get('username_select', '')
-        campaigns = Campaign.objects.exclude(status='2')
+        campaigns = Campaign.objects.filter(status='1')
+
+        if title:
+            campaigns = campaigns.filter(title__icontains=title)
+
         if username_select:
             campaigns = campaigns.filter(user__username=username_select)
         else:
