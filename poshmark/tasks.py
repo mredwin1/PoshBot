@@ -13,7 +13,7 @@ from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 @shared_task
 def log_cleanup():
-    logs = Log.objects.filter(created__lte=timezone.now()-datetime.timedelta(days=2))
+    logs = Log.objects.filter(created_date__lte=timezone.now()-datetime.timedelta(days=2))
 
     for log in logs:
         log.delete()
