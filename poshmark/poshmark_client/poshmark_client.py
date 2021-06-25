@@ -23,6 +23,27 @@ from poshmark.models import PoshUser
 CAPTCHA_API_KEY = os.environ['CAPTCHA_API_KEY']
 
 
+class Logger:
+    def __init__(self, logger_id, log_function):
+        self.logger_id = logger_id
+        self.log_function = log_function
+
+    def critical(self, message):
+        self.log_function(str(self.logger_id), {'level': 'CRITICAL', 'message': message})
+
+    def error(self, message):
+        self.log_function(str(self.logger_id), {'level': 'ERROR', 'message': message})
+
+    def warning(self, message):
+        self.log_function(str(self.logger_id), {'level': 'WARNING', 'message': message})
+
+    def info(self, message):
+        self.log_function(str(self.logger_id), {'level': 'INFO', 'message': message})
+
+    def debug(self, message):
+        self.log_function(str(self.logger_id), {'level': 'DEBUG', 'message': message})
+
+
 class Captcha:
     def __init__(self, google_key, page_url, logger):
         self.request_id = None
@@ -84,7 +105,7 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, posh_user, campaign, logger, posh_proxy=None):
+    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, posh_proxy=None):
         proxy = Proxy()
         hostname = posh_proxy.ip if posh_proxy else ''
         port = posh_proxy.port if posh_proxy else ''
@@ -97,11 +118,13 @@ class PoshMarkClient:
         capabilities = webdriver.DesiredCapabilities.CHROME
         proxy.add_to_capabilities(capabilities)
 
-        self.posh_user = posh_user
-        self.campaign = campaign
+        self.redis_posh_user_id = redis_posh_user_id
+        self.redis_campaign_id = redis_campaign_id
+        self.get_redis_object_attr = get_redis_object_attr
+        self.update_redis_object = update_redis_object
         self.last_login = None
         self.login_error = None
-        self.logger = logger
+        self.logger = Logger(logger_id, log_function)
         self.web_driver = None
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -201,8 +224,7 @@ class PoshMarkClient:
                 error = self.locate(By.CLASS_NAME, present_error_class)
                 if error.text == 'Invalid Username or Password':
                     self.logger.error(f'Invalid Username or Password')
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
 
                     return 'ERROR_USERNAME_PASSWORD'
 
@@ -309,8 +331,7 @@ class PoshMarkClient:
                             return True
             else:
                 if self.check_inactive():
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                     return False
 
         except Exception as e:
@@ -319,7 +340,7 @@ class PoshMarkClient:
     def check_inactive(self):
         """Will check if the current user is inactive"""
         try:
-            self.logger.info(f'Checking is the following user is inactive: {self.posh_user.username}')
+            self.logger.info(f'Checking is the following user is inactive: {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
             self.go_to_closet()
 
@@ -388,7 +409,7 @@ class PoshMarkClient:
         if it can find the login button which is only displayed when a user is not logged in"""
 
         self.logger.info('Checking if user is signed in')
-        self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+        self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
 
         if result:
@@ -402,11 +423,11 @@ class PoshMarkClient:
 
     def register(self):
         """Will register a given user to poshmark"""
-        if self.posh_user.is_registered:
+        if bool(self.get_redis_object_attr(self.redis_posh_user_id, 'is_registered')):
             pass
         else:
             try:
-                self.logger.info(f'Registering {self.posh_user.username}')
+                self.logger.info(f'Registering {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                 self.web_driver.get('https://poshmark.com/signup')
                 self.logger.info(f'At signup page - {self.web_driver.current_url}')
 
@@ -420,17 +441,23 @@ class PoshMarkClient:
 
                 # Send keys and select gender
                 self.logger.info('Filling out form')
-                first_name_field.send_keys(self.posh_user.first_name)
-                last_name_field.send_keys(self.posh_user.last_name)
-                email_field.send_keys(self.posh_user.email)
-                username_field.send_keys(self.posh_user.username)
-                password_field.send_keys(self.posh_user.password)
+                first_name_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "first_name"))
+                last_name_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "last_name"))
+                email_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "email"))
+                username_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "username"))
+                password_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "password"))
                 gender_field.click()
                 self.sleep(1)
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
                 done_button = self.locate(By.XPATH, '//button[@type="submit"]')
 
-                gender = self.posh_user.get_gender()
+                genders = {
+                    '2': 'Male',
+                    '1': 'Female',
+                    '0': 'Unspecified',
+                }
+
+                gender = genders[self.get_redis_object_attr(self.redis_posh_user_id, "gender")]
                 for element in gender_options:
                     if element.text == gender:
                         element.click()
@@ -452,19 +479,18 @@ class PoshMarkClient:
 
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                         self.logger.warning(
-                            f'Closet for {self.posh_user.username} is still not available - Trying again')
+                            f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1
                         self.sleep(5)
 
                     if response.status_code == requests.codes.ok:
-                        self.posh_user.is_registered = True
-                        self.posh_user.save()
+                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
                         self.logger.info(
-                            f'Successfully registered {self.posh_user.username}, status changed to "Active"')
+                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}, status changed to "Active"')
 
                         # Next Section - Profile
                         next_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -493,26 +519,24 @@ class PoshMarkClient:
                         self.logger.info('Registration Complete')
                     else:
                         self.logger.error(
-                            f'Closet could not be found at https://poshmark.com/closet/{self.posh_user.username}')
+                            f'Closet could not be found at https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                 elif error_code == 'ERROR_FORM_ERROR':
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                 elif error_code is None:
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
                         self.logger.warning(
-                            f'Closet for {self.posh_user.username} is still not available - Trying again')
+                            f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1
                         self.sleep(5)
 
                     if response.status_code == requests.codes.ok:
-                        self.posh_user.is_registered = True
-                        self.posh_user.save()
+                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
                         self.logger.info(
-                            f'Successfully registered {self.posh_user.username}')
+                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
                         # Next Section - Profile
                         next_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -540,19 +564,18 @@ class PoshMarkClient:
 
                         self.logger.info('Registration Complete')
                     else:
-                        self.posh_user.is_registered = False
-                        self.posh_user.save()
+                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
                         self.logger.info('Registration was not successful')
 
             except Exception as e:
                 self.logger.error(f'{traceback.format_exc()}')
-                if not self.posh_user.is_registered:
+                if not bool(self.get_redis_object_attr(self.redis_posh_user_id, 'is_registered')):
                     self.logger.error(f'User did not get registered')
 
     def log_in(self):
         """Will go to the Posh Mark home page and log in using waits for realism"""
         try:
-            self.logger.info(f'Logging {self.posh_user.username} in')
+            self.logger.info(f'Logging {self.get_redis_object_attr(self.redis_posh_user_id, "username")} in')
 
             self.web_driver.get('https://poshmark.com/login')
 
@@ -575,11 +598,11 @@ class PoshMarkClient:
 
             self.logger.info('Filling in form')
 
-            username_field.send_keys(self.posh_user.username)
+            username_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "username"))
 
             self.sleep(1)
 
-            password_field.send_keys(self.posh_user.password)
+            password_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "password"))
             password_field.send_keys(Keys.RETURN)
 
             self.logger.info('Form submitted')
@@ -615,15 +638,13 @@ class PoshMarkClient:
                         self.logger.warning('Could not log in, trying again.')
                         log_in_attempts += 1
                     if log_in_attempts >= 2:
-                        self.campaign.refresh_from_db()
-                        self.campaign.status = '5'
-                        self.campaign.save()
+                        self.update_redis_object(self.redis_campaign_id, {'status': '5'})
                         self.close()
 
-            if self.web_driver.current_url != f'https://poshmark.com/closet/{self.posh_user.username}':
-                self.web_driver.get(f'https://poshmark.com/closet/{self.posh_user.username}')
+            if self.web_driver.current_url != f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}':
+                self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
             else:
-                self.logger.info(f"Already at {self.posh_user.username}'s closet, refreshing.")
+                self.logger.info(f"Already at {self.get_redis_object_attr(self.redis_posh_user_id, 'username')}'s closet, refreshing.")
                 self.web_driver.refresh()
 
             show_all_listings_xpath = '//*[@id="content"]/div/div[2]/div/div/section/div[2]/div/div/button'
@@ -673,15 +694,14 @@ class PoshMarkClient:
 
             else:
                 if self.check_inactive():
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
 
             listings = {
                 'shareable_listings': shareable_listings,
                 'sold_listings': sold_listings,
                 'reserved_listings': reserved_listings
             }
-            self.logger.debug(listings)
+            self.logger.debug(str(listings))
             return listings
 
         except Exception as e:
@@ -705,7 +725,7 @@ class PoshMarkClient:
 
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
-            profile_picture_path = self.posh_user.profile_picture.path
+            profile_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'profile_picture')
             profile_picture_exists = Path(profile_picture_path).is_file()
             while not profile_picture_exists and attempts < 6:
                 self.logger.info(str(profile_picture_path))
@@ -732,7 +752,7 @@ class PoshMarkClient:
                     self.sleep(2)
 
             attempts = 1
-            header_picture_path = self.posh_user.header_picture.path
+            header_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'header_picture')
             header_picture_exists = Path(header_picture_path).is_file()
             while not header_picture_exists and attempts < 6:
                 self.logger.info(str(header_picture_path))
@@ -765,8 +785,7 @@ class PoshMarkClient:
 
             self.sleep(5)
 
-            self.posh_user.profile_updated = True
-            self.posh_user.save()
+            self.update_redis_object(self.redis_posh_user_id, {'profile_updated': 1})
 
             self.logger.info('Posh User status changed to "Active"')
         except Exception as e:
@@ -805,8 +824,7 @@ class PoshMarkClient:
             if self.is_present(By.XPATH, '//*[@id="app"]/main/div[1]/div/div[2]'):
                 self.logger.error('Error encountered when on the new listing page')
                 if self.check_inactive():
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                 else:
                     self.logger.info('User is not inactive')
             else:
@@ -1175,8 +1193,7 @@ class PoshMarkClient:
             else:
                 if self.check_inactive():
                     self.logger.warning('Setting user status to inactive')
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
@@ -1210,8 +1227,8 @@ class PoshMarkClient:
             else:
                 if self.check_inactive():
                     self.logger.warning('Setting user status to inactive')
-                    self.posh_user.status = PoshUser.INACTIVE
-                    self.posh_user.save()
+                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
+
                     return False
 
         except Exception as e:
@@ -1232,7 +1249,7 @@ class PoshMarkClient:
     def check_offers(self, listing=None, listing_title=None):
         try:
             listing_title = listing.title if listing else listing_title
-            lowest_price = listing.lowest_price if listing else self.campaign.lowest_price
+            lowest_price = listing.lowest_price if listing else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
             self.logger.info(f'Checking offers for {listing_title}')
             self.web_driver.get('https://poshmark.com/offers/my_offers')
 
@@ -1365,7 +1382,7 @@ class PoshMarkClient:
         """Will send offers to all likers for a given listing"""
         try:
             listing_title = listing.title if listing else listing_title
-            lowest_price = listing.lowest_price if listing else self.campaign.lowest_price
+            lowest_price = listing.lowest_price if listing else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
             self.logger.info(f'Sending offers to all likers for the following item: {listing_title}')
 
             self.go_to_closet()

@@ -43,8 +43,6 @@ class PoshUser(models.Model):
 
     date_added = models.DateField(auto_now_add=True, null=True)
 
-    port = models.IntegerField(blank=True, null=True)
-
     is_email_verified = models.BooleanField(default=False)
     is_registered = models.BooleanField(default=False)
     profile_updated = models.BooleanField(default=False)
@@ -188,6 +186,25 @@ class PoshUser(models.Model):
 
         return new_posh_user
 
+    def to_dict(self):
+        data = {}
+        for field in self._meta.get_fields():
+            field_type = field.get_internal_type()
+            if field_type not in ('OneToOneField', 'ForeignKey'):
+                if field.name == 'profile_picture' or field.name == 'header_picture':
+                    picture = field.value_from_object(self)
+                    if picture:
+                        data[field.name] = picture.path
+                    else:
+                        data[field.name] = ''
+                elif field_type == 'DateField':
+                    data[field.name] = field.value_from_object(self).strftime('%m-%d-%Y')
+                elif field_type == 'BooleanField':
+                    data[field.name] = int(field.value_from_object(self))
+                else:
+                    data[field.name] = field.value_from_object(self)
+        return data
+
     @staticmethod
     def check_alias_email():
         """Using the mailslurp client it checks if we the account has anymore aliases to create"""
@@ -293,6 +310,19 @@ class Campaign(models.Model):
 
     auto_run = models.BooleanField(default=False)
     generate_users = models.BooleanField(default=False)
+
+    def to_dict(self):
+        data = {}
+        for field in self._meta.get_fields():
+            field_type = field.get_internal_type()
+            if field_type not in ('OneToOneField', 'ForeignKey'):
+                if field_type == 'DateField':
+                    data[field.name] = field.value_from_object(self).strftime('%m-%d-%Y')
+                elif field_type == 'BooleanField':
+                    data[field.name] = int(field.value_from_object(self))
+                else:
+                    data[field.name] = field.value_from_object(self)
+        return data
 
     def __str__(self):
         return f'Campaign - Title: {self.title} Username: {self.posh_user.username if self.posh_user else "None"}'

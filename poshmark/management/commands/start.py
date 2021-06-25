@@ -10,6 +10,7 @@ from django.db.utils import OperationalError
 
 from users.models import User
 from poshmark.models import Campaign, ProxyConnection, PoshUser
+from poshmark.tasks import redis_log_reader, redis_instance_reader
 
 
 class Command(BaseCommand):
@@ -80,6 +81,12 @@ class Command(BaseCommand):
         logging.info('Removing all proxy connections')
         connections = ProxyConnection.objects.all()
         connections.delete()
+
+        logging.info('Starting redis log reader...')
+        redis_log_reader.delay()
+
+        logging.info('Starting redis instance reader...')
+        redis_instance_reader.delay()
 
         logging.info('Starting server...')
         os.system("gunicorn --preload -b 0.0.0.0:80 PoshBot.wsgi:application --threads 8 -w 4")

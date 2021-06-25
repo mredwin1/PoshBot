@@ -174,15 +174,21 @@ AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
+# Redis Settings
+REDIS_HOST = 'redis'
+REDIS_PORT = 6379
+
 # Celery Settings
-CELERY_BROKER_URL = "redis://redis:6379"
-CELERY_RESULT_BACKEND = "redis://redis:6379"
+CELERY_BROKER_URL = f'{REDIS_HOST}://{REDIS_HOST}:{REDIS_PORT}'
+CELERY_RESULT_BACKEND = f'{REDIS_HOST}://{REDIS_HOST}:{REDIS_PORT}'
 
 CELERY_TASK_ROUTES = {
     'poshmark.tasks.basic_sharing': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.advanced_sharing': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.start_campaign': {'queue': 'no_concurrency', 'routing_key': 'no_concurrency'},
     'poshmark.tasks.restart_task': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.redis_log_reader': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.redis_instance_reader': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks
