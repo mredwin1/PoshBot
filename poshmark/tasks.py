@@ -347,6 +347,7 @@ def advanced_sharing(campaign_id, proxy_id):
                     posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                     posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+
                 meet_your_posh_retries = 0
                 if posh_user_is_registered:
                     listing_title = get_redis_object_attr(redis_listing_id, 'title')
@@ -354,10 +355,10 @@ def advanced_sharing(campaign_id, proxy_id):
                     while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
                         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and meet_your_posh_retries <= 8:
                             meet_your_posh_retries += 1
                             proxy_client.sleep(30)
-                        if meet_your_posh_retries > 8:
+                        if meet_your_posh_retries >= 8:
                             log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Meet your posher did not come up after {meet_your_posh_retries}. Setting the user inactive.'})
                             update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
                         else:
