@@ -469,3 +469,5 @@ def restart_task(campaign_id):
         else:
             campaign.status = '2'
             campaign.save()
+
+    db.connections.close_all()
