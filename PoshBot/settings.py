@@ -192,10 +192,10 @@ CELERY_TASK_ROUTES = {
 }
 
 # Periodic Tasks
-CELERY_BEAT_SCHEDULE = {
-    'log_cleanup': {
-        'task': 'poshmark.tasks.log_cleanup',
-        'schedule': crontab(minute=0, hour=0),
-        'options': {'queue': 'no_concurrency'}
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'log_cleanup': {
+#         'task': 'poshmark.tasks.log_cleanup',
+#         'schedule': crontab(minute=0, hour=0),
+#         'options': {'queue': 'no_concurrency'}
+#     },
+# }
