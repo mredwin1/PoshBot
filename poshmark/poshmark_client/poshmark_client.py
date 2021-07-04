@@ -1270,10 +1270,10 @@ class PoshMarkClient:
                 news_nav = self.locate(By.XPATH, '//a[@href="/news"]')
                 news_nav.click()
 
-    def check_offers(self, listing=None, listing_title=None):
+    def check_offers(self, redis_listing_id=None, listing_title=None):
         try:
-            listing_title = listing.title if listing else listing_title
-            lowest_price = listing.lowest_price if listing else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
+            listing_title = self.get_redis_object_attr(redis_listing_id, 'listing_title') if redis_listing_id else listing_title
+            lowest_price = self.get_redis_object_attr(redis_listing_id, 'lowest_price') if redis_listing_id else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
             self.logger.info(f'Checking offers for {listing_title}')
             self.web_driver.get('https://poshmark.com/offers/my_offers')
 
