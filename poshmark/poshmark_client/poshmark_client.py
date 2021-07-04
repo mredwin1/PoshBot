@@ -105,13 +105,13 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, posh_proxy=None):
+    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id=None):
         proxy = Proxy()
-        hostname = posh_proxy.ip if posh_proxy else ''
-        port = posh_proxy.port if posh_proxy else ''
-        proxy.proxy_type = ProxyType.MANUAL if posh_proxy else ProxyType.SYSTEM
+        hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
+        port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
+        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
 
-        if posh_proxy:
+        if redis_proxy_id:
             proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
             proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
 
@@ -423,7 +423,7 @@ class PoshMarkClient:
 
     def register(self):
         """Will register a given user to poshmark"""
-        if bool(self.get_redis_object_attr(self.redis_posh_user_id, 'is_registered')):
+        if int(self.get_redis_object_attr(self.redis_posh_user_id, 'is_registered')):
             pass
         else:
             try:
@@ -518,8 +518,8 @@ class PoshMarkClient:
 
                         self.logger.info('Registration Complete')
                     else:
-                        self.logger.error(
-                            f'Closet could not be found at https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
+                        self.logger.info('Registration was not successful')
                 elif error_code == 'ERROR_FORM_ERROR':
                     self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                 elif error_code is None:
@@ -991,10 +991,21 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
-    def update_listing(self, current_title, listing):
+    def update_listing(self, current_title, redis_listing_id, brand=None):
         """Will update the listing with the current title with all of the information for the listing that was passed,
         if a brand is given it will update the brand to that otherwise it will use the listings brand"""
         try:
+            listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
+            listing_brand = self.get_redis_object_attr(redis_listing_id, 'brand')
+            listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
+            listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
+            listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
+            listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
+            listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
+            listing_tags = self.get_redis_object_attr(redis_listing_id, 'tags')
+            listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
+            listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
+            listing_photos = self.get_redis_object_attr(self.get_redis_object_attr(redis_listing_id, 'photos'))
             self.logger.info(f'Updating the following item: {current_title}')
 
             self.go_to_closet()
@@ -1014,156 +1025,169 @@ class PoshMarkClient:
 
                         self.sleep(5)
 
-                        self.web_driver.execute_script("window.scrollTo(0, 1280);")
+                        if brand:
+                            brand_field = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                            )
 
-                        # Update Category and Sub Category
-                        self.logger.info('Updating category')
-                        category_dropdown = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[3]/div/div[2]/div[1]/div/div[1]'
+                            brand_field.clear()
+                            brand_field.send_keys(listing_brand)
 
-                        )
-                        category_dropdown.click()
+                            self.web_driver.execute_script("window.scrollTo(0, 3000);")
 
-                        space_index = listing.category.find(' ')
-                        primary_category = listing.category[:space_index]
-                        secondary_category = listing.category[space_index + 1:]
-                        primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-                        for category in primary_categories:
-                            if category.text == primary_category:
-                                category.click()
-                                break
+                            availability = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/section[10]/div/div[2]/div/div')
+                            availability.click()
 
-                        secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-                        for category in secondary_categories[1:]:
-                            if category.text == secondary_category:
-                                category.click()
-                                break
+                            availability_selections = self.locate_all(By.CLASS_NAME, 'dropdown__link')
+                            for availability_selection in availability_selections:
+                                if availability_selection.text == 'For Sale':
+                                    availability_selection.click()
 
-                        self.logger.info('Category Updated')
+                            time.sleep(5)
+                        else:
+                            self.web_driver.execute_script("window.scrollTo(0, 1280);")
 
-                        self.logger.info('Updating subcategory')
+                            # Update Category and Sub Category
+                            self.logger.info('Updating category')
+                            category_dropdown = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[3]/div/div[2]/div[1]/div/div[1]'
 
-                        subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
-                        subcategories = subcategory_menu.find_elements_by_tag_name('a')
-                        subcategory = listing.subcategory
-                        for available_subcategory in subcategories:
-                            if available_subcategory.text == subcategory:
-                                available_subcategory.click()
-                                break
+                            )
+                            category_dropdown.click()
 
-                        self.logger.info('Subcategory updated')
+                            space_index = listing_category.find(' ')
+                            primary_category = listing_category[:space_index]
+                            secondary_category = listing_category[space_index + 1:]
+                            primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                            for category in primary_categories:
+                                if category.text == primary_category:
+                                    category.click()
+                                    break
 
-                        # Set size (This must be done after the category has been selected)
-                        self.logger.info('Updating size')
-                        size_dropdown = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[1]/div'
-                        )
-                        size_dropdown.click()
-                        size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
+                            secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
+                            for category in secondary_categories[1:]:
+                                if category.text == secondary_category:
+                                    category.click()
+                                    break
 
-                        for button in size_buttons:
-                            if button.text == 'Custom':
-                                button.click()
-                                break
+                            self.logger.info('Category Updated')
 
-                        custom_size_input = self.locate(By.ID, 'customSizeInput0')
-                        save_button = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
-                        )
-                        done_button = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
-                        )
-                        size = listing.size
-                        custom_size_input.send_keys(size)
-                        save_button.click()
-                        done_button.click()
+                            self.logger.info('Updating subcategory')
 
-                        self.logger.info('Size updated')
+                            subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
+                            subcategories = subcategory_menu.find_elements_by_tag_name('a')
+                            subcategory = listing_subcategory
+                            for available_subcategory in subcategories:
+                                if available_subcategory.text == subcategory:
+                                    available_subcategory.click()
+                                    break
 
-                        # Update photos
-                        self.logger.info('Uploading photos')
-                        listing_photos = listing.get_photos()
+                            self.logger.info('Subcategory updated')
 
-                        cover_photo = self.locate(By.XPATH,
-                                                  '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
-                        cover_photo.click()
+                            # Set size (This must be done after the category has been selected)
+                            self.logger.info('Updating size')
+                            size_dropdown = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+                            )
+                            size_dropdown.click()
+                            size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
 
-                        cover_photo_field = self.locate(
-                            By.XPATH,
-                            '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
-                        )
-                        cover_photo_field.send_keys(listing.cover_photo.path)
+                            for button in size_buttons:
+                                if button.text == 'Custom':
+                                    button.click()
+                                    break
 
-                        self.sleep(1)
+                            custom_size_input = self.locate(By.ID, 'customSizeInput0')
+                            save_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
+                            )
+                            done_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
+                            )
+                            size = listing_size
+                            custom_size_input.send_keys(size)
+                            save_button.click()
+                            done_button.click()
 
-                        apply_button = self.locate(
-                            By.XPATH,
-                            '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
-                        )
-                        apply_button.click()
+                            self.logger.info('Size updated')
 
-                        self.sleep(1)
+                            # Update photos
+                            self.logger.info('Uploading photos')
 
-                        if len(listing_photos) > 1:
+                            cover_photo = self.locate(By.XPATH,
+                                                      '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
+                            cover_photo.click()
+
+                            cover_photo_field = self.locate(
+                                By.XPATH,
+                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
+                            )
+                            cover_photo_field.send_keys(listing_cover_photo)
+
+                            self.sleep(1)
+
+                            apply_button = self.locate(
+                                By.XPATH,
+                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
+                            )
+                            apply_button.click()
+
+                            self.sleep(1)
+
                             for photo in listing_photos:
                                 upload_photos_field = self.locate(By.ID, 'img-file-input')
                                 upload_photos_field.clear()
                                 upload_photos_field.send_keys(photo)
                                 self.sleep(1)
 
-                        self.logger.info('Photos uploaded')
+                            self.logger.info('Photos uploaded')
 
-                        # Get all necessary fields
-                        self.logger.info('Updating the rest of the fields')
-                        title_field = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
-                        )
-                        description_field = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
-                        )
-
-                        input_fields = self.locate_all(By.TAG_NAME, 'input')
-                        for input_field in input_fields:
-                            if input_field.get_attribute('data-vv-name') == 'originalPrice':
-                                original_price_field = input_field
-                            if input_field.get_attribute('data-vv-name') == 'listingPrice':
-                                listing_price_field = input_field
-                        brand_field = self.locate(
-                            By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
-                        )
-
-                        # Send all the information to their respected fields
-                        title_field.clear()
-                        title_field.send_keys(listing.title)
-
-                        description_field.clear()
-                        for part in listing.description.split('\n'):
-                            description_field.send_keys(part)
-                            ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(
-                                Keys.SHIFT).key_up(
-                                Keys.ENTER).perform()
-
-                        original_prize = str(listing.original_price)
-                        original_price_field.clear()
-                        original_price_field.send_keys(original_prize)
-                        listing_price = str(listing.listing_price)
-                        listing_price_field.clear()
-                        listing_price_field.send_keys(listing_price)
-                        brand_field.clear()
-                        brand_field.send_keys(listing.brand)
-
-                        if listing.tags:
-                            tags_button = self.locate(
+                            # Get all necessary fields
+                            self.logger.info('Updating the rest of the fields')
+                            title_field = self.locate(
                                 By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[5]/div/div[2]/div[1]/button[1]',
-                                'clickable'
+                                '//*[@id="content"]/div/div[1]/div/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
                             )
-                            self.web_driver.execute_script("arguments[0].click();", tags_button)
+                            description_field = self.locate(
+                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
+                            )
+
+                            input_fields = self.locate_all(By.TAG_NAME, 'input')
+                            for input_field in input_fields:
+                                if input_field.get_attribute('data-vv-name') == 'originalPrice':
+                                    original_price_field = input_field
+                                if input_field.get_attribute('data-vv-name') == 'listingPrice':
+                                    listing_price_field = input_field
+
+                            # Send all the information to their respected fields
+                            title_field.clear()
+                            title_field.send_keys(listing_title)
+
+                            description_field.clear()
+                            for part in listing_description.split('\n'):
+                                description_field.send_keys(part)
+                                ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(
+                                    Keys.SHIFT).key_up(
+                                    Keys.ENTER).perform()
+
+                            original_prize = str(listing_original_price)
+                            original_price_field.clear()
+                            original_price_field.send_keys(original_prize)
+                            listing_price = str(listing_listing_price)
+                            listing_price_field.clear()
+                            listing_price_field.send_keys(listing_price)
+
+                            if listing_tags:
+                                tags_button = self.locate(
+                                    By.XPATH,
+                                    '//*[@id="content"]/div/div[1]/div/section[5]/div/div[2]/div[1]/button[1]',
+                                    'clickable'
+                                )
+                                self.web_driver.execute_script("arguments[0].click();", tags_button)
 
                         update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                         update_button.click()

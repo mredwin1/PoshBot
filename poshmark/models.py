@@ -48,7 +48,6 @@ class PoshUser(models.Model):
     profile_updated = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True,
@@ -198,7 +197,7 @@ class PoshUser(models.Model):
                     else:
                         data[field.name] = ''
                 elif field_type == 'DateField':
-                    data[field.name] = field.value_from_object(self).strftime('%m-%d-%Y')
+                    pass
                 elif field_type == 'BooleanField':
                     data[field.name] = int(field.value_from_object(self))
                 else:
@@ -317,7 +316,7 @@ class Campaign(models.Model):
             field_type = field.get_internal_type()
             if field_type not in ('OneToOneField', 'ForeignKey'):
                 if field_type == 'DateField':
-                    data[field.name] = field.value_from_object(self).strftime('%m-%d-%Y')
+                    pass
                 elif field_type == 'BooleanField':
                     data[field.name] = int(field.value_from_object(self))
                 else:
@@ -356,6 +355,21 @@ class Listing(models.Model):
     lowest_price = models.IntegerField(default=250)
 
     campaign = models.ForeignKey(Campaign, on_delete=models.SET_NULL, null=True)
+
+    def to_dict(self):
+        data = {}
+        for field in self._meta.get_fields():
+            field_type = field.get_internal_type()
+            if field_type not in ('OneToOneField', 'ForeignKey'):
+                if field_type == 'DateField':
+                    pass
+                elif field_type == 'BooleanField':
+                    data[field.name] = int(field.value_from_object(self))
+                elif field_type == 'FileField':
+                    data[field.name] = field.value_from_object(self).path
+                else:
+                    data[field.name] = field.value_from_object(self)
+        return data
 
     def get_photos(self):
         """Returns the paths for all the listing's photos"""
@@ -496,6 +510,19 @@ class PoshProxy(models.Model):
             datetime=timezone.now()
         )
         new_connection.save()
+
+    def to_dict(self):
+        data = {}
+        for field in self._meta.get_fields():
+            field_type = field.get_internal_type()
+            if field_type not in ('OneToOneField', 'ForeignKey'):
+                if field_type == 'DateField':
+                    pass
+                elif field_type == 'BooleanField':
+                    data[field.name] = int(field.value_from_object(self))
+                else:
+                    data[field.name] = field.value_from_object(self)
+        return data
 
     @staticmethod
     def remove_connection(posh_user):

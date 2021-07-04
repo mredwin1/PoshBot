@@ -11,27 +11,49 @@ from django.conf import settings
 from django.utils import timezone
 from celery import shared_task
 
-from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
+from .models import PoshUser, Log, Campaign, Listing, ListingPhotos, PoshProxy, ProxyConnection
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 
-def initialize_campaign(campaign_id):
+def remove_proxy_connection(campaign_id, proxy_id):
+    proxy = PoshProxy.objects.get(id=proxy_id)
+    posh_user = PoshUser.objects.get(campaign__id=campaign_id)
+
+    proxy.remove_connection(posh_user)
+
+
+def initialize_campaign(campaign_id, proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
+    listing = Listing.objects.get(campaign=campaign)
     logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
     logger.save()
+
+    if proxy_id:
+        proxy = PoshProxy.objects.get(id=proxy_id)
+        redis_posh_proxy_id = create_redis_object(proxy)
+    else:
+        redis_posh_proxy_id = None
+
+    if listing:
+        redis_listing_id = create_redis_object(listing)
+    else:
+        redis_listing_id = None
 
     redis_campaign_id = create_redis_object(campaign)
     redis_posh_user_id = create_redis_object(posh_user)
 
     db.connections.close_all()
 
-    return redis_campaign_id, redis_posh_user_id, logger.id
+    return redis_campaign_id, redis_posh_user_id, redis_posh_proxy_id, redis_listing_id, logger.id
 
 
-def get_redis_object_attr(object_id, field_name):
+def get_redis_object_attr(object_id, field_name=None):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    return r.hget(object_id, field_name)
+    if field_name:
+        return r.hget(object_id, field_name)
+    else:
+        return r.lrange(object_id, 0, -1)
 
 
 def create_redis_object(instance):
@@ -40,8 +62,16 @@ def create_redis_object(instance):
     instance_id = str(random.getrandbits(32))
 
     r.hset(instance_id, 'instance_type', instance_type)
-    for key, value in instance.to_dict().items():
-        r.hset(instance_id, key, value)
+    r.hset(instance_id, mapping=instance.to_dict())
+
+    if instance_type == 'Listing':
+        photos_id = str(random.getrandbits(32))
+        for listing_photo in instance.get_photos():
+            r.lpush(photos_id, listing_photo)
+        r.hset(instance_id, 'photos', photos_id)
+
+    instance.redis_id = instance_id
+    instance.save()
 
     return instance_id
 
@@ -49,15 +79,16 @@ def create_redis_object(instance):
 def update_redis_object(object_id, fields):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
-    r.hmset(object_id, fields)
+    if r.hgetall(object_id):
+        r.hset(object_id, mapping=fields)
 
-    fields_id = str(random.getrandbits(32))
+        fields_id = str(random.getrandbits(32))
 
-    # Creates an entry with a unique id and store the value that was updated and the value it got updated to
-    r.hset(fields_id, mapping=fields)
+        # Creates an entry with a unique id and store the value that was updated and the value it got updated to
+        r.hset(fields_id, mapping=fields)
 
-    # This maps the updated entry to the object it belongs to
-    r.hset('updated', object_id, fields_id)
+        # This maps the updated entry to the object it belongs to
+        r.hset('updated', object_id, fields_id)
 
 
 def log_to_redis(log_id, fields):
@@ -115,7 +146,8 @@ def redis_instance_reader():
         instance_types = {
             'PoshUser': PoshUser,
             'Campaign': Campaign,
-            'Listing': Listing
+            'Listing': Listing,
+            'PoshProxy': PoshProxy
         }
         while True:
             updated_key = r.hgetall('updated')
@@ -131,9 +163,9 @@ def redis_instance_reader():
                 updated_fields = []
                 for field_name, field_value in fields_to_update.items():
                     updated_fields.append(field_name)
-
                     setattr(instance, field_name, field_value)
-                instance.save(update_fields=updated_fields)
+
+                instance.save()
 
                 r.hdel(fields_id, *updated_fields)
                 r.hdel('updated', object_id)
@@ -193,7 +225,7 @@ def start_campaign(campaign_id):
 
 @shared_task
 def basic_sharing(campaign_id):
-    redis_campaign_id, redis_posh_user_id, logger_id = initialize_campaign(campaign_id)
+    redis_campaign_id, redis_posh_user_id, proxy_id, listing_id, logger_id = initialize_campaign(campaign_id)
     logged_hour_message = False
     max_deviation = round(int(get_redis_object_attr(redis_campaign_id, 'delay')) / 2)
     now = datetime.datetime.now(pytz.utc)
@@ -206,14 +238,13 @@ def basic_sharing(campaign_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
     with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as client:
-        r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
             now = datetime.datetime.now(pytz.utc)
             posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
             campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-            campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
+            campaign_delay = get_redis_object_attr(redis_campaign_id, 'delay')
             campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
             # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
@@ -265,96 +296,98 @@ def basic_sharing(campaign_id):
 
 @shared_task
 def advanced_sharing(campaign_id, proxy_id):
-    campaign = Campaign.objects.get(id=campaign_id)
-    proxy = PoshProxy.objects.get(id=proxy_id)
-    posh_user = campaign.posh_user
-    logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
-    campaign_listings = Listing.objects.filter(campaign=campaign)
-    listed_items = 0
+    redis_campaign_id, redis_posh_user_id, redis_proxy_id, redis_listing_id, logger_id = initialize_campaign(campaign_id, proxy_id)
+    listed_item = False
     logged_hour_message = False
     sent_offer = False
-    max_deviation = round(campaign.delay / 2)
+    max_deviation = round(int(get_redis_object_attr(redis_campaign_id, 'delay')) / 2)
+    now = datetime.datetime.now(pytz.utc)
+    end_time = now + datetime.timedelta(days=1)
 
-    if posh_user.status != PoshUser.INACTIVE:
-        posh_user.status = PoshUser.REGISTERING
-        posh_user.save()
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_campaign_id, {'status': '1'})
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
 
-    campaign.status = '1'
-    campaign.save()
-    logger.save()
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
-    logger.info('Starting Campaign')
-
-    with PoshMarkClient(posh_user, campaign, logger, proxy) as proxy_client:
-        now = datetime.datetime.now(pytz.utc)
-        end_time = now + datetime.timedelta(days=1)
-        # This outer loop is to ensure this task runs as long as the user is active and the campaign has not been stopped
-        while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
-            campaign.refresh_from_db()
-            posh_user.refresh_from_db()
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_proxy_id) as proxy_client:
+        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+        while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
             now = datetime.datetime.now(pytz.utc)
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
             # This inner loop is to run the task for the given hour
-            while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
-                campaign.refresh_from_db()
-                posh_user.refresh_from_db()
+            while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
                 now = datetime.datetime.now(pytz.utc)
-                while not posh_user.is_registered and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+                while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                     proxy_client.register()
-                    posh_user.refresh_from_db()
-                    campaign.refresh_from_db()
+                    posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+                    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
 
-                while posh_user.is_registered and not posh_user.profile_updated and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
+                posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+                while posh_user_is_registered and not posh_user_profile_updated and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                     proxy_client.update_profile()
-                    posh_user.refresh_from_db()
-                    campaign.refresh_from_db()
-
-                posh_user.refresh_from_db()
-                if posh_user.is_registered:
-                    for listing in campaign_listings:
-                        listing_found = proxy_client.check_listing(listing.title)
-                        while not listing_found and posh_user.status != PoshUser.INACTIVE and campaign.status == '1' and listed_items < 1:
-                            campaign.refresh_from_db()
-                            posh_user.refresh_from_db()
-                            title = proxy_client.list_item()
-                            if title:
-                                proxy_client.update_listing(title, listing)
-                                listed_items += 1
+                    posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+                    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                    posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+                meet_your_posh_retries = 0
+                if posh_user_is_registered:
+                    listing_title = get_redis_object_attr(redis_listing_id, 'title')
+                    listing_found = proxy_client.check_listing(listing_title)
+                    while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
+                        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                            meet_your_posh_retries += 1
+                            proxy_client.sleep(30)
+                        if meet_your_posh_retries > 8:
+                            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Meet your posher did not come up after {meet_your_posh_retries}. Setting the user inactive.'})
+                            update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
                         else:
-                            if listed_items < 1 and listing_found:
-                                listed_items += 1
-                                logger.warning(f'{listing.title} already listed, not re listing')
+                            posh_user_first_name = get_redis_object_attr(redis_posh_user_id, 'first_name')
+                            proxy_client.update_listing(f'Meet your Posher, {posh_user_first_name}', redis_listing_id)
+                            proxy_client.update_listing(listing_title, redis_listing_id, True)
+                            listed_item = True
+                    else:
+                        if not listed_item and listing_found:
+                            listed_item = True
+                            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'{listing_title} already listed, not re listing'})
 
-    proxy.remove_connection(posh_user)
+    remove_proxy_connection(campaign_id, proxy_id)
 
-    posh_user.refresh_from_db()
-    if posh_user.status != PoshUser.INACTIVE:
-        posh_user.status = PoshUser.RUNNING
-        posh_user.save()
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
-    if posh_user.is_registered:
-        proxy.refresh_from_db()
-        proxy.registered_accounts += 1
-        proxy.save()
-
-        with PoshMarkClient(posh_user, campaign, logger) as no_proxy_client:
-            while now < end_time and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                campaign.refresh_from_db()
-                posh_user.refresh_from_db()
+    if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
+        update_redis_object(redis_proxy_id, {'registered_accounts': int(get_redis_object_attr(redis_proxy_id, 'registered_accounts')) + 1})
+        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                 now = datetime.datetime.now(pytz.utc)
+                posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
+                campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
                 # This inner loop is to run the task for the given hour
-                while now.strftime('%I %p') in campaign.times and posh_user.status != PoshUser.INACTIVE and campaign.status == '1':
-                    campaign.refresh_from_db()
-                    posh_user.refresh_from_db()
+                while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                     now = datetime.datetime.now(pytz.utc)
+                    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
 
                     listing_titles = no_proxy_client.get_all_listings()
                     if listing_titles:
                         if listing_titles['shareable_listings']:
                             for listing_title in listing_titles['shareable_listings']:
                                 if '[FKE]' in listing_title:
-                                    campaign.refresh_from_db()
-                                    campaign.status = '5'
-                                    campaign.save()
+                                    update_redis_object(redis_campaign_id, {'status': '5'})
                                     break
                                 else:
                                     pre_share_time = time.time()
@@ -370,36 +403,31 @@ def advanced_sharing(campaign_id, proxy_id):
                                     deviation = random.randint(0, max_deviation) * positive_negative
                                     post_share_time = time.time()
                                     elapsed_time = round(post_share_time - pre_share_time, 2)
-                                    sleep_amount = (campaign.delay - elapsed_time) + deviation
+                                    sleep_amount = (campaign_delay - elapsed_time) + deviation
 
                                     if elapsed_time < sleep_amount:
                                         no_proxy_client.sleep(sleep_amount)
                         elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                            posh_user.status = PoshUser.INACTIVE
-                            posh_user.save()
+                            update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
 
                     if logged_hour_message:
                         logged_hour_message = False
 
-                if not logged_hour_message and campaign.status == '1' and posh_user.status == PoshUser.RUNNING:
-                    logger.info(
-                        f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping...")
+                if not logged_hour_message and campaign_status == '1' and posh_user_status == PoshUser.RUNNING:
+                    log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping..."})
                     logged_hour_message = True
 
-    posh_user.refresh_from_db()
-    if posh_user.status != PoshUser.INACTIVE:
-        posh_user.status = PoshUser.IDLE
-        posh_user.save()
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
 
-    logger.info('Campaign Ended')
-    campaign.refresh_from_db()
-    if campaign.status == '1' or campaign.status == '5':
-        campaign.status = '2'
-        campaign.save()
-        restart_task.delay(campaign.id)
-    elif campaign.status == '3':
-        campaign.status = '2'
-        campaign.save()
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
+
+    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+    if campaign_status == '1' or campaign_status == '5':
+        update_redis_object(redis_campaign_id, {'status': '2'})
+        restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
+    elif campaign_status == '3':
+        update_redis_object(redis_campaign_id, {'status': '2'})
 
 
 @shared_task
