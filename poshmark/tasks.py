@@ -25,9 +25,13 @@ def remove_proxy_connection(campaign_id, proxy_id):
 def initialize_campaign(campaign_id, proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    listing = Listing.objects.get(campaign=campaign)
     logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
     logger.save()
+
+    if campaign.mode == Campaign.ADVANCED_SHARING:
+        listing = Listing.objects.get(campaign=campaign)
+    else:
+        listing = None
 
     if proxy_id:
         proxy = PoshProxy.objects.get(id=proxy_id)
