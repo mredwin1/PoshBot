@@ -1273,7 +1273,7 @@ class PoshMarkClient:
     def check_offers(self, redis_listing_id=None, listing_title=None):
         try:
             listing_title = self.get_redis_object_attr(redis_listing_id, 'title') if redis_listing_id else listing_title
-            lowest_price = self.get_redis_object_attr(redis_listing_id, 'lowest_price') if redis_listing_id else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
+            lowest_price = int(self.get_redis_object_attr(redis_listing_id, 'lowest_price')) if redis_listing_id else int(self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price'))
             self.logger.info(f'Checking offers for {listing_title}')
             self.web_driver.get('https://poshmark.com/offers/my_offers')
 
@@ -1406,7 +1406,7 @@ class PoshMarkClient:
         """Will send offers to all likers for a given listing"""
         try:
             listing_title = self.get_redis_object_attr(redis_listing_id, 'title') if redis_listing_id else listing_title
-            lowest_price = self.get_redis_object_attr(redis_listing_id, 'lowest_price') if redis_listing_id else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
+            lowest_price = int(self.get_redis_object_attr(redis_listing_id, 'lowest_price')) if redis_listing_id else int(self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price'))
             self.logger.info(f'Sending offers to all likers for the following item: {listing_title}')
 
             self.go_to_closet()
