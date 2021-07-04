@@ -248,7 +248,7 @@ def basic_sharing(campaign_id):
             now = datetime.datetime.now(pytz.utc)
             posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
             campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-            campaign_delay = get_redis_object_attr(redis_campaign_id, 'delay')
+            campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
             campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
             # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
