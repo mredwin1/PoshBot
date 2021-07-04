@@ -21,6 +21,8 @@ def remove_proxy_connection(campaign_id, proxy_id):
 
     proxy.remove_connection(posh_user)
 
+    db.connections.close_all()
+
 
 def initialize_campaign(campaign_id, proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
@@ -76,6 +78,8 @@ def create_redis_object(instance):
 
     instance.redis_id = instance_id
     instance.save()
+
+    db.connections.close_all()
 
     return instance_id
 
@@ -225,6 +229,8 @@ def start_campaign(campaign_id):
         advanced_sharing.delay(campaign_id, selected_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
+
+    db.connections.close_all()
 
 
 @shared_task
