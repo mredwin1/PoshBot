@@ -362,7 +362,7 @@ def advanced_sharing(campaign_id, proxy_id):
                     else:
                         if not listed_item and listing_found:
                             listed_item = True
-                            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'{listing_title} already listed, not re listing'})
+                            log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
 
     remove_proxy_connection(campaign_id, proxy_id)
 
