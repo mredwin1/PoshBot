@@ -1402,11 +1402,11 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
-    def send_offer_to_likers(self, listing=None, listing_title=None):
+    def send_offer_to_likers(self, redis_listing_id=None, listing_title=None):
         """Will send offers to all likers for a given listing"""
         try:
-            listing_title = listing.title if listing else listing_title
-            lowest_price = listing.lowest_price if listing else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
+            listing_title = self.get_redis_object_attr(redis_listing_id, 'listing_title') if redis_listing_id else listing_title
+            lowest_price = self.get_redis_object_attr(redis_listing_id, 'lowest_price') if redis_listing_id else self.get_redis_object_attr(self.redis_campaign_id, 'lowest_price')
             self.logger.info(f'Sending offers to all likers for the following item: {listing_title}')
 
             self.go_to_closet()
@@ -1466,7 +1466,7 @@ class PoshMarkClient:
 
                         return True
             else:
-                self.logger.warning(f'The following listing was not found: {listing.title}')
+                self.logger.warning(f'The following listing was not found: {listing_title}')
                 self.logger.warning(f'Offers not sent to likers')
 
         except Exception as e:
