@@ -64,16 +64,19 @@ def get_redis_object_attr(object_id, field_name=None):
 
 def create_redis_object(instance):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
-    instance_type = instance.__class__.__name__
-    instance_id = str(random.getrandbits(32))
+    instance_type = str(instance.__class__.__name__)
+    instance_id = f'{instance_type}_{random.getrandbits(32)}'
 
     r.hset(instance_id, 'instance_type', instance_type)
     r.hset(instance_id, mapping=instance.to_dict())
 
+    import logging
+
     if instance_type == 'Listing':
-        photos_id = str(random.getrandbits(32))
+        photos_id = f'photos_{random.getrandbits(32)}'
         for listing_photo in instance.get_photos():
-            r.lpush(photos_id, listing_photo)
+            logging.info(f'Instance: {instance} Listing Photo: {listing_photo} Type: {type(listing_photo)}')
+            r.lpush(photos_id, str(listing_photo))
         r.hset(instance_id, 'photos', photos_id)
 
     instance.redis_id = instance_id
@@ -90,7 +93,7 @@ def update_redis_object(object_id, fields):
     if r.hgetall(object_id):
         r.hset(object_id, mapping=fields)
 
-        fields_id = str(random.getrandbits(32))
+        fields_id = f'fields_{random.getrandbits(32)}'
 
         # Creates an entry with a unique id and store the value that was updated and the value it got updated to
         r.hset(fields_id, mapping=fields)

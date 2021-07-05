@@ -1,9 +1,11 @@
 import logging
 import os
+import redis
 import socket
 import sys
 import time
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import OperationalError
@@ -78,6 +80,9 @@ class Command(BaseCommand):
             if posh_user.status != PoshUser.INACTIVE:
                 posh_user.status = PoshUser.IDLE
                 posh_user.save()
+
+        logging.info('Clearing redis')
+        r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
         logging.info('Removing all proxy connections')
         connections = ProxyConnection.objects.all()
