@@ -164,18 +164,12 @@ def redis_instance_reader():
         while True:
             updated_keys = r.keys(pattern='updated_*')
             for updated_key in updated_keys:
-                import logging
                 object_id = r.hget(updated_key, 'object_id')
                 fields_id = r.hget(updated_key, 'fields_id')
-                logging.info(updated_key)
-                logging.info(object_id)
-                logging.info(fields_id)
-                logging.info(r.hgetall(object_id))
-                logging.info(r.hgetall(fields_id))
                 instance_type = r.hget(object_id, 'instance_type')
                 instance_id = r.hget(object_id, 'id')
-                model = instance_types[instance_type]
 
+                model = instance_types[instance_type]
                 instance = model.objects.get(id=instance_id)
                 fields_to_update = r.hgetall(fields_id)
 
@@ -365,7 +359,7 @@ def advanced_sharing(campaign_id, proxy_id):
                     while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
                         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and meet_your_posh_retries <= 8:
+                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and meet_your_posh_retries < 8:
                             meet_your_posh_retries += 1
                             proxy_client.sleep(30)
                         if meet_your_posh_retries >= 8:
