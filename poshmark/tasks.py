@@ -247,7 +247,8 @@ def basic_sharing(campaign_id):
     sent_offer = False
 
     update_redis_object(redis_campaign_id, {'status': '1'})
-    update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
@@ -318,8 +319,8 @@ def advanced_sharing(campaign_id, proxy_id):
     now = datetime.datetime.now(pytz.utc)
     end_time = now + datetime.timedelta(days=1)
 
+    update_redis_object(redis_campaign_id, {'status': '1'})
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
-        update_redis_object(redis_campaign_id, {'status': '1'})
         update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
