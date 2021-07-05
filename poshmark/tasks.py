@@ -158,9 +158,12 @@ def redis_instance_reader():
             'PoshProxy': PoshProxy
         }
         while True:
-            updated_key = r.hgetall('updated')
+            updated_keys = r.keys(pattern='updated_*')
 
-            for object_id, fields_id in updated_key.items():
+            for updated_key in updated_keys:
+                object_id = list(r.hgetall(updated_key).keys())[0]
+                fields_id = list(r.hgetall(updated_key).values())[0]
+
                 instance_type = r.hget(object_id, 'instance_type')
                 instance_id = r.hget(object_id, 'id')
                 model = instance_types[instance_type]
@@ -176,7 +179,7 @@ def redis_instance_reader():
                 instance.save()
 
                 r.hdel(fields_id, *updated_fields)
-                r.hdel('updated', object_id)
+                r.delete(updated_key)
     except Exception as e:
         logging.info(traceback.format_exc())
         redis_instance_reader.delay()
