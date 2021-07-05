@@ -144,7 +144,6 @@ def redis_log_reader():
                 r.hdel(message_id, *message_keys)
     except Exception as e:
         logging.info(traceback.format_exc())
-        redis_log_reader.delay()
 
 
 @shared_task
@@ -159,7 +158,8 @@ def redis_instance_reader():
         }
         while True:
             updated_key = r.hgetall('updated')
-
+            import logging
+            logging.info(str(updated_key))
             for object_id, fields_id in updated_key.items():
                 instance_type = r.hget(object_id, 'instance_type')
                 instance_id = r.hget(object_id, 'id')
@@ -179,7 +179,6 @@ def redis_instance_reader():
                 r.hdel('updated', object_id)
     except Exception as e:
         logging.info(traceback.format_exc())
-        redis_instance_reader.delay()
 
 
 @shared_task
