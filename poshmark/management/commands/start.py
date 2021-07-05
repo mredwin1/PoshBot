@@ -81,10 +81,6 @@ class Command(BaseCommand):
                 posh_user.status = PoshUser.IDLE
                 posh_user.save()
 
-        logging.info('Clearing redis')
-        r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
-        for key in r.keys():
-            r.delete(key)
         logging.info('Removing all proxy connections')
         connections = ProxyConnection.objects.all()
         connections.delete()
