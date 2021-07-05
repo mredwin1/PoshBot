@@ -144,7 +144,6 @@ def redis_log_reader():
                 r.hdel(message_id, *message_keys)
     except Exception as e:
         logging.info(traceback.format_exc())
-        redis_log_reader.delay()
 
 
 @shared_task
@@ -182,7 +181,6 @@ def redis_instance_reader():
                 r.delete(updated_key)
     except Exception as e:
         logging.info(traceback.format_exc())
-        redis_instance_reader.delay()
 
 
 @shared_task
