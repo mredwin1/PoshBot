@@ -95,8 +95,13 @@ def update_redis_object(object_id, fields):
         # Creates an entry with a unique id and store the value that was updated and the value it got updated to
         r.hset(fields_id, mapping=fields)
 
+        updated_entry = {
+            'object_id': object_id,
+            'fields_id': fields_id,
+        }
+
         # This maps the updated entry to the object it belongs to
-        r.hset('updated', object_id, fields_id)
+        r.hset(f'updated_{random.getrandbits(32)}', mapping=updated_entry)
 
 
 def log_to_redis(log_id, fields):
@@ -158,11 +163,15 @@ def redis_instance_reader():
         }
         while True:
             updated_keys = r.keys(pattern='updated_*')
-
             for updated_key in updated_keys:
-                object_id = list(r.hgetall(updated_key).keys())[0]
-                fields_id = list(r.hgetall(updated_key).values())[0]
-
+                import logging
+                object_id = r.hget(updated_key, 'object_id')
+                fields_id = r.hget(updated_key, 'fields_id')
+                logging.info(updated_key)
+                logging.info(object_id)
+                logging.info(fields_id)
+                logging.info(r.hgetall(object_id))
+                logging.info(r.hgetall(fields_id))
                 instance_type = r.hget(object_id, 'instance_type')
                 instance_id = r.hget(object_id, 'id')
                 model = instance_types[instance_type]
