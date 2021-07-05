@@ -158,8 +158,9 @@ def redis_instance_reader():
         }
         while True:
             updated_key = r.hgetall('updated')
-            import logging
-            logging.info(str(updated_key))
+            if updated_key:
+                import logging
+                logging.info(str(updated_key))
             for object_id, fields_id in updated_key.items():
                 instance_type = r.hget(object_id, 'instance_type')
                 instance_id = r.hget(object_id, 'id')
