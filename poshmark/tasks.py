@@ -15,6 +15,16 @@ from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
 from poshmark.poshmark_client.poshmark_client import PoshMarkClient
 
 
+def get_new_id(instance_type):
+    r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    instance_id = f'{instance_type}_{random.getrandbits(32)}'
+
+    while instance_id in r.keys():
+        instance_id = f'{instance_type}_{random.getrandbits(32)}'
+
+    return instance_id
+
+
 def remove_proxy_connection(campaign_id, proxy_id):
     proxy = PoshProxy.objects.get(id=proxy_id)
     posh_user = PoshUser.objects.get(campaign__id=campaign_id)
@@ -65,17 +75,14 @@ def get_redis_object_attr(object_id, field_name=None):
 def create_redis_object(instance):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
     instance_type = str(instance.__class__.__name__)
-    instance_id = f'{instance_type}_{random.getrandbits(32)}'
+    instance_id = get_new_id(instance_type)
 
     r.hset(instance_id, 'instance_type', instance_type)
     r.hset(instance_id, mapping=instance.to_dict())
 
-    import logging
-
     if instance_type == 'Listing':
-        photos_id = f'photos_{random.getrandbits(32)}'
+        photos_id = get_new_id('photos')
         for listing_photo in instance.get_photos():
-            logging.info(f'Instance: {instance} Listing Photo: {listing_photo} Type: {type(listing_photo)}')
             r.lpush(photos_id, str(listing_photo))
         r.hset(instance_id, 'photos', photos_id)
 
@@ -93,7 +100,7 @@ def update_redis_object(object_id, fields):
     if r.hgetall(object_id):
         r.hset(object_id, mapping=fields)
 
-        fields_id = f'fields_{random.getrandbits(32)}'
+        fields_id = get_new_id('fields')
 
         # Creates an entry with a unique id and store the value that was updated and the value it got updated to
         r.hset(fields_id, mapping=fields)
@@ -104,12 +111,10 @@ def update_redis_object(object_id, fields):
         }
 
         # This maps the updated entry to the object it belongs to
-        r.hset(f'updated_{random.getrandbits(32)}', mapping=updated_entry)
+        r.hset(get_new_id('updated'), mapping=updated_entry)
 
 
 def log_to_redis(log_id, fields):
-    random.seed(444)
-
     r = redis.Redis(db=1, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
     redis_message = {
@@ -120,6 +125,9 @@ def log_to_redis(log_id, fields):
         redis_message[key] = value
 
     message_id = random.getrandbits(32)
+
+    while message_id in r.keys():
+        message_id = random.getrandbits(32)
 
     r.hset(f'Message:{message_id}', mapping=redis_message)
 
