@@ -215,19 +215,19 @@ def start_campaign(campaign_id):
             proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
             if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
                 proxy.reset_ip()
-
-            if len(proxy_connections) < proxy.max_connections:
-                selected_proxy = proxy
             else:
-                for proxy_connection in proxy_connections:
-                    now = timezone.now()
-                    elapsed_time = (now - proxy_connection.datetime).seconds
-                    if elapsed_time > 900:
-                        broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
-                        if broken_campaign.redis_id:
-                            update_redis_object(broken_campaign.redis_id, {'status': '5'})
-                            update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
-                        proxy_connection.delete()
+                if len(proxy_connections) < proxy.max_connections:
+                    selected_proxy = proxy
+                else:
+                    for proxy_connection in proxy_connections:
+                        now = timezone.now()
+                        elapsed_time = (now - proxy_connection.datetime).seconds
+                        if elapsed_time > 900:
+                            broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
+                            if broken_campaign.redis_id:
+                                update_redis_object(broken_campaign.redis_id, {'status': '5'})
+                                update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
+                            proxy_connection.delete()
         if not selected_proxy:
             time.sleep(30)
 
