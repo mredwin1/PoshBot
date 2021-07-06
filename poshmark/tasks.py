@@ -212,31 +212,24 @@ def start_campaign(campaign_id):
     while not selected_proxy:
         proxies = PoshProxy.objects.all()
         for proxy in proxies:
-            connections = ProxyConnection.objects.filter(posh_proxy=proxy)
-            if len(connections) < proxy.max_connections:
+            proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
+            if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
+                proxy.reset_ip()
+
+            if proxy_connections < proxy.max_connections:
                 selected_proxy = proxy
             else:
-                now = timezone.now()
-                deleted = False
-                for connection in connections:
-                    elapsed_time = (now - connection.datetime).seconds
+                for proxy_connection in proxy_connections:
+                    now = timezone.now()
+                    elapsed_time = (now - proxy_connection.datetime).seconds
                     if elapsed_time > 900:
-                        deleted = True
-                        broken_campaign = Campaign.objects.get(posh_user=connection.posh_user)
+                        broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
                         broken_campaign.status = '5'
                         broken_campaign.save()
-                        connection.delete()
-                if not deleted:
-                    time.sleep(30)
-
-    if selected_proxy.registered_accounts >= selected_proxy.max_accounts:
-        connections = ProxyConnection.objects.filter(posh_proxy=selected_proxy)
-
-        while connections:
+                        proxy_connection.delete()
+                        restart_task.delay(broken_campaign.id)
+        if not selected_proxy:
             time.sleep(30)
-            connections = ProxyConnection.objects.filter(posh_proxy=selected_proxy)
-
-        selected_proxy.reset_ip()
 
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
