@@ -453,7 +453,8 @@ def advanced_sharing(campaign_id, proxy_id):
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
     if campaign_status == '1' or campaign_status == '5':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
-    update_redis_object(redis_campaign_id, {'status': '2'})
+    else:
+        update_redis_object(redis_campaign_id, {'status': '2'})
 
 
 @shared_task
