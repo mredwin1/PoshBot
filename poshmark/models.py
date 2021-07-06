@@ -50,6 +50,8 @@ class PoshUser(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
+    redis_id = models.CharField(max_length=40, default='')
+
     email = models.EmailField(blank=True,
                               help_text="If alias is chosen up top then put the email you wish to mask here. Otherwise "
                                         "put the email you wish to create the Posh User with.")
@@ -303,6 +305,7 @@ class Campaign(models.Model):
     title = models.CharField(max_length=30)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES)
     times = models.CharField(max_length=255)
+    redis_id = models.CharField(max_length=40, default='')
 
     delay = models.IntegerField()
     lowest_price = models.IntegerField(blank=True, default=250)
@@ -344,6 +347,7 @@ class Listing(models.Model):
     brand = models.CharField(max_length=30)
     category = models.CharField(max_length=30)
     subcategory = models.CharField(max_length=30)
+    redis_id = models.CharField(max_length=40, default='')
 
     description = models.TextField()
 
@@ -485,6 +489,7 @@ class PoshProxy(models.Model):
     max_accounts = models.IntegerField()
     max_connections = models.IntegerField(default=2)
     registered_accounts = models.IntegerField()
+    redis_id = models.CharField(max_length=40, default='')
 
     ip = models.GenericIPAddressField()
     port = models.IntegerField()

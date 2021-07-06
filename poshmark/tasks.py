@@ -224,10 +224,9 @@ def start_campaign(campaign_id):
                     elapsed_time = (now - proxy_connection.datetime).seconds
                     if elapsed_time > 900:
                         broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
-                        broken_campaign.status = '5'
-                        broken_campaign.save()
+                        if broken_campaign.redis_id:
+                            update_redis_object(broken_campaign.redis_id, {'status': '5'})
                         proxy_connection.delete()
-                        restart_task.delay(broken_campaign.id)
         if not selected_proxy:
             time.sleep(30)
 
