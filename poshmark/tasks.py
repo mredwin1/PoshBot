@@ -458,9 +458,6 @@ def restart_task(campaign_id):
     old_posh_user = campaign.posh_user
     run_again = True
 
-    import logging
-    logging.info(f'Restarting {campaign}. User Status: {old_posh_user.status}')
-
     if campaign.mode == Campaign.BASIC_SHARING:
         basic_sharing.delay(campaign_id)
     elif campaign.mode == Campaign.ADVANCED_SHARING:
@@ -476,7 +473,7 @@ def restart_task(campaign_id):
             old_posh_user.delete()
         elif old_posh_user.status == PoshUser.INACTIVE:
             run_again = False
-        logging.info(f'Run Again: {run_again}')
+
         if run_again:
             campaign.status = '4'
             campaign.save()
