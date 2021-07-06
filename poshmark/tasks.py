@@ -448,14 +448,13 @@ def advanced_sharing(campaign_id, proxy_id):
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
 
+    update_redis_object(redis_campaign_id, {'status': '2'})
+
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
     if campaign_status == '1' or campaign_status == '5':
-        update_redis_object(redis_campaign_id, {'status': '2'})
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
-    elif campaign_status == '3':
-        update_redis_object(redis_campaign_id, {'status': '2'})
 
 
 @shared_task
@@ -463,6 +462,9 @@ def restart_task(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     old_posh_user = campaign.posh_user
     run_again = True
+
+    import logging
+    logging.info(f'Restarting {campaign}. User Status: {old_posh_user.status}')
 
     if campaign.mode == Campaign.BASIC_SHARING:
         basic_sharing.delay(campaign_id)
@@ -479,7 +481,7 @@ def restart_task(campaign_id):
             old_posh_user.delete()
         elif old_posh_user.status == PoshUser.INACTIVE:
             run_again = False
-
+        logging.info(f'Run Again: {run_again}')
         if run_again:
             campaign.status = '4'
             campaign.save()
