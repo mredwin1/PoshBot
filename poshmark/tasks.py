@@ -216,7 +216,7 @@ def start_campaign(campaign_id):
             if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
                 proxy.reset_ip()
             else:
-                if len(proxy_connections) < proxy.max_connections:
+                if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                     selected_proxy = proxy
                 else:
                     for proxy_connection in proxy_connections:
