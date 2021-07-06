@@ -226,6 +226,7 @@ def start_campaign(campaign_id):
                         broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
                         if broken_campaign.redis_id:
                             update_redis_object(broken_campaign.redis_id, {'status': '5'})
+                            update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
                         proxy_connection.delete()
         if not selected_proxy:
             time.sleep(30)
@@ -342,8 +343,10 @@ def advanced_sharing(campaign_id, proxy_id):
                 posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                 campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                 posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
-                while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                registration_attempts = 0
+                while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 4:
                     proxy_client.register()
+                    registration_attempts += 1
                     posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
                     posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
