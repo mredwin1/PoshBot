@@ -448,13 +448,12 @@ def advanced_sharing(campaign_id, proxy_id):
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
 
-    update_redis_object(redis_campaign_id, {'status': '2'})
-
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
     if campaign_status == '1' or campaign_status == '5':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
+    update_redis_object(redis_campaign_id, {'status': '2'})
 
 
 @shared_task
