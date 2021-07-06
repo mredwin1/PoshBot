@@ -1002,7 +1002,7 @@ class PoshMarkClient:
             listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
             listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
             listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
-            listing_tags = self.get_redis_object_attr(redis_listing_id, 'tags')
+            listing_tags = int(self.get_redis_object_attr(redis_listing_id, 'tags'))
             listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
             listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
             listing_photos = self.get_redis_object_attr(self.get_redis_object_attr(redis_listing_id, 'photos'))
