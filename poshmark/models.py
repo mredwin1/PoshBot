@@ -531,8 +531,8 @@ class PoshProxy(models.Model):
 
     @staticmethod
     def remove_connection(posh_user):
-        connection = ProxyConnection.objects.get(posh_user=posh_user)
-        if connection:
+        connections = ProxyConnection.objects.filter(posh_user=posh_user)
+        for connection in connections:
             connection.delete()
 
     def __str__(self):
