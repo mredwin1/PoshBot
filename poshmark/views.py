@@ -335,8 +335,7 @@ class StopCampaign(View, LoginRequiredMixin):
                 logger = Log.objects.filter(campaign=campaign).order_by('created_date').last()
                 logger.warning('Stop signal received')
 
-                campaign.status = '3'
-                campaign.save()
+                update_redis_object(campaign.id, {'status': '3'})
                 stopped_campaigns.append(campaign_id)
 
         if stopped_campaigns:
