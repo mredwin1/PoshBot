@@ -353,6 +353,7 @@ class PoshMarkClient:
 
             if total_listings > 0 and not self.is_present(By.CLASS_NAME, 'card--small'):
                 self.logger.warning('This user does not seem to be active, setting inactive')
+                self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                 return True
             else:
                 self.logger.info('This user is still active')
