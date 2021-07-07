@@ -14,7 +14,7 @@ from django.views.generic.list import ListView
 from .models import PoshUser, Log, LogEntry, Listing, Campaign, User
 from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
     EditListingForm
-from .tasks import basic_sharing, start_campaign
+from .tasks import basic_sharing, start_campaign, update_redis_object
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
