@@ -142,24 +142,26 @@ def redis_log_reader():
                 log_id = r.hget(message_id, 'log_id')
                 log_level = r.hget(message_id, 'level')
                 log_message = r.hget(message_id, 'message')
+                try:
+                    log = Log.objects.get(id=log_id)
 
-                log = Log.objects.get(id=log_id)
+                    if log_level == 'CRITICAL':
+                        log.critical(log_message)
+                    elif log_level == 'ERROR':
+                        log.error(log_message)
+                    elif log_level == 'WARNING':
+                        log.warning(log_message)
+                    elif log_level == 'INFO':
+                        log.info(log_message)
+                    elif log_level == 'DEBUG':
+                        log.debug(log_message)
 
-                if log_level == 'CRITICAL':
-                    log.critical(log_message)
-                elif log_level == 'ERROR':
-                    log.error(log_message)
-                elif log_level == 'WARNING':
-                    log.warning(log_message)
-                elif log_level == 'INFO':
-                    log.info(log_message)
-                elif log_level == 'DEBUG':
-                    log.debug(log_message)
-
-                message_keys = r.hkeys(message_id)
-                r.hdel(message_id, *message_keys)
+                    r.delete(message_id)
+                except Log.DoesNotExist:
+                    r.delete(message_id)
     except Exception as e:
         logging.info(traceback.format_exc())
+        redis_log_reader.delay()
 
 
 @shared_task
@@ -181,20 +183,25 @@ def redis_instance_reader():
                 instance_id = r.hget(object_id, 'id')
 
                 model = instance_types[instance_type]
-                instance = model.objects.get(id=instance_id)
-                fields_to_update = r.hgetall(fields_id)
+                try:
+                    instance = model.objects.get(id=instance_id)
+                    fields_to_update = r.hgetall(fields_id)
 
-                updated_fields = []
-                for field_name, field_value in fields_to_update.items():
-                    updated_fields.append(field_name)
-                    setattr(instance, field_name, field_value)
+                    updated_fields = []
+                    for field_name, field_value in fields_to_update.items():
+                        updated_fields.append(field_name)
+                        setattr(instance, field_name, field_value)
 
-                instance.save()
+                    instance.save()
 
-                r.hdel(fields_id, *updated_fields)
-                r.delete(updated_key)
+                    r.delete(updated_key)
+                    r.delete(fields_id)
+                except model.DoesNotExist:
+                    r.delete(updated_key)
+                    r.delete(fields_id)
     except Exception as e:
         logging.info(traceback.format_exc())
+        redis_instance_reader.delay()
 
 
 @shared_task
