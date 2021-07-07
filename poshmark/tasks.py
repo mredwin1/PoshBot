@@ -159,6 +159,7 @@ def redis_log_reader():
                     r.delete(message_id)
                 except Log.DoesNotExist:
                     r.delete(message_id)
+            time.sleep(1)
     except Exception as e:
         logging.info(traceback.format_exc())
         redis_log_reader.delay()
@@ -199,6 +200,7 @@ def redis_instance_reader():
                 except model.DoesNotExist:
                     r.delete(updated_key)
                     r.delete(fields_id)
+            time.sleep(1)
     except Exception as e:
         logging.info(traceback.format_exc())
         redis_instance_reader.delay()
