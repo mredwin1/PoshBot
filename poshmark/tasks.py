@@ -188,7 +188,7 @@ def redis_instance_reader():
                     fields_to_update = r.hgetall(fields_id)
 
                     for field_name, field_value in fields_to_update.items():
-                        if instance_type == 'Campaign' and field_name != 'status' and getattr(instance, field_name) != '4':
+                        if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4'):
                             setattr(instance, field_name, field_value)
 
                     instance.save()
