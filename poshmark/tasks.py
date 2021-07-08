@@ -159,7 +159,6 @@ def redis_log_reader():
                     r.delete(message_id)
                 except Log.DoesNotExist:
                     r.delete(message_id)
-            time.sleep(1)
     except Exception as e:
         logging.info(traceback.format_exc())
         redis_log_reader.delay()
@@ -188,10 +187,9 @@ def redis_instance_reader():
                     instance = model.objects.get(id=instance_id)
                     fields_to_update = r.hgetall(fields_id)
 
-                    updated_fields = []
                     for field_name, field_value in fields_to_update.items():
-                        updated_fields.append(field_name)
-                        setattr(instance, field_name, field_value)
+                        if instance_type == 'Campaign' and field_name != 'status' and getattr(instance, field_name) != '4':
+                            setattr(instance, field_name, field_value)
 
                     instance.save()
 
@@ -200,7 +198,6 @@ def redis_instance_reader():
                 except model.DoesNotExist:
                     r.delete(updated_key)
                     r.delete(fields_id)
-            time.sleep(1)
     except Exception as e:
         logging.info(traceback.format_exc())
         redis_instance_reader.delay()
@@ -243,6 +240,8 @@ def start_campaign(campaign_id):
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
         selected_proxy.add_connection(campaign.posh_user)
+        campaign.status = '1'
+        campaign.save()
         advanced_sharing.delay(campaign_id, selected_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
@@ -333,7 +332,6 @@ def advanced_sharing(campaign_id, proxy_id):
     now = datetime.datetime.now(pytz.utc)
     end_time = now + datetime.timedelta(days=1)
 
-    update_redis_object(redis_campaign_id, {'status': '1'})
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
 
