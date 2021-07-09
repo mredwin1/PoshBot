@@ -472,7 +472,12 @@ def restart_task(campaign_id):
     run_again = True
 
     if campaign.mode == Campaign.BASIC_SHARING:
-        basic_sharing.delay(campaign_id)
+        if old_posh_user.status == PoshUser.INACTIVE:
+            old_posh_user.delete()
+            campaign.status = '2'
+            campaign.save()
+        else:
+            basic_sharing.delay(campaign_id)
     elif campaign.mode == Campaign.ADVANCED_SHARING:
         if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
             new_posh_user = old_posh_user.generate_random_posh_user()
