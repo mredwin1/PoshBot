@@ -1478,9 +1478,11 @@ class PoshMarkClient:
     def check_comments(self, listing_title):
         """Checks all the comments for a given listing to ensure there are no bad comments, if so it reports them"""
         try:
-            self.logger.info(f'Sharing the following item: {listing_title}')
+            self.logger.info(f'Checking the comments for the following item: {listing_title}')
 
             self.go_to_closet()
+
+            bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen')
 
             if self.check_listing(listing_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
@@ -1493,7 +1495,6 @@ class PoshMarkClient:
                         self.sleep(3)
 
                         regex = re.compile('[^a-zA-Z]+')
-                        bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen')
                         comments = self.locate_all(By.CLASS_NAME, 'comment-item__container')
                         for comment in comments:
                             text = comment.find_element_by_class_name('comment-item__text').text
@@ -1505,12 +1506,16 @@ class PoshMarkClient:
                                 report_button = comment.find_element_by_class_name('flag')
                                 report_button.click()
 
+                                self.sleep(1)
+
                                 primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
                                 for button in primary_buttons:
                                     if button.text == 'Submit':
                                         button.click()
+                                        self.logger.info(f'Reported the following comment as spam: {text}')
                                         break
                         break
+            self.logger.info(f'No comments with the following words: {",".join(bad_words)}')
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
