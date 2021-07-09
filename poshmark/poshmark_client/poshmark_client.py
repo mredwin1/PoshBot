@@ -1483,6 +1483,7 @@ class PoshMarkClient:
             self.go_to_closet()
 
             bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen')
+            reported = False
 
             if self.check_listing(listing_title):
                 listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
@@ -1512,10 +1513,13 @@ class PoshMarkClient:
                                     for button in primary_buttons:
                                         if button.text == 'Submit':
                                             button.click()
-                                            self.logger.info(f'Reported the following comment as spam: {text}')
+                                            reported = True
+                                            self.logger.warning(f'Reported the following comment as spam: {text}')
                                             break
+                            if not reported:
+                                self.logger.info(f'No comments with the following words: {", ".join(bad_words)}')
                         else:
-                            self.logger.info(f'No comments with the following words: {",".join(bad_words)}')
+                            self.logger.info(f'No comments on this listing yet.')
                         break
 
         except Exception as e:
