@@ -372,9 +372,6 @@ class StartCampaign(View, LoginRequiredMixin):
                     data['error'] = 'Campaign could not be started: No Posh User'
 
             if 'error' not in data.keys():
-                campaign.status = '4'
-                campaign.save()
-
                 data['success'] = 'success'
         else:
             started_campaigns = []
