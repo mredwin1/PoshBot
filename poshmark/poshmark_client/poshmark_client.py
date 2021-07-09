@@ -1244,6 +1244,8 @@ class PoshMarkClient:
 
                         self.sleep(1)
 
+                        self.web_driver.save_screenshot(f'/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}_sharing.png')
+
                         to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
                         to_followers_button.click()
 
