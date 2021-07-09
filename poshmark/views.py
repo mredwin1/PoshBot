@@ -353,13 +353,15 @@ class StartCampaign(View, LoginRequiredMixin):
         if len(campaign_ids) == 1:
             campaign = Campaign.objects.get(id=int(campaign_ids[0]))
             if campaign.posh_user and campaign.status == '2':
-                campaign.status = '4'
-                campaign.save()
                 if campaign.mode == Campaign.BASIC_SHARING:
+                    campaign.status = '1'
+                    campaign.save()
                     basic_sharing.delay(int(campaign_ids[0]))
                 elif campaign.mode == Campaign.ADVANCED_SHARING:
                     listings = Listing.objects.filter(campaign=campaign)
                     if listings:
+                        campaign.status = '4'
+                        campaign.save()
                         start_campaign.delay(int(campaign_ids[0]))
                     else:
                         data['error'] = 'Campaign could not be started: No Listings'

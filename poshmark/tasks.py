@@ -258,7 +258,6 @@ def basic_sharing(campaign_id):
     end_time = now + datetime.timedelta(days=1)
     sent_offer = False
 
-    update_redis_object(redis_campaign_id, {'status': '1'})
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
