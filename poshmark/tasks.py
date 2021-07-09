@@ -284,7 +284,7 @@ def basic_sharing(campaign_id):
                             pre_share_time = time.time()
                             client.share_item(listing_title)
                             client.check_offers(listing_title=listing_title)
-
+                            client.check_comments(listing_title=listing_title)
                             if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
                                 sent_offer = client.send_offer_to_likers(listing_title=listing_title)
 
