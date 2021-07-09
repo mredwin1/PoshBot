@@ -606,6 +606,8 @@ class PoshMarkClient:
             password_field.send_keys(self.get_redis_object_attr(self.redis_posh_user_id, "password"))
             password_field.send_keys(Keys.RETURN)
 
+            self.web_driver.save_screenshot(f'/shared_volume/screenshots/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+
             self.logger.info('Form submitted')
 
             error_code = self.check_for_errors()
