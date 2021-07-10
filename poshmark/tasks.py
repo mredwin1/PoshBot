@@ -34,7 +34,7 @@ def remove_proxy_connection(campaign_id, proxy_id):
     db.connections.close_all()
 
 
-def initialize_campaign(campaign_id, proxy_id=None):
+def initialize_campaign(campaign_id, sharing_proxy_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
     logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
@@ -45,11 +45,14 @@ def initialize_campaign(campaign_id, proxy_id=None):
     else:
         listing = None
 
-    if proxy_id:
-        proxy = PoshProxy.objects.get(id=proxy_id)
-        redis_posh_proxy_id = create_redis_object(proxy)
+    sharing_proxy = PoshProxy.objects.get(id=sharing_proxy_id)
+    redis_sharing_proxy_id = create_redis_object(sharing_proxy)
+
+    if registration_proxy_id:
+        registration_proxy = PoshProxy.objects.get(id=registration_proxy_id)
+        redis_registration_proxy_id = create_redis_object(registration_proxy)
     else:
-        redis_posh_proxy_id = None
+        redis_registration_proxy_id = None
 
     if listing:
         redis_listing_id = create_redis_object(listing)
@@ -61,7 +64,7 @@ def initialize_campaign(campaign_id, proxy_id=None):
 
     db.connections.close_all()
 
-    return redis_campaign_id, redis_posh_user_id, redis_posh_proxy_id, redis_listing_id, logger.id
+    return redis_campaign_id, redis_posh_user_id, redis_sharing_proxy_id, logger.id, redis_listing_id, redis_registration_proxy_id
 
 
 def get_redis_object_attr(object_id, field_name=None):
@@ -212,37 +215,55 @@ def log_cleanup():
 
 
 @shared_task
-def start_campaign(campaign_id):
-    selected_proxy = None
+def start_campaign(campaign_id, registration_ip):
+    registration_proxy = None
+    sharing_proxy = None
 
-    while not selected_proxy:
-        proxies = PoshProxy.objects.all()
-        for proxy in proxies:
+    while not sharing_proxy:
+        sharing_proxies = PoshProxy.objects.filter(registration_proxy=False)
+        for proxy in sharing_proxies:
             proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
-            if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
-                proxy.reset_ip()
-            else:
-                if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
-                    selected_proxy = proxy
+            if len(proxy_connections) < proxy.max_connections:
+                sharing_proxy = proxy
+                break
+
+    if registration_ip:
+        while not registration_proxy:
+            registration_proxies = PoshProxy.objects.filter(registration_proxy=True)
+            for proxy in registration_proxies:
+                proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
+                if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
+                    proxy.reset_ip()
                 else:
-                    for proxy_connection in proxy_connections:
-                        now = timezone.now()
-                        elapsed_time = (now - proxy_connection.datetime).seconds
-                        if elapsed_time > 900:
-                            broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
-                            if broken_campaign.redis_id:
-                                update_redis_object(broken_campaign.redis_id, {'status': '5'})
-                                update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
-                            proxy_connection.delete()
-        if not selected_proxy:
-            time.sleep(30)
+                    if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
+                        registration_proxy = proxy
+                        break
+                    else:
+                        for proxy_connection in proxy_connections:
+                            now = timezone.now()
+                            elapsed_time = (now - proxy_connection.datetime).seconds
+                            if elapsed_time > 900:
+                                broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
+                                if broken_campaign.redis_id:
+                                    update_redis_object(broken_campaign.redis_id, {'status': '5'})
+                                    update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
+                                proxy_connection.delete()
+            if not registration_proxy:
+                time.sleep(30)
 
     campaign = Campaign.objects.get(id=campaign_id)
     if campaign.status == '4':
-        selected_proxy.add_connection(campaign.posh_user)
-        campaign.status = '1'
-        campaign.save()
-        advanced_sharing.delay(campaign_id, selected_proxy.id)
+        if campaign.mode == Campaign.ADVANCED_SHARING:
+            sharing_proxy.add_connection(campaign.posh_user)
+            registration_proxy.add_connection(campaign.posh_user)
+            campaign.status = '1'
+            campaign.save()
+            advanced_sharing.delay(campaign_id, sharing_proxy.id, registration_proxy.id)
+        elif campaign.mode == Campaign.BASIC_SHARING:
+            sharing_proxy.add_connection(campaign.posh_user)
+            campaign.status = '1'
+            campaign.save()
+            basic_sharing.delay(campaign_id, sharing_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
@@ -250,8 +271,8 @@ def start_campaign(campaign_id):
 
 
 @shared_task
-def basic_sharing(campaign_id):
-    redis_campaign_id, redis_posh_user_id, proxy_id, listing_id, logger_id = initialize_campaign(campaign_id)
+def basic_sharing(campaign_id, sharing_proxy_id):
+    redis_campaign_id, redis_posh_user_id, redis_sharing_proxy_id, logger_id, *other = initialize_campaign(campaign_id, sharing_proxy_id)
     logged_hour_message = False
     max_deviation = round(int(get_redis_object_attr(redis_campaign_id, 'delay')) / 2)
     now = datetime.datetime.now(pytz.utc)
@@ -263,7 +284,7 @@ def basic_sharing(campaign_id):
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
-    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as client:
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_sharing_proxy_id) as client:
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
@@ -306,6 +327,7 @@ def basic_sharing(campaign_id):
                 log_to_redis(str(logger_id), {'level': 'WARNING', 'message': log_message})
                 logged_hour_message = True
 
+    remove_proxy_connection(campaign_id, sharing_proxy_id)
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
@@ -321,8 +343,8 @@ def basic_sharing(campaign_id):
 
 
 @shared_task
-def advanced_sharing(campaign_id, proxy_id):
-    redis_campaign_id, redis_posh_user_id, redis_proxy_id, redis_listing_id, logger_id = initialize_campaign(campaign_id, proxy_id)
+def advanced_sharing(campaign_id, sharing_proxy_id, registration_proxy_id):
+    redis_campaign_id, redis_posh_user_id, redis_sharing_proxy_id, logger_id, redis_listing_id, redis_registration_proxy_id = initialize_campaign(campaign_id, sharing_proxy_id, registration_proxy_id)
     listed_item = False
     logged_hour_message = False
     sent_offer = False
@@ -336,7 +358,7 @@ def advanced_sharing(campaign_id, proxy_id):
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
-    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_proxy_id) as proxy_client:
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, registration_proxy_id) as proxy_client:
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
@@ -394,16 +416,16 @@ def advanced_sharing(campaign_id, proxy_id):
                             listed_item = True
                             log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
 
-    remove_proxy_connection(campaign_id, proxy_id)
+    remove_proxy_connection(campaign_id, registration_proxy_id)
 
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
     if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
-        registered_accounts = get_redis_object_attr(redis_proxy_id, 'registered_accounts')
+        registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
         total_registered = int(registered_accounts) + 1 if registered_accounts else 1
-        update_redis_object(redis_proxy_id, {'registered_accounts': total_registered})
-        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
+        update_redis_object(registration_proxy_id, {'registered_accounts': total_registered})
+        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, sharing_proxy_id) as no_proxy_client:
             posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
             campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
             while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
@@ -455,6 +477,7 @@ def advanced_sharing(campaign_id, proxy_id):
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
 
+    remove_proxy_connection(campaign_id, sharing_proxy_id)
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')

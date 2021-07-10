@@ -105,15 +105,14 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id=None):
+    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id):
         proxy = Proxy()
-        hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
-        port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
-        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
+        hostname = get_redis_object_attr(redis_proxy_id, 'ip')
+        port = get_redis_object_attr(redis_proxy_id, 'port')
+        proxy.proxy_type = ProxyType.MANUAL
 
-        if redis_proxy_id:
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+        proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+        proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
 
         capabilities = webdriver.DesiredCapabilities.CHROME
         proxy.add_to_capabilities(capabilities)

@@ -484,12 +484,15 @@ class LogEntry(models.Model):
 
 
 class PoshProxy(models.Model):
+    registration_proxy = models.BooleanField(default=False)
+
     ip_reset_url = models.CharField(max_length=200, default='', blank=True)
 
-    max_accounts = models.IntegerField()
+    max_accounts = models.IntegerField(default=2)
     max_connections = models.IntegerField(default=2)
-    registered_accounts = models.IntegerField()
-    redis_id = models.CharField(max_length=40, default='')
+    registered_accounts = models.IntegerField(default=0, blank=True)
+
+    redis_id = models.CharField(max_length=40, default='', blank=True)
 
     ip = models.GenericIPAddressField()
     port = models.IntegerField()
@@ -536,7 +539,7 @@ class PoshProxy(models.Model):
             connection.delete()
 
     def __str__(self):
-        return f'Proxy #{self.id}'
+        return f'Registration Proxy #{self.id}' if self.registration_proxy else f'Sharing Proxy #{self.id}'
 
 
 class ProxyConnection(models.Model):
