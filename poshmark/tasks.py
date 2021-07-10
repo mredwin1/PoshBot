@@ -358,7 +358,7 @@ def advanced_sharing(campaign_id, sharing_proxy_id, registration_proxy_id):
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
-    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, registration_proxy_id) as proxy_client:
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_registration_proxy_id) as proxy_client:
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
@@ -425,7 +425,7 @@ def advanced_sharing(campaign_id, sharing_proxy_id, registration_proxy_id):
         registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
         total_registered = int(registered_accounts) + 1 if registered_accounts else 1
         update_redis_object(registration_proxy_id, {'registered_accounts': total_registered})
-        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, sharing_proxy_id) as no_proxy_client:
+        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_sharing_proxy_id) as no_proxy_client:
             posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
             campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
             while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
