@@ -430,7 +430,7 @@ def advanced_sharing(campaign_id, proxy_id):
                                     no_proxy_client.share_item(listing_title)
 
                                     no_proxy_client.check_offers(redis_listing_id=redis_listing_id)
-
+                                    no_proxy_client.check_comments(listing_title=listing_title)
                                     if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
                                         sent_offer = no_proxy_client.send_offer_to_likers(redis_listing_id=redis_listing_id)
 
