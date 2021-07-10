@@ -544,7 +544,7 @@ class PoshProxy(models.Model):
 
 class ProxyConnection(models.Model):
     posh_proxy = models.ForeignKey(PoshProxy, on_delete=models.CASCADE)
-    posh_user = models.ForeignKey(PoshUser, on_delete=models.CASCADE)
+    posh_user = models.ManyToManyField(PoshUser, on_delete=models.CASCADE)
     datetime = models.DateTimeField()
 
     def __str__(self):
