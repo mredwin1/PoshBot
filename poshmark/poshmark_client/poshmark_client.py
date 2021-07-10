@@ -1481,6 +1481,56 @@ class PoshMarkClient:
             if not self.check_logged_in():
                 self.log_in()
 
+    def check_comments(self, listing_title):
+        """Checks all the comments for a given listing to ensure there are no bad comments, if so it reports them"""
+        try:
+            self.logger.info(f'Checking the comments for the following item: {listing_title}')
+
+            self.go_to_closet()
+
+            bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen')
+            reported = False
+
+            if self.check_listing(listing_title):
+                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+                for listed_item in listed_items:
+                    title = listed_item.find_element_by_class_name('tile__title')
+                    if title.text == listing_title:
+                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                        listing_button.click()
+
+                        self.sleep(3)
+                        if self.is_present(By.CLASS_NAME, 'comment-item__container'):
+                            regex = re.compile('[^a-zA-Z]+')
+                            comments = self.locate_all(By.CLASS_NAME, 'comment-item__container')
+                            for comment in comments:
+                                text = comment.find_element_by_class_name('comment-item__text').text
+                                cleaned_comment = regex.sub('', text)
+
+                                if any([bad_word in cleaned_comment for bad_word in bad_words]):
+                                    report_button = comment.find_element_by_class_name('flag')
+                                    report_button.click()
+
+                                    self.sleep(1)
+
+                                    primary_buttons = self.locate_all(By.CLASS_NAME, 'btn--primary')
+                                    for button in primary_buttons:
+                                        if button.text == 'Submit':
+                                            button.click()
+                                            reported = True
+                                            self.logger.warning(f'Reported the following comment as spam: {text}')
+                                            break
+                            if not reported:
+                                self.logger.info(f'No comments with the following words: {", ".join(bad_words)}')
+                        else:
+                            self.logger.info(f'No comments on this listing yet.')
+                        break
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
+
     def check_ip(self, filename=None):
         self.web_driver.get('https://www.whatsmyip.org/')
         host_name = self.locate(By.ID, 'hostname')

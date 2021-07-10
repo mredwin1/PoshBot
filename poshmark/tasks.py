@@ -258,7 +258,6 @@ def basic_sharing(campaign_id):
     end_time = now + datetime.timedelta(days=1)
     sent_offer = False
 
-    update_redis_object(redis_campaign_id, {'status': '1'})
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
@@ -284,7 +283,7 @@ def basic_sharing(campaign_id):
                             pre_share_time = time.time()
                             client.share_item(listing_title)
                             client.check_offers(listing_title=listing_title)
-
+                            client.check_comments(listing_title=listing_title)
                             if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
                                 sent_offer = client.send_offer_to_likers(listing_title=listing_title)
 
@@ -431,7 +430,7 @@ def advanced_sharing(campaign_id, proxy_id):
                                     no_proxy_client.share_item(listing_title)
 
                                     no_proxy_client.check_offers(redis_listing_id=redis_listing_id)
-
+                                    no_proxy_client.check_comments(listing_title=listing_title)
                                     if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
                                         sent_offer = no_proxy_client.send_offer_to_likers(redis_listing_id=redis_listing_id)
 
