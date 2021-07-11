@@ -158,3 +158,8 @@ def listings_return(listing_ids):
     """Given a string of Listing ids it will return a list of Listing objects"""
     listing_ids = listing_ids.split(',')
     return [Listing.objects.get(id=listing_id) for listing_id in listing_ids]
+
+
+@register.filter
+def space_replace(value):
+    return value.raplace(' ', '-')
