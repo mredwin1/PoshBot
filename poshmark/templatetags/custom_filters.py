@@ -161,5 +161,5 @@ def listings_return(listing_ids):
 
 
 @register.filter
-def space_replace(value):
+def replace_space(value):
     return value.raplace(' ', '-')
