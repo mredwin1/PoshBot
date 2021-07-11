@@ -163,5 +163,4 @@ def listings_return(listing_ids):
 
 @register.filter
 def replace_space(value):
-    new_string = value.replace(' ', '-')
-    return re.sub('[^A-Za-z0-9]+', '', new_string)
+    return re.sub('[^A-Za-z0-9]+', '', value)
