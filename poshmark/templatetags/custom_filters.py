@@ -162,4 +162,4 @@ def listings_return(listing_ids):
 
 @register.filter
 def replace_space(value):
-    return value.raplace(' ', '-')
+    return value.replace(' ', '-')
