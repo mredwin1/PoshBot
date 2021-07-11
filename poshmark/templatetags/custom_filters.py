@@ -1,4 +1,5 @@
 import pytz
+import re
 
 from django import template
 from django.template.defaultfilters import stringfilter
@@ -162,4 +163,5 @@ def listings_return(listing_ids):
 
 @register.filter
 def replace_space(value):
-    return value.replace(' ', '-')
+    new_string = value.replace(' ', '-')
+    return re.sub('[^A-Za-z0-9]+', '', new_string)
