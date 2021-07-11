@@ -508,8 +508,6 @@ class PoshProxy(models.Model):
                 cookies=login_response.cookies
             )
             time.sleep(10)
-            logging.info(login_response.status_code)
-            logging.info(reset_response.status_code)
         self.registered_accounts = 0
         self.save()
 
@@ -536,7 +534,7 @@ class PoshProxy(models.Model):
 
     @staticmethod
     def remove_connection(posh_user):
-        connections = ProxyConnection.objects.filter(posh_user=posh_user)
+        connections = ProxyConnection.objects.filter(posh_user=posh_user, posh_proxy=self)
         for connection in connections:
             connection.delete()
 
