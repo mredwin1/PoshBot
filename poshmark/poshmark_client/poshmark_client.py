@@ -105,14 +105,15 @@ class Captcha:
 
 
 class PoshMarkClient:
-    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id):
+    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id=None):
         proxy = Proxy()
-        hostname = get_redis_object_attr(redis_proxy_id, 'ip')
-        port = get_redis_object_attr(redis_proxy_id, 'port')
-        proxy.proxy_type = ProxyType.MANUAL
+        hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
+        port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
+        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
 
-        proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-        proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+        if redis_proxy_id:
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
 
         capabilities = webdriver.DesiredCapabilities.CHROME
         proxy.add_to_capabilities(capabilities)
@@ -467,15 +468,11 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
-                self.sleep(5)
-
                 error_code = self.check_for_errors()
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
-
-                    self.web_driver.save_screenshot('/media/register.png')
 
                     # Check if Posh User is now registered
                     attempts = 0
@@ -490,7 +487,7 @@ class PoshMarkClient:
                     if response.status_code == requests.codes.ok:
                         self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
                         self.logger.info(
-                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}, status changed to "Active"')
+                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
                         # Next Section - Profile
                         next_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -606,10 +603,6 @@ class PoshMarkClient:
             password_field.send_keys(Keys.RETURN)
 
             self.logger.info('Form submitted')
-
-            self.sleep(5)  # Please remove after debugging
-
-            self.web_driver.save_screenshot(f'/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}_login.png')
 
             error_code = self.check_for_errors()
 
@@ -790,8 +783,6 @@ class PoshMarkClient:
             self.sleep(5)
 
             self.update_redis_object(self.redis_posh_user_id, {'profile_updated': 1})
-
-            self.logger.info('Posh User status changed to "Active"')
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
@@ -1245,8 +1236,6 @@ class PoshMarkClient:
 
                         self.sleep(1)
 
-                        self.web_driver.save_screenshot(f'/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}_sharing.png')
-
                         to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
                         to_followers_button.click()
 
@@ -1504,7 +1493,7 @@ class PoshMarkClient:
                             comments = self.locate_all(By.CLASS_NAME, 'comment-item__container')
                             for comment in comments:
                                 text = comment.find_element_by_class_name('comment-item__text').text
-                                cleaned_comment = regex.sub('', text)
+                                cleaned_comment = regex.sub('', text.lower())
 
                                 if any([bad_word in cleaned_comment for bad_word in bad_words]):
                                     report_button = comment.find_element_by_class_name('flag')
