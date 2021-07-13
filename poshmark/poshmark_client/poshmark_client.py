@@ -487,7 +487,7 @@ class PoshMarkClient:
                     if response.status_code == requests.codes.ok:
                         self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
                         self.logger.info(
-                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}, status changed to "Active"')
+                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
                         # Next Section - Profile
                         next_button = self.locate(By.XPATH, '//button[@type="submit"]')
@@ -783,8 +783,6 @@ class PoshMarkClient:
             self.sleep(5)
 
             self.update_redis_object(self.redis_posh_user_id, {'profile_updated': 1})
-
-            self.logger.info('Posh User status changed to "Active"')
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
