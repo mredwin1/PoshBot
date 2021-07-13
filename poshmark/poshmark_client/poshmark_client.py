@@ -468,15 +468,11 @@ class PoshMarkClient:
 
                 self.logger.info('Form submitted')
 
-                self.sleep(5)
-
                 error_code = self.check_for_errors()
                 if error_code == 'CAPTCHA':
                     done_button = self.locate(By.XPATH, '//button[@type="submit"]')
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
-
-                    self.web_driver.save_screenshot('/media/register.png')
 
                     # Check if Posh User is now registered
                     attempts = 0
@@ -607,10 +603,6 @@ class PoshMarkClient:
             password_field.send_keys(Keys.RETURN)
 
             self.logger.info('Form submitted')
-
-            self.sleep(5)  # Please remove after debugging
-
-            self.web_driver.save_screenshot(f'/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}_login.png')
 
             error_code = self.check_for_errors()
 
@@ -1245,8 +1237,6 @@ class PoshMarkClient:
                         share_button.click()
 
                         self.sleep(1)
-
-                        self.web_driver.save_screenshot(f'/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}_sharing.png')
 
                         to_followers_button = self.locate(By.CLASS_NAME, 'internal-share__link')
                         to_followers_button.click()
