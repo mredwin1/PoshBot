@@ -464,8 +464,8 @@ def advanced_sharing(campaign_id, sharing_proxy_id, registration_proxy_id):
 
                                     if elapsed_time < sleep_amount:
                                         no_proxy_client.sleep(sleep_amount)
-                        elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                            update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
+                        # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                        #     update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
 
                     if logged_hour_message:
                         logged_hour_message = False
