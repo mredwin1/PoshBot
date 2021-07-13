@@ -1495,7 +1495,7 @@ class PoshMarkClient:
                             comments = self.locate_all(By.CLASS_NAME, 'comment-item__container')
                             for comment in comments:
                                 text = comment.find_element_by_class_name('comment-item__text').text
-                                cleaned_comment = regex.sub('', text)
+                                cleaned_comment = regex.sub('', text.lower())
 
                                 if any([bad_word in cleaned_comment for bad_word in bad_words]):
                                     report_button = comment.find_element_by_class_name('flag')
