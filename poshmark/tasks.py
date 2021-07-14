@@ -451,7 +451,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
     total_registered = int(registered_accounts) + 1 if registered_accounts else 1
-    update_redis_object(registration_proxy_id, {'registered_accounts': total_registered})
+    update_redis_object(registration_proxy_id, {'registered_accounts': str(total_registered)})
 
     if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
         with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
