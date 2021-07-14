@@ -213,7 +213,7 @@ def redis_instance_reader():
                 object_id = r.hget(updated_key, 'object_id')
                 fields_id = r.hget(updated_key, 'fields_id')
                 instance_type = r.hget(object_id, 'instance_type')
-                instance_id = r.hget(object_id, 'id')
+                instance_id = int(r.hget(object_id, 'id'))
 
                 model = instance_types[instance_type]
                 try:
