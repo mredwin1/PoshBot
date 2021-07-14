@@ -34,6 +34,28 @@ def remove_proxy_connection(campaign_id, proxy_id):
     db.connections.close_all()
 
 
+def remove_redis_object(*args):
+    r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    instance_types = {
+        'PoshUser': PoshUser,
+        'Campaign': Campaign,
+        'Listing': Listing,
+        'PoshProxy': PoshProxy
+    }
+
+    for redis_id in args:
+        r.delete(redis_id)
+        instance_type = redis_id[:redis_id.find('_')]
+        model = instance_types[instance_type]
+
+        try:
+            instance = model.objects.get(redis_id=redis_id)
+            instance.redis_id = ''
+            instance.save()
+        except model.DoesNotExist:
+            pass
+
+
 def initialize_campaign(campaign_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
@@ -75,10 +97,20 @@ def get_redis_object_attr(object_id, field_name=None):
 def create_redis_object(instance):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
     instance_type = str(instance.__class__.__name__)
-    instance_id = get_new_id(instance_type)
+    already_exists = False
 
-    r.hset(instance_id, 'instance_type', instance_type)
-    r.hset(instance_id, mapping=instance.to_dict())
+    if instance_type == 'PoshProxy':
+        posh_proxy_keys = r.keys(pattern='PoshProxy_*')
+        for posh_proxy_key in posh_proxy_keys:
+            if instance.id == r.hget(posh_proxy_key, 'id'):
+                already_exists = True
+                instance_id = posh_proxy_key
+
+    if not already_exists:
+        instance_id = get_new_id(instance_type)
+
+        r.hset(instance_id, 'instance_type', instance_type)
+        r.hset(instance_id, mapping=instance.to_dict())
 
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
@@ -222,6 +254,7 @@ def start_campaign(campaign_id, registration_ip):
                 proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
                 if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
                     proxy.reset_ip()
+                    remove_redis_object(proxy.redis_id)
                 else:
                     if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                         registration_proxy = proxy
@@ -325,6 +358,7 @@ def basic_sharing(campaign_id):
 
     if campaign_status == '1' or campaign_status == '5':
         restart_task.delay(campaign_id)
+    remove_redis_object(redis_campaign_id, redis_posh_user_id)
 
 
 @shared_task
@@ -471,6 +505,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
+    remove_redis_object(redis_campaign_id, redis_posh_user_id, redis_listing_id)
 
 
 @shared_task
