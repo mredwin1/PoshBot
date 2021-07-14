@@ -216,10 +216,14 @@ def redis_instance_reader():
                 instance_id = r.hget(object_id, 'id')
 
                 model = instance_types[instance_type]
+                import logging
+                logging.info(object_id)
+                logging.info(instance_type)
+                logging.info(instance_id)
+                logging.info(type(instance_id))
                 try:
                     instance = model.objects.get(id=instance_id)
                     fields_to_update = r.hgetall(fields_id)
-                    import logging
                     logging.info(instance)
                     logging.info(fields_to_update)
                     for field_name, field_value in fields_to_update.items():
