@@ -448,6 +448,9 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
     total_registered = int(registered_accounts) + 1 if registered_accounts else 1
+    import logging
+    logging.info(registered_accounts)
+    logging.info(total_registered)
     update_redis_object(registration_proxy_id, {'registered_accounts': total_registered})
 
     if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
