@@ -258,6 +258,7 @@ def start_campaign(campaign_id, registration_ip):
                 proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
                 if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
                     proxy.reset_ip()
+                    proxy.refresh_from_db()
                     remove_redis_object(proxy.redis_id)
                 else:
                     if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
