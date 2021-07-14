@@ -219,7 +219,9 @@ def redis_instance_reader():
                 try:
                     instance = model.objects.get(id=instance_id)
                     fields_to_update = r.hgetall(fields_id)
-
+                    import logging
+                    logging.info(instance)
+                    logging.info(fields_to_update)
                     for field_name, field_value in fields_to_update.items():
                         if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4'):
                             if field_name in ('registered_accounts',):
