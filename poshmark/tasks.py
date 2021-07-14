@@ -222,7 +222,10 @@ def redis_instance_reader():
 
                     for field_name, field_value in fields_to_update.items():
                         if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4'):
-                            setattr(instance, field_name, field_value)
+                            if field_name in ('registered_accounts',):
+                                setattr(instance, field_name, int(field_value))
+                            else:
+                                setattr(instance, field_name, field_value)
 
                     instance.save()
 
@@ -448,9 +451,6 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
     total_registered = int(registered_accounts) + 1 if registered_accounts else 1
-    import logging
-    logging.info(registered_accounts)
-    logging.info(total_registered)
     update_redis_object(registration_proxy_id, {'registered_accounts': total_registered})
 
     if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
