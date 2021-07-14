@@ -216,16 +216,9 @@ def redis_instance_reader():
                 instance_id = r.hget(object_id, 'id')
 
                 model = instance_types[instance_type]
-                import logging
-                logging.info(object_id)
-                logging.info(instance_type)
-                logging.info(instance_id)
-                logging.info(type(instance_id))
                 try:
                     instance = model.objects.get(id=instance_id)
                     fields_to_update = r.hgetall(fields_id)
-                    logging.info(instance)
-                    logging.info(fields_to_update)
                     for field_name, field_value in fields_to_update.items():
                         if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4'):
                             if field_name in ('registered_accounts',):
@@ -455,9 +448,9 @@ def advanced_sharing(campaign_id, registration_proxy_id):
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
 
-    registered_accounts = get_redis_object_attr(registration_proxy_id, 'registered_accounts')
+    registered_accounts = get_redis_object_attr(redis_registration_proxy_id, 'registered_accounts')
     total_registered = int(registered_accounts) + 1 if registered_accounts else 1
-    update_redis_object(registration_proxy_id, {'registered_accounts': str(total_registered)})
+    update_redis_object(redis_registration_proxy_id, {'registered_accounts': str(total_registered)})
 
     if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
         with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
