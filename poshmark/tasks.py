@@ -367,7 +367,6 @@ def basic_sharing(campaign_id):
 
     if campaign_status == '1' or campaign_status == '5':
         restart_task.delay(campaign_id)
-    remove_redis_object(redis_campaign_id, redis_posh_user_id)
 
 
 @shared_task
@@ -517,7 +516,6 @@ def advanced_sharing(campaign_id, registration_proxy_id):
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
-    remove_redis_object(redis_campaign_id, redis_posh_user_id, redis_listing_id)
 
 
 @shared_task
