@@ -213,7 +213,7 @@ def redis_instance_reader():
                 object_id = r.hget(updated_key, 'object_id')
                 fields_id = r.hget(updated_key, 'fields_id')
                 instance_type = r.hget(object_id, 'instance_type')
-                instance_id = r.hget(object_id, 'id')
+                instance_id = int(r.hget(object_id, 'id'))
 
                 model = instance_types[instance_type]
                 try:
@@ -258,7 +258,9 @@ def start_campaign(campaign_id, registration_ip):
                 proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
                 if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
                     proxy.reset_ip()
-                    remove_redis_object(proxy.redis_id)
+                    proxy.refresh_from_db()
+                    if proxy.redis_id:
+                        remove_redis_object(proxy.redis_id)
                 else:
                     if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                         registration_proxy = proxy
@@ -342,9 +344,9 @@ def basic_sharing(campaign_id):
                     elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                         log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
                         update_redis_object(redis_campaign_id, {'status': '3'})
-                    elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                        log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
-                        update_redis_object(redis_campaign_id, {'status': '4'})
+                    # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                    #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
+                    #     update_redis_object(redis_campaign_id, {'status': '4'})
 
                 if logged_hour_message:
                     logged_hour_message = False
@@ -366,7 +368,6 @@ def basic_sharing(campaign_id):
 
     if campaign_status == '1' or campaign_status == '5':
         restart_task.delay(campaign_id)
-    remove_redis_object(redis_campaign_id, redis_posh_user_id)
 
 
 @shared_task
@@ -495,9 +496,9 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                             log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
                             update_redis_object(redis_campaign_id, {'status': '3'})
-                        elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                            log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
-                            update_redis_object(redis_campaign_id, {'status': '4'})
+                        # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                        #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
+                        #     update_redis_object(redis_campaign_id, {'status': '4'})
 
                 if logged_hour_message:
                         logged_hour_message = False
@@ -516,7 +517,6 @@ def advanced_sharing(campaign_id, registration_proxy_id):
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
-    remove_redis_object(redis_campaign_id, redis_posh_user_id, redis_listing_id)
 
 
 @shared_task

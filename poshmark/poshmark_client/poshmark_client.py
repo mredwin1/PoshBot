@@ -151,7 +151,7 @@ class PoshMarkClient:
     def open(self):
         """Used to open the selenium web driver session"""
         self.web_driver = webdriver.Chrome('/poshmark/poshmark_client/chromedriver', options=self.web_driver_options)
-        self.web_driver.implicitly_wait(10)
+        self.web_driver.implicitly_wait(20)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
@@ -161,7 +161,7 @@ class PoshMarkClient:
 
     def locate(self, by, locator, location_type=None):
         """Locates the first elements with the given By"""
-        wait = WebDriverWait(self.web_driver, 20)
+        wait = WebDriverWait(self.web_driver, 30)
         if location_type:
             if location_type == 'visibility':
                 return wait.until(EC.visibility_of_element_located((by, locator)))
@@ -174,7 +174,7 @@ class PoshMarkClient:
 
     def locate_all(self, by, locator, location_type=None):
         """Locates all web elements with the given By and returns a list of them"""
-        wait = WebDriverWait(self.web_driver, 20)
+        wait = WebDriverWait(self.web_driver, 30)
         if location_type:
             if location_type == 'visibility':
                 return wait.until(EC.visibility_of_all_elements_located((by, locator)))
