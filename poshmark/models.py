@@ -1,12 +1,12 @@
 import logging
-import time
-
 import mailslurp_client
 import names
 import os
 import random
 import requests
 import string
+import time
+import traceback
 
 from django.db import models
 from django.utils import timezone
@@ -499,17 +499,20 @@ class PoshProxy(models.Model):
 
     def reset_ip(self):
         if self.ip_reset_url:
-            login_response = requests.post(
-                'https://portal.proxyguys.com/login',
-                data={'username': os.environ['PROXY_USERNAME'], 'password': os.environ['PROXY_PASSWORD']}
-            )
-            reset_response = requests.get(
-                f'{self.ip_reset_url}',
-                cookies=login_response.cookies
-            )
-            time.sleep(10)
-        self.registered_accounts = 0
-        self.save()
+            try:
+                login_response = requests.post(
+                    'https://portal.proxyguys.com/login',
+                    data={'username': os.environ['PROXY_USERNAME'], 'password': os.environ['PROXY_PASSWORD']}
+                )
+                reset_response = requests.get(
+                    f'{self.ip_reset_url}',
+                    cookies=login_response.cookies
+                )
+                time.sleep(10)
+                self.registered_accounts = 0
+                self.save()
+            except Exception as e:
+                logging.info(traceback.format_exc())
 
     def add_connection(self, posh_user):
         new_connection = ProxyConnection(
