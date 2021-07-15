@@ -123,8 +123,7 @@ class PoshMarkClient:
         self.get_redis_object_attr = get_redis_object_attr
         self.update_redis_object = update_redis_object
         self.requests_proxy = {
-            'http': f'http://{hostname}:{port}',
-            'https': f'https://{hostname}:{port}',
+            'https': f'http://{hostname}:{port}',
         }
         self.last_login = None
         self.login_error = None
