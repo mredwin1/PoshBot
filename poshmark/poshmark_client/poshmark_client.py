@@ -122,6 +122,10 @@ class PoshMarkClient:
         self.redis_campaign_id = redis_campaign_id
         self.get_redis_object_attr = get_redis_object_attr
         self.update_redis_object = update_redis_object
+        self.requests_proxy = {
+            'http': f'http://{hostname}:{port}',
+            'https': f'https://{hostname}:{port}',
+        }
         self.last_login = None
         self.login_error = None
         self.logger = Logger(logger_id, log_function)
@@ -476,9 +480,9 @@ class PoshMarkClient:
 
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy)
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy)
                         self.logger.warning(
                             f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1
@@ -522,9 +526,9 @@ class PoshMarkClient:
                 elif error_code is None:
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy)
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy)
                         self.logger.warning(
                             f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1
