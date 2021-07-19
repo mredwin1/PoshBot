@@ -19,7 +19,7 @@ def get_new_id(instance_type):
     r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
     instance_id = f'{instance_type}_{random.getrandbits(32)}'
 
-    while instance_id in r.keys():
+    while r.exists(instance_id):
         instance_id = f'{instance_type}_{random.getrandbits(32)}'
 
     return instance_id
@@ -100,8 +100,7 @@ def create_redis_object(instance):
     already_exists = False
 
     if instance_type == 'PoshProxy':
-        posh_proxy_keys = r.keys(pattern='PoshProxy_*')
-        for posh_proxy_key in posh_proxy_keys:
+        for posh_proxy_key in r.scan_iter(match='PoshProxy_*'):
             if instance.id == r.hget(posh_proxy_key, 'id'):
                 already_exists = True
                 instance_id = posh_proxy_key
@@ -158,7 +157,7 @@ def log_to_redis(log_id, fields):
 
     message_id = random.getrandbits(32)
 
-    while message_id in r.keys():
+    while r.exists(message_id):
         message_id = random.getrandbits(32)
 
     r.hset(f'Message:{message_id}', mapping=redis_message)
@@ -170,7 +169,7 @@ def redis_log_reader():
         r = redis.Redis(db=1, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
         while True:
-            for message_id in r.keys():
+            for message_id in r.scan_iter():
                 log_id = r.hget(message_id, 'log_id')
                 log_level = r.hget(message_id, 'level')
                 log_message = r.hget(message_id, 'message')
@@ -208,7 +207,7 @@ def redis_instance_reader():
             'PoshProxy': PoshProxy
         }
         while True:
-            updated_keys = r.keys(pattern='updated_*')
+            updated_keys = r.scan_iter(match='updated_*')
             for updated_key in updated_keys:
                 object_id = r.hget(updated_key, 'object_id')
                 fields_id = r.hget(updated_key, 'fields_id')
