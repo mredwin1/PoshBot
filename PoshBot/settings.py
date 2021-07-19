@@ -189,18 +189,20 @@ CELERY_TASK_ROUTES = {
     'poshmark.tasks.restart_task': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.redis_log_reader': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.redis_instance_reader': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.log_cleanup': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.redis_cleaner': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
-# Periodic Tasks
-# CELERY_BEAT_SCHEDULE = {
-#     'log_cleanup': {
-#         'task': 'poshmark.tasks.log_cleanup',
-#         'schedule': crontab(minute=0, hour=0),
-#         'options': {'queue': 'no_concurrency'}
-#     },
-#     'redis_cleaner': {
-#         'task': 'poshmark.tasks.redis_cleaner',
-#         'schedule': crontab(minute='*/10'),
-#         'options': {'queue': 'no_concurrency'}
-#     },
-# }
+Periodic Tasks
+CELERY_BEAT_SCHEDULE = {
+    'log_cleanup': {
+        'task': 'poshmark.tasks.log_cleanup',
+        'schedule': crontab(minute=0, hour=0),
+        'options': {'queue': 'no_concurrency'}
+    },
+    'redis_cleaner': {
+        'task': 'poshmark.tasks.redis_cleaner',
+        'schedule': crontab(minute='*/10'),
+        'options': {'queue': 'no_concurrency'}
+    },
+}
