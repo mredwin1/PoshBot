@@ -247,6 +247,24 @@ def log_cleanup():
 
 
 @shared_task
+def redis_cleaner():
+    r = redis.Redis(db=2, decode_responses=True, host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    instance_types = {
+        'PoshUser': PoshUser,
+        'Campaign': Campaign,
+        'Listing': Listing,
+        'PoshProxy': PoshProxy
+    }
+    for key in r.scan_iter():
+        instance_type = key[:key.find('_')]
+        model = instance_types[instance_type]
+        try:
+            model.objects.get(redis_id=key)
+        except model.DoesNotExist:
+            r.delete(key)
+
+
+@shared_task
 def start_campaign(campaign_id, registration_ip):
     registration_proxy = None
 
