@@ -104,30 +104,8 @@ class Captcha:
             time.sleep(5)
 
 
-class PoshMarkClient:
-    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr, update_redis_object, redis_proxy_id=None):
-        proxy = Proxy()
-        hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
-        port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
-        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
-
-        if redis_proxy_id:
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-
-        capabilities = webdriver.DesiredCapabilities.CHROME
-        proxy.add_to_capabilities(capabilities)
-
-        self.redis_posh_user_id = redis_posh_user_id
-        self.redis_campaign_id = redis_campaign_id
-        self.get_redis_object_attr = get_redis_object_attr
-        self.update_redis_object = update_redis_object
-        self.requests_proxy = {
-            'https': f'http://{hostname}:{port}',
-        }
-        self.last_login = None
-        self.login_error = None
-        self.logger = Logger(logger_id, log_function)
+class BaseClient:
+    def __init__(self):
         self.web_driver = None
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -139,6 +117,8 @@ class PoshMarkClient:
         self.web_driver_options.add_argument('--incognito')
         self.web_driver_options.add_argument('--no-sandbox')
 
+        self.logger = Logger(logger_id, log_function)
+
     def __enter__(self):
         self.open()
 
@@ -149,7 +129,7 @@ class PoshMarkClient:
 
     def open(self):
         """Used to open the selenium web driver session"""
-        self.web_driver = webdriver.Chrome('/poshmark/poshmark_client/chromedriver', options=self.web_driver_options)
+        self.web_driver = webdriver.Chrome('/poshmark/chrome_clients/chromedriver', options=self.web_driver_options)
         self.web_driver.implicitly_wait(20)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
@@ -198,6 +178,38 @@ class PoshMarkClient:
 
         self.logger.info(f'Sleeping for {seconds} {word}')
         time.sleep(seconds)
+
+
+class GmailClient(BaseClient):
+    pass
+
+
+class PoshMarkClient(BaseClient):
+    def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr,
+                 update_redis_object, redis_proxy_id=None):
+        super(PoshMarkClient, self).__init__()
+        proxy = Proxy()
+        hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
+        port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
+        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
+
+        if redis_proxy_id:
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+
+        capabilities = webdriver.DesiredCapabilities.CHROME
+        proxy.add_to_capabilities(capabilities)
+
+        self.redis_posh_user_id = redis_posh_user_id
+        self.redis_campaign_id = redis_campaign_id
+        self.get_redis_object_attr = get_redis_object_attr
+        self.update_redis_object = update_redis_object
+        self.requests_proxy = {
+            'https': f'http://{hostname}:{port}',
+        }
+        self.last_login = None
+        self.login_error = None
+        self.logger = Logger(logger_id, log_function)
 
     def check_for_errors(self):
         """This will check for errors on the current page and handle them as necessary"""
@@ -1416,7 +1428,7 @@ class PoshMarkClient:
                     if title.text == listing_title:
                         listing_price_text = listed_item.find_element_by_class_name('fw--bold').text
                         listing_price = int(re.findall(r'\d+', listing_price_text)[-1])
-                        
+
                         listing_button = listed_item.find_element_by_class_name('tile__covershot')
                         listing_button.click()
 
