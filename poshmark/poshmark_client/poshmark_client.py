@@ -159,7 +159,7 @@ class PoshMarkClient:
                 for cookie in cookies:
                     self.web_driver.add_cookie(cookie)
                 self.logger.info('Cookies loaded successfully')
-        except FileNotFoundError:
+        except (FileNotFoundError, TypeError):
             self.logger.warning('Cookies not loaded: Cookie file not found')
 
     def close(self):
