@@ -1,5 +1,6 @@
 import datetime
 import os
+import pickle
 import random
 import re
 import requests
@@ -136,7 +137,6 @@ class PoshMarkClient:
         self.web_driver_options.add_argument('--headless')
         self.web_driver_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                                              '(KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
-        self.web_driver_options.add_argument('--incognito')
         self.web_driver_options.add_argument('--no-sandbox')
 
     def __enter__(self):
@@ -154,8 +154,18 @@ class PoshMarkClient:
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
+        try:
+            with open(f'/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
+                for cookie in cookies:
+                    self.web_driver.add_cookie(cookie)
+        except FileNotFoundError:
+            self.logger.warning('Cookies not loaded: Cookie file not found')
+
     def close(self):
         """Closes the selenium web driver session"""
+        cookies = self.web_driver.get_cookies()
+        with open(f'/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'wb') as file:
+            pickle.dump(cookies, file)
         self.web_driver.quit()
 
     def locate(self, by, locator, location_type=None):
