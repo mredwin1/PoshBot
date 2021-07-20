@@ -257,11 +257,14 @@ def redis_cleaner():
     }
     for key in r.scan_iter():
         instance_type = key[:key.find('_')]
-        model = instance_types[instance_type]
-        try:
-            model.objects.get(redis_id=key)
-        except model.DoesNotExist:
-            r.delete(key)
+        if instance_type in instance_types.keys():
+            model = instance_types[instance_type]
+            if instance_type == 'Listing':
+                r.delete(r.hget(key, 'photos'))
+            try:
+                model.objects.get(redis_id=key)
+            except model.DoesNotExist:
+                r.delete(key)
 
 
 @shared_task
