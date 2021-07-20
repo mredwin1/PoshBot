@@ -154,13 +154,6 @@ class PoshMarkClient:
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
-        try:
-            with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
-                for cookie in pickle.load(cookies):
-                    self.web_driver.add_cookie(cookie)
-                self.logger.info('Cookies loaded successfully')
-        except FileNotFoundError:
-            self.logger.warning('Cookies not loaded: Cookie file not found')
 
     def close(self):
         """Closes the selenium web driver session"""
@@ -428,6 +421,14 @@ class PoshMarkClient:
         self.logger.info('Checking if user is signed in')
         self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
+
+        try:
+            with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
+                for cookie in pickle.load(cookies):
+                    self.web_driver.add_cookie(cookie)
+                self.logger.info('Cookies loaded successfully')
+        except FileNotFoundError:
+            self.logger.warning('Cookies not loaded: Cookie file not found')
 
         if result:
             self.logger.info('User is logged in')
