@@ -12,7 +12,7 @@ from django.utils import timezone
 from celery import shared_task
 
 from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
-from poshmark.poshmark_client.poshmark_client import PoshMarkClient
+from poshmark.chrome_clients.clients import PoshMarkClient
 
 
 def get_new_id(instance_type):

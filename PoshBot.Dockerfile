@@ -37,7 +37,7 @@ COPY . .
 RUN pipenv install --system --deploy
 
 # Install chrome
-RUN apt install -y /poshmark/poshmark_client/chrome.deb
+RUN apt install -y /poshmark/chrome_clients/chrome.deb
 
 # Run web server through custom manager
 ENTRYPOINT ["python3", "manage.py"]
