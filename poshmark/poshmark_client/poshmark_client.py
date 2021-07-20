@@ -155,7 +155,7 @@ class PoshMarkClient:
             self.web_driver.set_window_size(1920, 1080)
 
         try:
-            with open(f'/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
+            with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
                 for cookie in cookies:
                     self.web_driver.add_cookie(cookie)
                 self.logger.info('Cookies loaded successfully')
@@ -165,7 +165,9 @@ class PoshMarkClient:
     def close(self):
         """Closes the selenium web driver session"""
         cookies = self.web_driver.get_cookies()
-        with open(f'/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'wb') as file:
+        folders_path = Path('/shared_volume/cookies/')
+        folders_path.mkdir(parents=True, exist_ok=True)
+        with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'wb') as file:
             pickle.dump(cookies, file)
         self.web_driver.quit()
 
