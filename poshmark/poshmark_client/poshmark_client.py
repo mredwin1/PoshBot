@@ -159,7 +159,7 @@ class PoshMarkClient:
                 for cookie in pickle.load(cookies):
                     self.web_driver.add_cookie(cookie)
                 self.logger.info('Cookies loaded successfully')
-        except (FileNotFoundError, TypeError):
+        except FileNotFoundError:
             self.logger.warning('Cookies not loaded: Cookie file not found')
 
     def close(self):
