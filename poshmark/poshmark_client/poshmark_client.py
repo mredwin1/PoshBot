@@ -154,7 +154,6 @@ class PoshMarkClient:
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
-
     def close(self):
         """Closes the selenium web driver session"""
         cookies = self.web_driver.get_cookies()
