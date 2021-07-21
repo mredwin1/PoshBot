@@ -219,7 +219,7 @@ def redis_instance_reader():
                     instance = model.objects.get(id=instance_id)
                     fields_to_update = r.hgetall(fields_id)
                     for field_name, field_value in fields_to_update.items():
-                        if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4'):
+                        if not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '4') and not (instance_type == 'Campaign' and field_name == 'status' and getattr(instance, field_name) == '2' and (field_value == '3' or field_value == '5')):
                             if field_name in ('registered_accounts',):
                                 setattr(instance, field_name, int(field_value))
                             else:
