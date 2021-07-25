@@ -131,6 +131,12 @@ class PoshUser(models.Model):
                     'header_picture': header_image_response.url,
                 }
 
+                username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=5)
+
+                while username_test.status_code == requests.codes.ok:
+                    user_info["username"] = PoshUser.generate_username(user_info['first_name'], user_info['last_name'])
+                    username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=5)
+
                 results.append(user_info)
 
             return results
