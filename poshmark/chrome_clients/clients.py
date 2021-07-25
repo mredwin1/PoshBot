@@ -312,7 +312,7 @@ class BaseClient:
         """Used to open the selenium web driver session"""
         self.web_driver = webdriver.Chrome('/poshmark/chrome_clients/chromedriver', options=self.web_driver_options)
         self.web_driver.implicitly_wait(20)
-        self.web_driver.set_page_load_timeout(60)
+        self.web_driver.set_page_load_timeout(120)
         if '--headless' in self.web_driver_options.arguments:
             self.web_driver.set_window_size(1920, 1080)
 
