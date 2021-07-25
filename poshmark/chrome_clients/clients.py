@@ -132,7 +132,7 @@ class PhoneNumber:
 
         organized_orders = {}
         for order in response_json['order_history']:
-            if order['state'] == 'FINISHED':
+            if order['state'] in ('FINISHED', 'TIMED_OUT'):
                 try:
                     service = organized_orders[order['service_name']]
                     try:
