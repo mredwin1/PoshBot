@@ -126,6 +126,22 @@ services:
       - ./PoshBot/:/PoshBot/
       - ./poshmark/:/poshmark/
       - /dev/shm:/dev/shm
+  celery_gmail_registration:
+    image: ghcr.io/mredwin1/poshbot:latest
+    container_name: celery_gmail_registration_poshbot
+    restart: always
+    entrypoint: celery -A PoshBot worker --concurrency=1 -Q gmail_registration -l INFO
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env
+    networks:
+      - internal
+    volumes:
+      - ./PoshBot/:/PoshBot/
+      - ./poshmark/:/poshmark/
+      - /dev/shm:/dev/shm
   celery_beat:
     image: ghcr.io/mredwin1/poshbot:latest
     container_name: celery_beat_poshbot

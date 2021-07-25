@@ -9,7 +9,7 @@
         </div>
         <form class="col-lg-6 col-md-8 col-12 mb-2" method="GET">
             <div class="row align-items-center h-100">
-                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Username" value="{{ request.GET.username }}" name="username">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Description" value="{{ request.GET.description }}" name="description">
                 <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
                     <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
                     {% if perms.can_view_all_users %}
@@ -22,30 +22,43 @@
         </form>
     </div>
     <hr>
-    <div class="pt-2" id="accordion">
-        {% for title, log_group in object_list.items %}
-            <div class="card">
-                <div class="card-header" id="register-heading-{{ title|replace_space }}">
-                    <h5 class="mb-0">
-                        <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-register-{{ title|replace_space }}" aria-expanded="false" aria-controls="collapse-register-{{ title|replace_space }}">
-                            {{ title }}
-                        </button>
-                    </h5>
-                </div>
-            </div>
-            <div id="collapse-register-{{ title|replace_space }}" class="collapse" aria-labelledby="register-heading-{{ title|replace_space }}" data-parent="#accordion">
-                <div class="card-body">
-                    <div class="row justify-content">
-                        {% for log in log_group %}
-                            <a class="col-lg-4 col-sm-6 col-12  text-dark mb-2" href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none">
-                                <div class="border border-dark rounded p-1">
-                                    <h6><b>Username:</b> {{ log.posh_user }}</h6>
-                                    <h6><b>Date Created:</b> {{ log.created_date|timezone:"US/Eastern"|date:"m-d-Y" }}</h6>
-                                    <h6><b>Time Created:</b> {{ log.created_date|timezone:"US/Eastern"|time:"h:i:s A" }}</h6>
+    <nav>
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            {% for type in object_list.keys %}
+                <a class="nav-item nav-link{% if type == 'Campaign' %} active{% endif %}" id="nav-{{ type|replace_space }}-tab" data-toggle="tab" href="#nav-{{ type|replace_space }}" role="tab" aria-controls="nav-{{ type|replace_space }}" aria-selected="{% if type == 'Campaign' %}true{% else %}false{% endif %}">{{ type }}</a>
+            {% endfor %}
+        </div>
+    </nav>
+    <div class="tab-content" id="nav-tabContent">
+        {% for type, logs in object_list.items %}
+            <div class="tab-pane fade{% if type == 'Campaign' %} show active{% else %}{% endif %}" id="nav-{{ type|replace_space }}" role="tabpanel" aria-labelledby="nav-{{ type|replace_space }}-tab">
+                <div class="pt-2" id="accordion">
+                    {% for title, log_group in logs.items %}
+                        <div class="card">
+                            <div class="card-header" id="register-heading-{{ title|replace_space }}">
+                                <h5 class="mb-0">
+                                    <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-register-{{ title|replace_space }}" aria-expanded="false" aria-controls="collapse-register-{{ title|replace_space }}">
+                                        {{ title }}
+                                    </button>
+                                </h5>
+                            </div>
+                        </div>
+                        <div id="collapse-register-{{ title|replace_space }}" class="collapse" aria-labelledby="register-heading-{{ title|replace_space }}" data-parent="#accordion">
+                            <div class="card-body">
+                                <div class="row justify-content">
+                                    {% for log in log_group %}
+                                        <a class="col-lg-4 col-sm-6 col-12  text-dark mb-2" href="{% url 'view-action-log-details' log.id %}" style="text-decoration: none">
+                                            <div class="border border-dark rounded p-1">
+                                                <h6><b>Description:</b> {{ log.description }}</h6>
+                                                <h6><b>Date Created:</b> {{ log.created_date|timezone:"US/Eastern"|date:"m-d-Y" }}</h6>
+                                                <h6><b>Time Created:</b> {{ log.created_date|timezone:"US/Eastern"|time:"h:i:s A" }}</h6>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
                                 </div>
-                            </a>
-                        {% endfor %}
-                    </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         {% endfor %}

@@ -16,7 +16,8 @@ class CustomUserAdmin(UserAdmin):
         ('General Information', {
             'fields': (
                 ('is_active', 'is_superuser', 'is_staff'),
-                ('username',),
+                ('username', 'accounts_to_maintain'),
+                ('master_email', 'email_password',),
             )
         }),
         ('Groups and Permissions', {

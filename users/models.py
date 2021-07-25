@@ -10,6 +10,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False, verbose_name='Staff')
 
     username = models.CharField(max_length=30, verbose_name='Username', unique=True)
+    email_password = models.CharField(max_length=50, verbose_name='Email Password', default='')
+
+    master_email = models.EmailField(
+        verbose_name='Master Email',
+        help_text='Where all the emails for your accounts will forward to',
+        default=''
+    )
+
+    accounts_to_maintain = models.IntegerField(default=0)
 
     objects = UserManager()
 

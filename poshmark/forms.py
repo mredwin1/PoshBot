@@ -10,8 +10,6 @@ from poshmark.models import PoshUser, Listing, ListingPhotos, Campaign
 
 
 class CreatePoshUser(forms.ModelForm):
-    alias = forms.BooleanField(required=False, label='Create Alias')
-
     is_registered = forms.BooleanField(required=False, label='User is Registered')
 
     class Meta:
@@ -32,13 +30,6 @@ class CreatePoshUser(forms.ModelForm):
 
     def clean(self):
         if not self.cleaned_data['is_registered']:
-            if self.cleaned_data['alias']:
-                tmp_user = PoshUser()
-                can_create_alias = tmp_user.check_alias_email()
-
-                if not can_create_alias:
-                    self.add_error('email', 'The limit of email aliases have been met, cannot create more.')
-
             response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
 
             if response.status_code == requests.codes.ok:
@@ -66,26 +57,9 @@ class CreatePoshUser(forms.ModelForm):
         new_user = super(CreatePoshUser, self).save(commit=False)
 
         new_user.user = self.request.user
-
-        if self.cleaned_data['alias'] and not self.cleaned_data['is_registered']:
-            masked_email = self.cleaned_data['email']
-            alias = new_user.generate_email(masked_email)
-            new_user.email = alias.email_address
-            new_user.is_email_verified = alias.is_verified
-            new_user.alias_email_id = alias.id
-            new_user.masked_email = alias.masked_email_address
-
-            if alias.is_verified:
-                new_user.status = PoshUser.IDLE
-
-        elif not self.cleaned_data['alias'] or not self.cleaned_data['is_registered']:
-            new_user.email = self.cleaned_data['email']
-            new_user.is_email_verified = True
-            new_user.status = PoshUser.IDLE
-        else:
-            new_user.status = PoshUser.IDLE
-
+        new_user.status = PoshUser.IDLE
         new_user.is_registered = self.cleaned_data['is_registered']
+        new_user.email_registered = True
 
         new_user.save()
 
@@ -305,9 +279,6 @@ class CreateCampaign(forms.Form):
 
         new_campaign.save()
 
-        new_campaign.posh_user.status = PoshUser.IDLE
-        new_campaign.posh_user.save(update_fields=['status'])
-
         if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
             for listing in self.cleaned_data['listings']:
                 listing.campaign = new_campaign
@@ -492,10 +463,7 @@ class EditCampaignForm(CreateCampaign):
         self.campaign.mode = self.cleaned_data['mode']
         self.campaign.lowest_price = self.cleaned_data['lowest_price']
 
-        if self.campaign.posh_user:
-            self.campaign.posh_user.status = PoshUser.IDLE
-            self.campaign.posh_user.save()
-            self.campaign.save()
+        self.campaign.save()
 
         old_listings = Listing.objects.filter(campaign=self.campaign)
         for old_listing in old_listings:

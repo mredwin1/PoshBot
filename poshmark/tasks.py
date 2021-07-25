@@ -1,8 +1,10 @@
 import datetime
 import logging
+import os
 import pytz
 import random
 import redis
+import requests
 import time
 import traceback
 
@@ -12,7 +14,8 @@ from django.utils import timezone
 from celery import shared_task
 
 from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
-from poshmark.poshmark_client.poshmark_client import PoshMarkClient
+from users.models import User
+from poshmark.chrome_clients.clients import PoshMarkClient, GmailClient
 
 
 def get_new_id(instance_type):
@@ -59,8 +62,6 @@ def remove_redis_object(*args):
 def initialize_campaign(campaign_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
-    logger = Log(campaign=campaign, user=campaign.user, posh_user=campaign.posh_user.username)
-    logger.save()
 
     if campaign.mode == Campaign.ADVANCED_SHARING:
         listing = Listing.objects.get(campaign=campaign)
@@ -80,6 +81,11 @@ def initialize_campaign(campaign_id, registration_proxy_id=None):
 
     redis_campaign_id = create_redis_object(campaign)
     redis_posh_user_id = create_redis_object(posh_user)
+
+    campaign.posh_user.refresh_from_db()
+
+    logger = Log(campaign=campaign, user=campaign.user, description=campaign.posh_user.username)
+    logger.save()
 
     db.connections.close_all()
 
@@ -104,6 +110,16 @@ def create_redis_object(instance):
             if instance.id == r.hget(posh_proxy_key, 'id'):
                 already_exists = True
                 instance_id = posh_proxy_key
+    elif instance_type == 'PoshUser' and not instance.is_registered:
+        username = instance.username
+        username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=5)
+
+        while username_test.status_code == requests.codes.ok:
+            username = PoshUser.generate_username(instance.first_name, instance.last_name)
+            username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=5)
+
+        instance.username = username
+        instance.save()
 
     if not already_exists:
         instance_id = get_new_id(instance_type)
@@ -161,6 +177,105 @@ def log_to_redis(log_id, fields):
         message_id = random.getrandbits(32)
 
     r.hset(f'Message:{message_id}', mapping=redis_message)
+
+
+@shared_task
+def posh_user_balancer():
+    available_posh_users = PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)
+    creating_posh_users = PoshUser.objects.filter(status=PoshUser.CREATING, user__isnull=True)
+    needed_users = int(os.environ.get('ACCOUNTS_TO_MAINTAIN', '4')) - len(creating_posh_users) - len(available_posh_users)
+    if needed_users > 0:
+        all_user_info = PoshUser.generate_sign_up_info(needed_users)
+        for user_info in all_user_info:
+            new_user = PoshUser.create_posh_user(user_info)
+            new_user.status = PoshUser.CREATING
+            new_user.save()
+
+            register_gmail.delay(new_user.id)
+
+    users = User.objects.all()
+    available_posh_users_id_list = [posh_user.id for posh_user in PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)]
+    if available_posh_users_id_list:
+        for user in users:
+            not_registered_posh_users = PoshUser.objects.filter(is_registered=False, user=user, status=PoshUser.IDLE)
+            needed_posh_users = user.accounts_to_maintain - len(not_registered_posh_users) if user.accounts_to_maintain else 0
+            selection_size = len(available_posh_users_id_list) if needed_posh_users > len(available_posh_users_id_list) else needed_posh_users
+            selected_ids_list = random.sample(available_posh_users_id_list, selection_size)
+
+            selected_posh_users = PoshUser.objects.filter(id__in=selected_ids_list)
+
+            for selected_posh_user in selected_posh_users:
+                try:
+                    log = Log.objects.get(description=selected_posh_user.username)
+                    log.user = user
+                    log.save()
+                except Log.DoesNotExist:
+                    pass
+                selected_posh_user.user = user
+                selected_posh_user.status = PoshUser.FORWARDING
+                selected_posh_user.save()
+                enable_email_forwarding.delay(selected_posh_user.id)
+
+
+@shared_task
+def register_gmail(posh_user_id):
+    posh_user = PoshUser.objects.get(id=posh_user_id)
+    log = Log(description=posh_user.username)
+    log.save()
+    log.info('Registering email')
+    with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
+        registration_attempts = 0
+        less_secure_apps_attempts = 0
+
+        while not posh_user.email_registered and registration_attempts <= 3:
+            email = client.register()
+            registration_attempts += 1
+            if email:
+                posh_user.email = email
+                posh_user.email_registered = True
+                posh_user.save()
+
+                log.description = email
+                log.save()
+
+        while not posh_user.email_less_secure_apps_allowed and posh_user.email_registered and less_secure_apps_attempts <= 3:
+            less_secure_apps_attempts += 1
+            posh_user.email_less_secure_apps_allowed = client.allow_less_secure_apps()
+            posh_user.save()
+
+    if posh_user.email_registered and posh_user.email_less_secure_apps_allowed:
+        posh_user.status = PoshUser.IDLE
+        posh_user.save()
+        log.info('Successfully registered email. Status changed to idle')
+    else:
+        posh_user.status = PoshUser.INACTIVE
+        posh_user.save()
+        log.error('Something is not right, could not change status to idle. Status changed to Inactive.')
+
+
+@shared_task
+def enable_email_forwarding(posh_user_id):
+    posh_user = PoshUser.objects.get(id=posh_user_id)
+
+    other_logs = Log.objects.filter(description=posh_user.email)
+    if other_logs:
+        other_logs.update(user=posh_user.user)
+    log = Log(description=posh_user.email, user=posh_user.user)
+    log.save()
+    email_forwarding_attempts = 0
+
+    log.info('Enabling email forwarding')
+
+    with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
+        while not posh_user.email_forwarding_enabled and posh_user.email_registered and email_forwarding_attempts <= 3:
+            email_forwarding_attempts += 1
+            posh_user.email_forwarding_enabled = client.turn_on_email_forwarding(posh_user.user.master_email, posh_user.user.email_password)
+            posh_user.save()
+
+    if posh_user.email_forwarding_enabled:
+        log.info('Email forwarding success')
+        posh_user.status = PoshUser.IDLE
+        posh_user.save()
 
 
 @shared_task
@@ -307,6 +422,10 @@ def start_campaign(campaign_id, registration_ip):
             campaign.status = '1'
             campaign.save()
             basic_sharing.delay(campaign_id)
+        elif campaign.mode == Campaign.REGISTER:
+            campaign.status = '1'
+            campaign.save()
+            register_posh_user.delay(campaign.id, registration_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
@@ -531,7 +650,55 @@ def advanced_sharing(campaign_id, registration_proxy_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    if campaign_status == '1' or campaign_status == '5':
+    if campaign_status == '5':
+        restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
+    else:
+        update_redis_object(redis_campaign_id, {'status': '2'})
+
+
+@shared_task
+def register_posh_user(campaign_id, registration_proxy_id):
+    redis_campaign_id, redis_posh_user_id, logger_id, redis_listing_id, redis_registration_proxy_id = initialize_campaign(campaign_id, registration_proxy_id)
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
+
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_registration_proxy_id) as proxy_client:
+        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+        posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+
+        registration_attempts = 0
+        while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 4:
+            proxy_client.register()
+            registration_attempts += 1
+            posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+
+        if registration_attempts >= 4:
+            update_redis_object(redis_campaign_id, {'status': '5'})
+            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Could not register after {registration_attempts} attempts. Restarting Campaign.'})
+
+        posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+        while posh_user_is_registered and not posh_user_profile_updated and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+            proxy_client.update_profile()
+            posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+
+    remove_proxy_connection(campaign_id, registration_proxy_id)
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
+
+    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+    if campaign_status == '5':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
@@ -571,5 +738,9 @@ def restart_task(campaign_id):
         else:
             campaign.status = '2'
             campaign.save()
+    elif campaign.mode == Campaign.REGISTER:
+        campaign.status = '4'
+        campaign.save()
+        start_campaign.delay(campaign_id, True)
 
     db.connections.close_all()

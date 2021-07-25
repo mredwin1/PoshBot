@@ -191,6 +191,10 @@ CELERY_TASK_ROUTES = {
     'poshmark.tasks.redis_instance_reader': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.log_cleanup': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.redis_cleaner': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.posh_user_balancer': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.register_gmail': {'queue': 'gmail_registration', 'routing_key': 'gmail_registration'},
+    'poshmark.tasks.register_posh_user': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.enable_email_forwarding': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks
@@ -203,6 +207,11 @@ CELERY_BEAT_SCHEDULE = {
     'redis_cleaner': {
         'task': 'poshmark.tasks.redis_cleaner',
         'schedule': crontab(minute='*/10'),
+        'options': {'queue': 'no_concurrency'}
+    },
+    'posh_user_balancer': {
+        'task': 'poshmark.tasks.posh_user_balancer',
+        'schedule': crontab(minute='*/3'),
         'options': {'queue': 'no_concurrency'}
     },
 }

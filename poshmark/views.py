@@ -215,8 +215,7 @@ class ListingListView(ListView, LoginRequiredMixin):
 class GeneratePoshUserInfo(View, LoginRequiredMixin):
     @staticmethod
     def get(request, *args, **kwargs):
-        new_user = PoshUser()
-        data = new_user.generate_sign_up_info()
+        data = PoshUser.generate_sign_up_info()[0]
 
         return JsonResponse(data=data, status=200)
 
@@ -231,7 +230,7 @@ class ActionLogListView(ListView, LoginRequiredMixin):
         return context
 
     def get_queryset(self):
-        username = self.request.GET.get('username', '')
+        description = self.request.GET.get('description', '')
         username_select = self.request.GET.get('username_select', '')
         logs = Log.objects.order_by('-created_date')
 
@@ -240,18 +239,29 @@ class ActionLogListView(ListView, LoginRequiredMixin):
         else:
             logs = logs.filter(user=self.request.user)
 
-        if username:
-            logs = logs.filter(posh_user__icontains=username)
+        if description:
+            logs = logs.filter(description__icontains=description)
 
-        organized_logs = {}
+        all_logs = {
+            'Campaign': {},
+            'Email Registration': {},
+        }
 
         for log in logs:
-            if log.campaign.title not in organized_logs.keys():
-                organized_logs[log.campaign.title] = [log]
+            if log.campaign:
+                organized_logs = all_logs['Campaign']
+                if log.campaign.title not in organized_logs.keys():
+                    organized_logs[log.campaign.title] = [log]
+                else:
+                    organized_logs[log.campaign.title].append(log)
             else:
-                organized_logs[log.campaign.title].append(log)
+                organized_logs = all_logs['Email Registration']
+                if log.description not in organized_logs.keys():
+                    organized_logs[log.description] = [log]
+                else:
+                    organized_logs[log.description].append(log)
 
-        return organized_logs
+        return all_logs
 
 
 class LogEntryListView(ListView, LoginRequiredMixin):
@@ -286,7 +296,7 @@ class GetLogEntries(View, LoginRequiredMixin):
 class SearchUserNames(View, LoginRequiredMixin):
     def get(self, *args, **kwargs):
         search = self.request.GET.get('q')
-        posh_users = PoshUser.objects.filter(campaign__isnull=True, user=self.request.user, username__icontains=search).order_by('date_added')
+        posh_users = PoshUser.objects.filter(campaign__isnull=True, user=self.request.user, username__icontains=search, status=PoshUser.IDLE).order_by('date_added')
 
         user_names = [f'{posh_user.username}|{posh_user.id}' for posh_user in posh_users]
 
@@ -365,6 +375,13 @@ class StartCampaign(View, LoginRequiredMixin):
                         start_campaign.delay(int(campaign_ids[0]), True)
                     else:
                         data['error'] = 'Campaign could not be started: No Listings'
+                elif campaign.mode == Campaign.REGISTER:
+                    if not campaign.posh_user.is_registered:
+                        campaign.status = '4'
+                        campaign.save()
+                        start_campaign.delay(int(campaign_ids[0]), True)
+                    else:
+                        data['error'] = 'Campaign could not be started: Posh User is already registered'
             else:
                 if campaign.posh_user:
                     data['error'] = 'Campaign could not be started: Not IDLE'
@@ -387,6 +404,12 @@ class StartCampaign(View, LoginRequiredMixin):
                         elif campaign.mode == Campaign.ADVANCED_SHARING:
                             listings = Listing.objects.filter(campaign=campaign)
                             if listings:
+                                campaign.status = '4'
+                                campaign.save()
+                                start_campaign.delay(int(campaign_id), True)
+                                started_campaigns.append(campaign_id)
+                        elif campaign.mode == Campaign.REGISTER:
+                            if not campaign.posh_user.is_registered:
                                 campaign.status = '4'
                                 campaign.save()
                                 start_campaign.delay(int(campaign_id), True)
