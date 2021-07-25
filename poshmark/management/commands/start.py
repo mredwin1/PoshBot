@@ -78,6 +78,10 @@ class Command(BaseCommand):
             posh_user.status = PoshUser.IDLE
             posh_user.save()
 
+        posh_users_to_delete = PoshUser.objects.filter(status__in=(PoshUser.CREATING, PoshUser.FORWARDING))
+        for posh_user_to_delete in posh_users_to_delete:
+            posh_user_to_delete.delete()
+
         logging.info('Removing all proxy connections')
         connections = ProxyConnection.objects.all()
         connections.delete()
