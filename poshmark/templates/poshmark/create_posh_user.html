@@ -8,7 +8,6 @@
             <legend class="border-bottom mb-4">New Posh User</legend>
             <div class="form-group">
                 <div class="d-flex justify-content-between">
-                    {{ form.alias|as_crispy_field }}
                     <button class="btn btn-outline-dark" type="button" id="id_generate_info" onclick="generate_posh_user_info()">Generate Random Information</button>
                     {{ form.is_registered|as_crispy_field }}
                 </div>

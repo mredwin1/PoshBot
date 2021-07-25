@@ -73,11 +73,10 @@ class Command(BaseCommand):
             campaign.save()
 
         logging.info('Setting all Posh Users to IDLE status')
-        posh_users = PoshUser.objects.exclude(status=PoshUser.IDLE)
+        posh_users = PoshUser.objects.exclude(status__in=(PoshUser.INACTIVE, PoshUser.CREATING, PoshUser.FORWARDING))
         for posh_user in posh_users:
-            if posh_user.status != PoshUser.INACTIVE:
-                posh_user.status = PoshUser.IDLE
-                posh_user.save()
+            posh_user.status = PoshUser.IDLE
+            posh_user.save()
 
         logging.info('Removing all proxy connections')
         connections = ProxyConnection.objects.all()

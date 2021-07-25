@@ -1,12 +1,15 @@
 import datetime
+import email
+import imaplib
 import os
 import pickle
 import random
 import re
 import requests
+import socket
+import string
 import time
 import traceback
-import string
 
 from pathlib import Path
 from selenium import webdriver
@@ -16,7 +19,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.proxy import Proxy, ProxyType
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
 from poshmark.models import PoshUser
@@ -105,8 +108,185 @@ class Captcha:
             time.sleep(5)
 
 
+class PhoneNumber:
+    def __init__(self, service_name, logger, api_key):
+        self.service_name = service_name
+        self.logger = logger
+        self.headers = {
+            'X-API-KEY': api_key
+        }
+        self.order_id = None
+        self.number = None
+        self.reuse = False
+
+    def _check_order_history(self, excluded_numbers=None):
+        selected_service = 'Google / Gmail / Google Voice / Youtube' if self.service_name == 'google' else 'Poshmark'
+        order_history_url = 'https://portal.easysmsverify.com/get_order_history'
+
+        response = None
+
+        while not response or response.status_code != requests.codes.ok:
+            response = requests.get(order_history_url, headers=self.headers)
+
+        response_json = response.json()
+
+        organized_orders = {}
+        for order in response_json['order_history']:
+            if order['state'] == 'FINISHED':
+                try:
+                    service = organized_orders[order['service_name']]
+                    try:
+                        service[order['number']]['quantity'] += 1
+                    except KeyError:
+                        service[order['number']] = {
+                            'quantity': 1,
+                            'order_id': order['order_id']
+                        }
+                except KeyError:
+                    organized_orders[order['service_name']] = {
+                        order['number']: {
+                            'quantity': 1,
+                            'order_id': order['order_id']
+                        }
+                    }
+
+        try:
+            for key, value in organized_orders[selected_service].items():
+                try:
+                    if value['quantity'] < 3 and key not in excluded_numbers:
+                        self.number = key
+                        self.order_id = value['order_id']
+                        self.reuse = True
+                        return key
+                except ValueError:
+                    pass
+        except KeyError:
+            pass
+        return None
+
+    def get_number(self, excluded_numbers=None, state=None):
+        number = self._check_order_history(excluded_numbers)
+        if number:
+            self.logger.info(f'Reusing number {number}')
+            return number
+        else:
+            service_id_url = 'https://portal.easysmsverify.com/get_service_id'
+            phone_number_url = 'https://portal.easysmsverify.com/order_number'
+
+            service_id_parameters = {
+                'service_name': self.service_name
+            }
+            service_id_response = None
+
+            while not service_id_response or service_id_response.status_code != requests.codes.ok:
+                service_id_response = requests.post(service_id_url, headers=self.headers, data=service_id_parameters)
+
+            service_id_response_json = service_id_response.json()
+
+            if service_id_response_json['status']:
+                service_id = service_id_response_json['service']['id']
+                phone_number_parameters = {
+                    'service_id': service_id,
+                }
+
+                if state:
+                    phone_number_parameters['state'] = state
+
+                phone_number_response = None
+
+                while not phone_number_response or phone_number_response.status_code != requests.codes.ok:
+                    phone_number_response = requests.post(phone_number_url, headers=self.headers, data=phone_number_parameters)
+
+                phone_number_response_json = phone_number_response.json()
+
+                if phone_number_response_json['status']:
+                    phone_number = phone_number_response_json['number']
+                    order_id = phone_number_response_json['order_id']
+                    self.order_id = order_id
+                    self.number = phone_number
+
+                    self.logger.info(f'Using a new number: {phone_number}')
+
+                    return phone_number
+                else:
+                    error_msg = phone_number_response_json['msg']
+                    self.logger.error(error_msg)
+            else:
+                error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
+                self.logger.error(error_msg)
+
+    def get_verification_code(self):
+        if self.reuse:
+            order_number_url = 'https://portal.easysmsverify.com/order_number'
+            parameters = {
+                'previous_order_id': self.order_id
+            }
+            order_response = None
+            order_response_json = {'status': False}
+            attempts = 0
+            while (not order_response or order_response.status_code != requests.codes.ok) and not order_response_json['status'] and attempts < 4:
+                order_response = requests.post(order_number_url, headers=self.headers, data=parameters)
+                if order_response or order_response.status_code == requests.codes.ok:
+                    order_response_json = order_response.json()
+                    if not order_response_json['status']:
+                        self.logger.warning(order_response_json['msg'])
+                        self.logger.info('Sleeping for 30 seconds')
+                        order_response = None
+                        order_response_json = {'status': False}
+                        time.sleep(30)
+                        attempts += 1
+
+            if attempts >= 4:
+                self.logger.warning('Number seems to be very busy skipping')
+                return None
+
+            self.order_id = order_response_json['order_id']
+
+        check_sms_url = 'https://portal.easysmsverify.com/check_sms'
+        parameters = {
+            'order_id': self.order_id,
+            'number': self.number
+        }
+        verification_response = None
+        verification_response_json = {'state': 'WAITING_FOR_SMS'}
+
+        while (not verification_response or verification_response.status_code != requests.codes.ok) or verification_response_json['state'] == 'WAITING_FOR_SMS':
+            verification_response = requests.post(check_sms_url, headers=self.headers, data=parameters)
+
+            if verification_response or verification_response.status_code == requests.codes.ok:
+                verification_response_json = verification_response.json()
+                if verification_response_json['state'] == 'WAITING_FOR_SMS':
+                    self.logger.info('SMS not received, sleeping for 10 seconds')
+                    time.sleep(10)
+
+        if verification_response_json['state'] == 'ERROR':
+            self.logger.error(verification_response_json['msg'])
+            return None
+        elif verification_response_json['state'] == 'SMS_RECEIVED':
+            self.logger.info(f'Verification code received: {verification_response_json["code"]}')
+            return verification_response_json['code']
+        elif verification_response_json['state'] == 'TIME_OUT':
+            self.logger.warning('Verification code note received in the allotted time')
+            return None
+        elif verification_response_json['state'] == 'CANCELLED':
+            self.logger.warning('Phone number cancelled by user')
+            return None
+
+
 class BaseClient:
-    def __init__(self):
+    def __init__(self, logger_id, log_function, proxy_ip=None, proxy_port=None):
+        proxy = Proxy()
+        hostname = proxy_ip if proxy_ip and proxy_port else ''
+        port = proxy_port if proxy_ip and proxy_port else ''
+        proxy.proxy_type = ProxyType.MANUAL if proxy_ip and proxy_port else ProxyType.SYSTEM
+
+        if proxy_ip:
+            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+
+        capabilities = webdriver.DesiredCapabilities.CHROME
+        proxy.add_to_capabilities(capabilities)
+
         self.web_driver = None
         self.web_driver_options = Options()
         self.web_driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -115,6 +295,7 @@ class BaseClient:
         self.web_driver_options.add_argument('--headless')
         self.web_driver_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                                              '(KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36')
+        self.web_driver_options.add_argument('--incognito')
         self.web_driver_options.add_argument('--no-sandbox')
 
         self.logger = Logger(logger_id, log_function)
@@ -136,11 +317,6 @@ class BaseClient:
 
     def close(self):
         """Closes the selenium web driver session"""
-        cookies = self.web_driver.get_cookies()
-        folders_path = Path('/shared_volume/cookies/')
-        folders_path.mkdir(parents=True, exist_ok=True)
-        with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'wb') as file:
-            pickle.dump(cookies, file)
         self.web_driver.quit()
 
     def locate(self, by, locator, location_type=None):
@@ -186,24 +362,384 @@ class BaseClient:
 
 
 class GmailClient(BaseClient):
-    pass
+    def __init__(self, user_info, logger_id, log_function):
+        super(GmailClient, self).__init__(logger_id, log_function)
 
+        self.user_info = user_info
+
+    def is_logged_in(self):
+        """Checks if the user is singed into gmail"""
+        try:
+            self.logger.info('Checking if someone is logged in')
+            self.web_driver.get('https://gmail.com')
+
+            profile_icon = self.is_present(By.XPATH, '/html/body/div[7]/div[3]/div/div[1]/div[3]/header/div[2]/div[3]/div[1]/div[2]/div/a/img')
+
+            if profile_icon:
+                self.logger.info('Someone was logged in')
+                return True
+            else:
+                self.logger.info('No one was logged in')
+                return False
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+
+    def register(self):
+        """Registers a new gmail"""
+        try:
+            self.logger.info(f'Registering {self.user_info["first_name"]} {self.user_info["last_name"]}')
+
+            self.web_driver.get('https://gmail.com')
+            create_account_button = self.locate(
+                By.XPATH,
+                '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[2]/div/div/div[1]/div/button/span'
+            )
+            create_account_button.click()
+
+            for_my_self_button = self.locate(
+                By.XPATH,
+                '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div/ul/li[1]'
+            )
+            for_my_self_button.click()
+
+            first_name_field = self.locate(By.ID, 'firstName')
+            last_name_field = self.locate(By.ID, 'lastName')
+            username_field = self.locate(By.ID, 'username')
+            password_field = self.locate(By.XPATH, '//*[@id="passwd"]/div[1]/div/div[1]/input')
+            confirm_field = self.locate(By.XPATH, '//*[@id="confirm-passwd"]/div[1]/div/div[1]/input')
+            next_button = self.locate(By.XPATH, '//*[@id="accountDetailsNext"]/div/button')
+
+            first_name_field.send_keys(self.user_info['first_name'])
+            last_name_field.send_keys(self.user_info['last_name'])
+            username_field.send_keys(self.user_info['email'])
+            password_field.send_keys(self.user_info['password'])
+            confirm_field.send_keys(self.user_info['password'])
+
+            username = self.user_info['email']
+            while self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[1]/div/div[2]/div[2]/div'):
+                if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button'):
+                    other_email = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button')
+                    username = other_email.text
+                    other_email.click()
+                else:
+                    username_field = self.locate(By.ID, 'username')
+                    username += str(random.randint(100, 999))
+                    username.clear()
+                    username_field.send_keys(username)
+                    username_field.send_keys(Keys.TAB)
+
+            self.user_info['email'] = f'{username}@gmail.com'
+
+            next_button.click()
+
+            if self.is_present(By.ID, 'phoneNumberId'):
+                verification_code = None
+                excluded_numbers = []
+                while not verification_code:
+                    phone_number = PhoneNumber('google', self.logger, os.environ['SMS_API_KEY'])
+                    while not phone_number.number:
+                        selected_number = str(phone_number.get_number(excluded_numbers=excluded_numbers))
+                        phone_number_field = self.locate(By.ID, 'phoneNumberId')
+                        phone_number_field.clear()
+                        phone_number_field.send_keys(selected_number)
+
+                        next_button = self.locate(
+                            By.XPATH,
+                            '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
+                        )
+                        next_button.click()
+
+                        if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
+                            phone_number.number = None
+                            phone_number.reuse = False
+                            excluded_numbers.append(selected_number)
+
+                    code_input = self.locate(By.ID, 'code')
+                    verify_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[1]/div/div/button')
+
+                    verification_code = phone_number.get_verification_code()
+
+                    if not verification_code:
+                        self.logger.warning('Trying again since there is no verification code.')
+                        excluded_numbers.append(phone_number.number)
+                        phone_number.number = None
+                        phone_number.reuse = False
+                        back_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[1]/div/div/button')
+                        back_button.click()
+                    else:
+                        code_input.send_keys(verification_code)
+                        verify_button.click()
+
+            time.sleep(2)
+
+            gender_select = Select(self.locate(By.ID, 'gender'))
+            month_select = Select(self.locate(By.ID, 'month'))
+            day_field = self.locate(By.ID, 'day')
+            year_field = self.locate(By.ID, 'year')
+
+            day_field.send_keys(self.user_info['dob_day'])
+            year_field.send_keys(self.user_info['dob_year'])
+            month_select.select_by_visible_text(self.user_info['dob_month'])
+            gender_select.select_by_visible_text(self.user_info['gender'])
+
+            next_button = self.locate(
+                By.XPATH,
+                '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
+            )
+            next_button.click()
+
+            self.sleep(3)
+
+            skip_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[2]/div/div/button')
+            skip_button.click()
+
+            self.sleep(3)
+
+            body = self.locate(By.CSS_SELECTOR, 'body')
+            body.send_keys(Keys.PAGE_DOWN)
+            body.send_keys(Keys.PAGE_DOWN)
+
+            agree_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div')
+            agree_button.click()
+
+            attempts = 0
+            logo = self.is_present(By.XPATH, '//*[@id="gb"]/div[2]/div[1]/div[4]/div/a/img')
+            while not logo and attempts <= 10:
+                self.logger.error('Email not ready yet')
+                self.sleep(5)
+                logo = self.is_present(By.XPATH, '//*[@id="gb"]/div[2]/div[1]/div[4]/div/a/img')
+                attempts += 1
+
+                if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div'):
+                    agree_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div', 'clickable')
+                    agree_button.click()
+
+            else:
+                if attempts > 10:
+                    self.logger.error(f'Email seems to have never been made')
+                    return False
+                else:
+                    self.logger.info('Email creation success')
+            import logging
+            logging.info(self.user_info['email'])
+            return self.user_info['email']
+        except Exception as e:
+            self.logger.error(str(traceback.format_exc()))
+
+    def login(self):
+        """Log user into gmail"""
+        try:
+            self.logger.info('Logging In')
+            self.web_driver.get('https://www.google.com/gmail/')
+
+            sign_in_button = self.locate(By.XPATH, '/html/body/div/header/div/div/ul/li[2]/a')
+            sign_in_button.click()
+
+            if self.is_present(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div/div/ul/li[2]/div/div'):
+                self.logger.info('Other account button found, clicking it.')
+                other_account_button = self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div/div/ul/li[2]/div/div')
+                other_account_button.click()
+
+            self.sleep(3)
+
+            email_field = self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[1]/div/div[1]/div/div[1]/input')
+            next_button = self.locate(By.XPATH, '//*[@id="identifierNext"]/div/button')
+
+            email_field.send_keys(self.user_info['email'])
+            next_button.click()
+
+            password_field = self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[1]/div[1]/div/div/div/div/div[1]/div/div[1]/input')
+            next_button = self.locate(By.XPATH, '//*[@id="passwordNext"]/div/button')
+
+            password_field.send_keys(self.user_info['password'])
+            next_button.click()
+
+            not_now = self.is_present(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[4]/div[1]/span')
+            if not_now:
+                not_now_button = self.locate(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[4]/div[1]/span')
+                not_now_button.click()
+
+            self.logger.info('Successfully logged in')
+
+            return True
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            return False
+
+    def log_out(self):
+        """Logs out of gmail"""
+        try:
+            self.logger.info('Logging out')
+
+            self.web_driver.get('https://gmail.com')
+
+            profile_icon = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[1]/div[3]/header/div[2]/div[3]/div[1]/div[2]/div/a/img')
+            profile_icon.click()
+
+            self.sleep(1)
+
+            sign_out_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[1]/div[3]/header/div[2]/div[4]/div[4]/a')
+            sign_out_button.click()
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+
+    def allow_less_secure_apps(self):
+        """Goes to the signed in gmail account and enables less secure apps"""
+        try:
+            self.web_driver.get('https://myaccount.google.com/security')
+
+            self.sleep(2)
+
+            body = self.locate(By.CSS_SELECTOR, 'body')
+            body.send_keys(Keys.PAGE_DOWN)
+            body.send_keys(Keys.PAGE_DOWN)
+
+            self.sleep(1)
+
+            off_button = self.locate(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div[2]/c-wiz/c-wiz/div/div[3]/div/div/c-wiz/section/div[6]/div/div/div[2]/div/a')
+            off_button.click()
+
+            allow_button = self.locate(By.ID, 'i3')
+            allow_button.click()
+
+            return True
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            return False
+
+    def turn_on_email_forwarding(self, forwarding_address, password):
+        """Enable email forwarding"""
+        try:
+            if self.is_logged_in():
+                self.log_out()
+
+            self.login()
+
+            self.web_driver.get('https://gmail.com')
+
+            if self.is_present(By.XPATH, '/html/body/div[22]'):
+                overlay = self.locate(By.XPATH, '/html/body/div[22]')
+                overlay.click()
+
+            settings_button = self.locate(By.XPATH, '//*[@id="gb"]/div[2]/div[2]/div[3]/div[3]/a')
+            settings_button.click()
+
+            self.sleep(1)
+
+            all_settings_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]/div/button[2]')
+            all_settings_button.click()
+
+            forwarding_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[1]/div/div[2]/div[6]/a')
+            forwarding_button.click()
+
+            window_before = self.web_driver.window_handles[0]
+
+            add_address_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[1]/td[2]/div/div[2]/input')
+            add_address_button.click()
+
+            email_pop_up = self.locate(By.CLASS_NAME, 'Kj-JD')
+            email_field = email_pop_up.find_element_by_tag_name('input')
+            next_button = email_pop_up.find_element_by_tag_name('button')
+
+            email_field.send_keys(forwarding_address)
+            next_button.click()
+
+            window_after = self.web_driver.window_handles[1]
+
+            self.web_driver.switch_to_window(window_after)
+
+            accept_button = self.locate(By.XPATH, '/html/body/form/table/tbody/tr/td/input[3]')
+            accept_button.click()
+
+            self.web_driver.switch_to_window(window_before)
+
+            confirmation_pop_up = self.locate(By.CLASS_NAME, 'Kj-JD')
+            ok_button = confirmation_pop_up.find_element_by_tag_name('button')
+
+            ok_button.click()
+
+            self.logger.info('Getting verification code')
+
+            verification_code_attempts = 0
+            verification_code = None
+            while not verification_code and verification_code_attempts < 6:
+                verification_code = self.get_verification_code(forwarding_address, password)
+                if not verification_code:
+                    self.logger.error('Verification code not available, trying again')
+                    self.sleep(60)
+
+            if verification_code:
+                verification_code_field = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[1]/td[2]/div/div[3]/table/tbody/tr[4]/td[2]/input[1]')
+                verify_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[1]/td[2]/div/div[3]/table/tbody/tr[4]/td[2]/input[2]')
+
+                verification_code_field.clear()
+
+                verification_code_field.send_keys(verification_code)
+                verify_button.click()
+
+                enable_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[1]/td[2]/div/div[1]/table[2]/tbody/tr/td[1]/input')
+                enable_button.click()
+
+            imap_enable_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[3]/td[2]/div[1]/table[1]/tbody/tr/td[1]/input')
+            imap_enable_button.click()
+
+            return True
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            return False
+
+    def get_verification_code(self, forwarding_address, password):
+        """Gets the email forwarding verification code using imap"""
+        try:
+            attempts = 0
+            socket.setdefaulttimeout(5)
+            imap = imaplib.IMAP4_SSL('imap.gmail.com')
+            imap.login(forwarding_address, password)
+
+            imap.select('inbox')
+            data = imap.search(None, f'(SUBJECT "Receive Mail from {self.user_info["email"]}")')  # (SUBJECT "Receive Mail from")
+
+            mail_ids = data[1]
+            id_list = mail_ids[0].split(b' ')
+            id_list = [email_id.decode('utf-8') for email_id in id_list]
+            id_list.reverse()
+
+            for email_id in id_list:
+                data = imap.fetch(email_id, '(RFC822)')
+                for response_part in data:
+                    arr = response_part[0]
+                    if isinstance(arr, tuple):
+                        msg = email.message_from_string(str(arr[1], 'utf-8'))
+                        email_subject = msg['subject']
+                        self.logger.debug(f'Email: {self.user_info["email"]} Subject: {email_subject}')
+                        if self.user_info['email'] in email_subject:
+                            hash_index = email_subject.find('#')
+                            parenthesis_index = email_subject.find(')')
+                            verification_code = email_subject[hash_index + 1:parenthesis_index]
+
+                            self.logger.info(f'Verification code retrieved successfully: {verification_code}')
+
+                            return verification_code
+                self.logger.warning('Verification code not ready')
+                time.sleep(60)
+                attempts += 1
+
+            self.logger.error('Could not get verification code from email')
+            return None
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            return None
 
 class PoshMarkClient(BaseClient):
     def __init__(self, redis_posh_user_id, redis_campaign_id, logger_id, log_function, get_redis_object_attr,
                  update_redis_object, redis_proxy_id=None):
-        super(PoshMarkClient, self).__init__()
-        proxy = Proxy()
         hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
         port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
-        proxy.proxy_type = ProxyType.MANUAL if redis_proxy_id else ProxyType.SYSTEM
-
-        if redis_proxy_id:
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-
-        capabilities = webdriver.DesiredCapabilities.CHROME
-        proxy.add_to_capabilities(capabilities)
+        super(PoshMarkClient, self).__init__(logger_id, log_function, hostname, port)
 
         self.redis_posh_user_id = redis_posh_user_id
         self.redis_campaign_id = redis_campaign_id
@@ -214,7 +750,6 @@ class PoshMarkClient(BaseClient):
         }
         self.last_login = None
         self.login_error = None
-        self.logger = Logger(logger_id, log_function)
 
     def check_for_errors(self):
         """This will check for errors on the current page and handle them as necessary"""
@@ -482,13 +1017,7 @@ class PoshMarkClient(BaseClient):
                 gender_options = self.web_driver.find_elements_by_class_name('dropdown__link')
                 done_button = self.locate(By.XPATH, '//button[@type="submit"]')
 
-                genders = {
-                    '2': 'Male',
-                    '1': 'Female',
-                    '0': 'Unspecified',
-                }
-
-                gender = genders[self.get_redis_object_attr(self.redis_posh_user_id, "gender")]
+                gender = self.get_redis_object_attr(self.redis_posh_user_id, "gender")
                 for element in gender_options:
                     if element.text == gender:
                         element.click()

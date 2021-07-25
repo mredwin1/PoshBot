@@ -1,191 +1,63 @@
 import logging
-import mailslurp_client
-import names
 import os
 import random
 import requests
-import string
 import time
 import traceback
+import urllib3
 
 from django.db import models
 from django.utils import timezone
-from django_cleanup import cleanup
-from gender_guesser import detector as gender
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill, Transpose
-from mailslurp_client.exceptions import ApiException
 from users.models import User
 
 
-@cleanup.ignore
 class PoshUser(models.Model):
     IDLE = '1'
     INACTIVE = '2'
     RUNNING = '3'
     REGISTERING = '4'
+    CREATING = '5'
+    FORWARDING = '6'
 
     STATUS_CHOICES = [
         (IDLE, 'Idle'),
         (INACTIVE, 'Inactive'),
-        (RUNNING, 'Campaign running'),
+        (RUNNING, 'Running'),
         (REGISTERING, 'Registering'),
-    ]
-
-    GENDER_CHOICES = [
-        ('', ''),
-        ('2', 'Male'),
-        ('1', 'Female'),
-        ('0', 'Unspecified'),
+        (CREATING, 'Email Creation'),
+        (FORWARDING, 'Email Forwarding'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     date_added = models.DateField(auto_now_add=True, null=True)
 
-    is_email_verified = models.BooleanField(default=False)
     is_registered = models.BooleanField(default=False)
+    email_registered = models.BooleanField(default=False, null=True)
+    email_less_secure_apps_allowed = models.BooleanField(default=False, null=True)
+    email_forwarding_enabled = models.BooleanField(default=False, null=True)
     profile_updated = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     redis_id = models.CharField(max_length=40, default='')
+    dob_month = models.CharField(max_length=20, default='')
+    dob_day = models.CharField(max_length=20, default='')
+    dob_year = models.CharField(max_length=20, default='')
 
-    email = models.EmailField(blank=True,
-                              help_text="If alias is chosen up top then put the email you wish to mask here. Otherwise "
-                                        "put the email you wish to create the Posh User with.")
-    masked_email = models.EmailField(default="", blank=True)
-    alias_email_id = models.CharField(max_length=100, default="", blank=True)
+    email = models.EmailField(blank=True)
     username = models.CharField(max_length=15, unique=True)
     password = models.CharField(max_length=20,
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
-    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
-    profile_picture = ProcessedImageField(
-        processors=[
-            Transpose(),
-            ResizeToFill(200, 200)
-        ],
-        format='PNG',
-        options={'quality': 60},
-        blank=True
-    )
-    header_picture = ProcessedImageField(
-        processors=[
-            Transpose(),
-            ResizeToFill(1200, 200)
-        ],
-        format='PNG',
-        options={'quality': 60},
-        blank=True
-    )
+    gender = models.CharField(max_length=20, blank=True)
+    profile_picture = models.ImageField()
+    header_picture = models.ImageField()
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'
-
-    def get_gender(self):
-        """Returns gender string from code"""
-        genders = {
-            '2': 'Male',
-            '1': 'Female',
-            '0': 'Unspecified',
-        }
-
-        return genders[self.gender]
-
-    def generate_sign_up_info(self, old_first_name=None, old_last_name=None):
-        first_name = old_first_name if old_first_name else names.get_first_name()
-        last_name = old_last_name if old_last_name else names.get_last_name()
-        username = self.generate_username(first_name, last_name)
-        password = self.generate_password()
-        user_gender = self.guess_gender(first_name)
-
-        signup_info = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'username': username,
-            'password': password,
-            'gender': user_gender
-        }
-
-        return signup_info
-
-    def generate_email(self, master_email):
-        """Using the mailslurp library it will generate a random email as an alias to a given email. It also checks to
-        ensure you have more aliases to assign"""
-        configuration = mailslurp_client.Configuration()
-        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
-
-        with mailslurp_client.ApiClient(configuration) as api_client:
-            api_instance = mailslurp_client.AliasControllerApi(api_client)
-
-            create_alias_options = mailslurp_client.CreateAliasOptions(email_address=master_email,
-                                                                       name=str(self.username))
-
-            try:
-                api_response = api_instance.create_alias(create_alias_options)
-            except ApiException as e:
-                logging.error(f'Exception when calling AliasControllerApi->create_alias {e}\n')
-
-            return api_response
-
-    def delete_alias_email(self):
-        """Using the mailslurp client it deletes it's alias email"""
-        if self.alias_email_id:
-            configuration = mailslurp_client.Configuration()
-            configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
-
-            with mailslurp_client.ApiClient(configuration) as api_client:
-                api_instance = mailslurp_client.AliasControllerApi(api_client)
-                api_instance.delete_alias(self.alias_email_id)
-
-    def generate_random_posh_user(self):
-        signup_info = self.generate_sign_up_info(self.first_name, self.last_name)
-
-        emails = [posh_user.email for posh_user in PoshUser.objects.filter(user=self.user)]
-
-        if len(emails) == 1:
-            last_email = emails[0]
-        else:
-            last_number = 0
-            last_email = ''
-            for email in emails:
-                plus_index = email.find('+')
-                at_index = email.find('@')
-
-                if plus_index == -1:
-                    pass
-                else:
-                    number = int(email[plus_index:at_index])
-
-                    if number > last_number:
-                        last_number = number
-                        last_email = email
-
-        plus_index = last_email.find('+')
-        at_index = last_email.find('@')
-
-        if plus_index == -1:
-            new_email = f'{last_email[:at_index]}+1{last_email[at_index:]}'
-        else:
-            number = int(last_email[plus_index:at_index]) + 1
-            new_email = f'{last_email[:plus_index + 1]}{number}{last_email[at_index:]}'
-
-        new_posh_user = PoshUser(
-            first_name=signup_info['first_name'],
-            last_name=signup_info['last_name'],
-            username=signup_info['username'],
-            password=self.password,
-            gender=self.gender,
-            user=self.user,
-            email=new_email,
-            status=PoshUser.IDLE ,
-            profile_picture=self.profile_picture,
-            header_picture=self.header_picture,
-        )
-        new_posh_user.save()
-
-        return new_posh_user
 
     def to_dict(self):
         data = {}
@@ -207,34 +79,96 @@ class PoshUser(models.Model):
         return data
 
     @staticmethod
-    def check_alias_email():
-        """Using the mailslurp client it checks if we the account has anymore aliases to create"""
-        configuration = mailslurp_client.Configuration()
-        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
+    def generate_sign_up_info(results=1):
+        months = {
+            '01': 'January',
+            '02': 'February',
+            '03': 'March',
+            '04': 'April',
+            '05': 'May',
+            '06': 'June',
+            '07': 'July',
+            '08': 'August',
+            '09': 'September',
+            '10': 'October',
+            '11': 'November',
+            '12': 'December',
+        }
+        user_info = {
+            'first_name': '',
+            'last_name': '',
+        }
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36'
+        }
 
-        with mailslurp_client.ApiClient(configuration) as api_client:
-            api_instance = mailslurp_client.AliasControllerApi(api_client)
-            number_of_aliases = api_instance.get_aliases().number_of_elements
-            if number_of_aliases >= int(os.environ.get('MAX_ALIASES', '1')):
-                logging.warning(f'The limit of email aliases have been met - '
-                                f'Total Number of Aliases {number_of_aliases}')
-                return False
-            else:
-                return True
+        user_payload = {
+            'password': 'upper,lower,number,10-12',
+            'inc': 'gender,name,email,login,dob,picture,password',
+            'results': str(results)
+        }
+        user_url = 'https://randomuser.me/api/'
+        header_image_url = 'https://picsum.photos/1200/200'
+        results = []
 
-    def check_email_verified(self):
-        """Using the mailslurp client to check if an alias is verified"""
-        configuration = mailslurp_client.Configuration()
-        configuration.api_key['x-api-key'] = os.environ['MAILSLURP_API_KEY']
+        while not PoshUser.is_english(user_info['first_name'] + user_info['last_name']):
+            user_response = requests.get(user_url, params=user_payload, timeout=5, headers=headers)
+            response_results = user_response.json()['results']
+            for response_dict in response_results:
+                header_image_response = requests.get(header_image_url, timeout=5, headers=headers)
+                username = response_dict['login']['username']
+                user_info = {
+                    'first_name': response_dict['name']['first'],
+                    'last_name': response_dict['name']['last'],
+                    'gender': response_dict['gender'].capitalize(),
+                    'email': f'{response_dict["email"][:-12]}',
+                    'username': username if len(username) <= 12 else username[:12],
+                    'password': response_dict['login']['password'],
+                    'dob_month': months[response_dict['dob']['date'][5:7]],
+                    'dob_day': response_dict['dob']['date'][8:10],
+                    'dob_year': response_dict['dob']['date'][:4],
+                    'profile_picture': response_dict['picture']['large'],
+                    'header_picture': header_image_response.url,
+                }
 
-        with mailslurp_client.ApiClient(configuration) as api_client:
-            api_instance = mailslurp_client.AliasControllerApi(api_client)
-            if self.alias_email_id:
-                alias = api_instance.get_alias(self.alias_email_id)
+                results.append(user_info)
 
-                return alias.is_verified
-            else:
-                return True
+            return results
+
+    @staticmethod
+    def create_posh_user(signup_info):
+        new_posh_user = PoshUser(
+            first_name=signup_info['first_name'],
+            last_name=signup_info['last_name'],
+            username=signup_info['username'],
+            password=signup_info['password'],
+            gender=signup_info['gender'],
+            email=signup_info['email'],
+            dob_month=signup_info['dob_month'],
+            dob_day=signup_info['dob_day'],
+            dob_year=signup_info['dob_year'],
+            status=PoshUser.CREATING,
+        )
+
+        for picture_type in ('profile_picture', 'header_picture'):
+            file_name = f'{picture_type}_{new_posh_user.username}.jpg'
+
+            with open(file_name, 'wb') as img_temp:
+                http = urllib3.PoolManager(timeout=urllib3.Timeout(connect=5))
+                r = http.request('GET', signup_info[picture_type])
+
+                img_temp.write(r.data)
+
+            with open(file_name, 'rb') as img_temp:
+                if picture_type == 'profile_picture':
+                    new_posh_user.profile_picture.save(file_name, img_temp, save=True)
+                else:
+                    new_posh_user.header_picture.save(file_name, img_temp, save=True)
+
+        os.remove(f'profile_picture_{new_posh_user.username}.jpg')
+        os.remove(f'header_picture_{new_posh_user.username}.jpg')
+
+        return new_posh_user
 
     @staticmethod
     def generate_username(first_name, last_name):
@@ -254,28 +188,15 @@ class PoshUser(models.Model):
         return f'{username}{random_int}'
 
     @staticmethod
-    def generate_password():
-        password_characters = string.ascii_letters + string.digits + string.punctuation
-        password = ''.join(random.choice(password_characters) for i in range(10))
-
-        return password
-
-    @staticmethod
-    def guess_gender(name):
-        """Using the gender-guesser library will try to guess the gender based on the first name, if it does not find
-        a good answer it sets it to Unspecified"""
-        detector = gender.Detector()
-
-        genders = {
-            'male': '2',
-            'mostly_male': '2',
-            'female': '1',
-            'mostly_female': '1',
-            'andy': '0',
-            'unknown': '0',
-        }
-
-        return genders[detector.get_gender(name)]
+    def is_english(text):
+        if not text:
+            return False
+        try:
+            text.encode(encoding='utf-8').decode('ascii')
+        except UnicodeDecodeError:
+            return False
+        else:
+            return True
 
     def __str__(self):
         return f'Posh User - Username: {self.username}'
@@ -292,10 +213,12 @@ class Campaign(models.Model):
 
     BASIC_SHARING = '0'
     ADVANCED_SHARING = '1'
+    REGISTER = '2'
 
     MODE_CHOICES = [
         (BASIC_SHARING, 'Basic Sharing'),
         (ADVANCED_SHARING, 'Advanced Sharing'),
+        (REGISTER, 'Register'),
     ]
 
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='0')
@@ -409,10 +332,10 @@ class ListingPhotos(models.Model):
 
 
 class Log(models.Model):
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_date = models.DateTimeField(editable=False)
-    posh_user = models.CharField(max_length=20, default='')
+    description = models.CharField(max_length=50, default='')
 
     @staticmethod
     def get_time():
@@ -457,7 +380,7 @@ class Log(models.Model):
         return super(Log, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'Log - Username: {self.campaign.title}'
+        return f'Log - Username: {self.campaign.title}' if self.campaign else f'Log - Email {self.description}'
 
 
 class LogEntry(models.Model):

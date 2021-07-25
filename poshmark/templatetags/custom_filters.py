@@ -16,6 +16,8 @@ def posh_users_status_return(status_code):
         PoshUser.INACTIVE: 'INACTIVE',
         PoshUser.RUNNING: 'RUNNING',
         PoshUser.REGISTERING: 'REGISTERING',
+        PoshUser.CREATING: 'CREATING',
+        PoshUser.FORWARDING: 'FORWARDING',
     }
 
     return statuses[status_code]
@@ -29,6 +31,8 @@ def posh_user_status_color_return(status_code):
         PoshUser.INACTIVE: 'border-danger',
         PoshUser.RUNNING: 'border-success',
         PoshUser.REGISTERING: 'border-warning',
+        PoshUser.CREATING: 'border-dark',
+        PoshUser.FORWARDING: 'border-dark',
     }
 
     return statuses[status_code]
@@ -38,9 +42,9 @@ def posh_user_status_color_return(status_code):
 def gender_return(status_code):
     """Takes a gender code and returns it's gender"""
     status = {
-        '0': 'Unspecified',
-        '1': 'Female',
-        '2': 'Male',
+        '': 'Unspecified',
+        'Female': 'Female',
+        'Male': 'Male',
     }
 
     return status[status_code]

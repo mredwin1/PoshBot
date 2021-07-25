@@ -186,22 +186,44 @@ $(document).ready(function () {
     $('#id_mode').change(function () {
         let mode = $(this).val();
         let listing_items = $('#listing');
+        let auto_run = $('#auto_run');
+        let posh_user = $('#posh_user');
+        let delay = $('#id_delay');
+        let times = $('#times');
         let generate_users = $('#generate_users');
         let lowest_price_label = $('#lowest_price_label')
         let lowest_price_input = $('#id_lowest_price')
 
         if (mode === '0') {
+            auto_run.show();
+            posh_user.show();
+            times.show();
             listing_items.hide();
             generate_users.hide();
             lowest_price_label.show();
             lowest_price_input.show();
             lowest_price_input.prop('required', true);
+            delay.prop('required', true);
         } else if (mode === '1') {
+            auto_run.show();
+            posh_user.show();
+            times.show();
             listing_items.show();
             generate_users.show();
             lowest_price_label.hide();
             lowest_price_input.hide();
             lowest_price_input.prop('required', false);
+            delay.prop('required', true);
+        } else if (mode === '2') {
+            auto_run.hide();
+            posh_user.hide();
+            times.hide();
+            listing_items.hide();
+            generate_users.hide();
+            lowest_price_label.hide();
+            lowest_price_input.hide();
+            lowest_price_input.prop('required', false);
+            delay.prop('required', false);
         }
     });
     $('#mainModal').on('show.bs.modal', function (event) {
