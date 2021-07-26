@@ -6,7 +6,7 @@ import time
 import traceback
 import urllib3
 
-from django.core.files import File
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
 from imagekit.models import ProcessedImageField
@@ -177,9 +177,9 @@ class PoshUser(models.Model):
 
             with open(file_name, 'rb') as img_temp:
                 if picture_type == 'profile_picture':
-                    new_posh_user.profile_picture.save(file_name, File(img_temp), save=True)
+                    new_posh_user.profile_picture.save(file_name, ContentFile(img_temp.read()), save=True)
                 else:
-                    new_posh_user.header_picture.save(file_name, File(img_temp), save=True)
+                    new_posh_user.header_picture.save(file_name, ContentFile(img_temp.read()), save=True)
 
         os.remove(f'profile_picture_{new_posh_user.username}.jpg')
         os.remove(f'header_picture_{new_posh_user.username}.jpg')
