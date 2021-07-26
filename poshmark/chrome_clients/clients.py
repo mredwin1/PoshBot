@@ -434,6 +434,8 @@ class GmailClient(BaseClient):
 
             next_button_one.click()
 
+            self.sleep(2)
+
             if self.is_present(By.ID, 'phoneNumberId'):
                 verification_code = None
                 excluded_numbers = []
@@ -447,7 +449,7 @@ class GmailClient(BaseClient):
 
                         next_button_two = self.locate(
                             By.XPATH,
-                            '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
+                            '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
                         )
                         next_button_two.click()
 
