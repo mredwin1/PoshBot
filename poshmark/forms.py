@@ -227,7 +227,7 @@ class CreateCampaign(forms.Form):
 
             self.cleaned_data[times_field] = ','.join(datetimes)
 
-        if self.cleaned_data['mode'] != Campaign.BASIC_SHARING:
+        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING:
             listings_field = 'listings'
             if listings_field in self.cleaned_data.keys():
                 listing_ids = self.cleaned_data[listings_field].split(',')
