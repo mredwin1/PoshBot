@@ -118,40 +118,42 @@ class PhoneNumber:
         self.order_id = None
         self.number = None
         self.reuse = False
+        self.orders = {}
 
     def _check_order_history(self, excluded_numbers=None):
+        self.logger.info('Checking order history')
         selected_service = 'Google / Gmail / Google Voice / Youtube' if self.service_name == 'google' else 'Poshmark'
-        order_history_url = 'https://portal.easysmsverify.com/get_order_history'
+        if not self.orders:
+            order_history_url = 'https://portal.easysmsverify.com/get_order_history'
 
-        response = None
+            response = None
 
-        while not response or response.status_code != requests.codes.ok:
-            response = requests.get(order_history_url, headers=self.headers)
+            while not response or response.status_code != requests.codes.ok:
+                response = requests.get(order_history_url, headers=self.headers)
 
-        response_json = response.json()
+            response_json = response.json()
 
-        organized_orders = {}
-        for order in response_json['order_history']:
-            if order['state'] in ('FINISHED', 'TIMED_OUT'):
-                try:
-                    service = organized_orders[order['service_name']]
+            for order in response_json['order_history']:
+                if order['state'] in ('FINISHED', 'TIMED_OUT'):
                     try:
-                        service[order['number']]['quantity'] += 1
+                        service = self.orders[order['service_name']]
+                        try:
+                            service[order['number']]['quantity'] += 1
+                        except KeyError:
+                            service[order['number']] = {
+                                'quantity': 1,
+                                'order_id': order['order_id']
+                            }
                     except KeyError:
-                        service[order['number']] = {
-                            'quantity': 1,
-                            'order_id': order['order_id']
+                        self.orders[order['service_name']] = {
+                            order['number']: {
+                                'quantity': 1,
+                                'order_id': order['order_id']
+                            }
                         }
-                except KeyError:
-                    organized_orders[order['service_name']] = {
-                        order['number']: {
-                            'quantity': 1,
-                            'order_id': order['order_id']
-                        }
-                    }
 
         try:
-            for key, value in organized_orders[selected_service].items():
+            for key, value in self.orders[selected_service].items():
                 try:
                     if value['quantity'] < 3 and key not in excluded_numbers:
                         self.number = key
@@ -165,6 +167,7 @@ class PhoneNumber:
         return None
 
     def get_number(self, excluded_numbers=None, state=None):
+        self.logger.info('Getting a new number')
         number = self._check_order_history(excluded_numbers)
         if number:
             self.logger.info(f'Reusing number {number}')
