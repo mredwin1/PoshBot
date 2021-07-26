@@ -198,20 +198,20 @@ CELERY_TASK_ROUTES = {
 }
 
 # Periodic Tasks
-CELERY_BEAT_SCHEDULE = {
-    'log_cleanup': {
-        'task': 'poshmark.tasks.log_cleanup',
-        'schedule': crontab(minute=0, hour=0),
-        'options': {'queue': 'no_concurrency'}
-    },
-    'redis_cleaner': {
-        'task': 'poshmark.tasks.redis_cleaner',
-        'schedule': crontab(minute='*/10'),
-        'options': {'queue': 'no_concurrency'}
-    },
-    'posh_user_balancer': {
-        'task': 'poshmark.tasks.posh_user_balancer',
-        'schedule': crontab(minute='*/3'),
-        'options': {'queue': 'no_concurrency'}
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'log_cleanup': {
+#         'task': 'poshmark.tasks.log_cleanup',
+#         'schedule': crontab(minute=0, hour=0),
+#         'options': {'queue': 'no_concurrency'}
+#     },
+#     'redis_cleaner': {
+#         'task': 'poshmark.tasks.redis_cleaner',
+#         'schedule': crontab(minute='*/10'),
+#         'options': {'queue': 'no_concurrency'}
+#     },
+#     'posh_user_balancer': {
+#         'task': 'poshmark.tasks.posh_user_balancer',
+#         'schedule': crontab(minute='*/3'),
+#         'options': {'queue': 'no_concurrency'}
+#     },
+# }
