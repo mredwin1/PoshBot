@@ -791,7 +791,7 @@ class PoshMarkClient(BaseClient):
                  update_redis_object, redis_proxy_id=None):
         hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
         port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
-        super(PoshMarkClient, self).__init__(logger_id, log_function, hostname, port, cookies_filename=get_redis_object_attr(self.redis_posh_user_id, "username"))
+        super(PoshMarkClient, self).__init__(logger_id, log_function, hostname, port, cookies_filename=get_redis_object_attr(redis_posh_user_id, "username"))
 
         self.redis_posh_user_id = redis_posh_user_id
         self.redis_campaign_id = redis_campaign_id
