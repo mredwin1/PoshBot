@@ -665,7 +665,7 @@ class GmailClient(BaseClient):
             self.web_driver.get('https://gmail.com')
 
             action = ActionChains(self.web_driver)
-            action.move_by_offset(1400, 100)
+            action.move_by_offset(1400, 50)
             action.click().perform()
 
             settings_button = self.locate(By.XPATH, '//*[@id="gb"]/div[2]/div[2]/div[3]/div[3]/a')
