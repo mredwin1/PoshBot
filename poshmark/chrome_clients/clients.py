@@ -207,6 +207,7 @@ class PhoneNumber:
                     order_id = phone_number_response_json['order_id']
                     self.order_id = order_id
                     self.number = phone_number
+                    self.reuse = False
 
                     self.logger.info(f'Using a new number: {phone_number}')
 
@@ -219,6 +220,7 @@ class PhoneNumber:
                 self.logger.error(error_msg)
 
     def get_verification_code(self):
+        self.logger.info('Getting Verification code')
         if self.reuse:
             order_number_url = 'https://portal.easysmsverify.com/order_number'
             parameters = {
@@ -463,6 +465,8 @@ class GmailClient(BaseClient):
                             phone_number.number = None
                             phone_number.reuse = False
                             excluded_numbers.append(selected_number)
+                        else:
+                            self.logger.info('No errors, this number should work')
 
                     time.sleep(2)
 
