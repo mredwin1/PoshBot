@@ -164,10 +164,17 @@ class PhoneNumber:
             for key, value in self.orders[selected_service].items():
                 try:
                     if value['quantity'] < 3 and key not in excluded_numbers:
-                        self.number = key
-                        self.order_id = value['order_id']
-                        self.reuse = True
-                        return key
+                        reuse_number_url = 'https://portal.easysmsverify.com/check_if_reusable'
+                        reuse_response = None
+                        data = {'number': key}
+
+                        while not reuse_response or reuse_response.status_code != requests.codes.ok:
+                            reuse_response = requests.post(reuse_number_url, headers=self.headers, data=data, timeout=30)
+                        if reuse_response.json()['status']:
+                            self.number = key
+                            self.order_id = value['order_id']
+                            self.reuse = True
+                            return key
                 except ValueError:
                     pass
         except KeyError:
