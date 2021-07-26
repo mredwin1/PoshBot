@@ -31,7 +31,7 @@ class PoshUser(models.Model):
         (FORWARDING, 'Email Forwarding'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     date_added = models.DateField(auto_now_add=True, null=True)
 
