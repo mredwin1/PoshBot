@@ -445,11 +445,11 @@ class GmailClient(BaseClient):
                         phone_number_field.clear()
                         phone_number_field.send_keys(selected_number)
 
-                        next_button = self.locate(
+                        next_button_two = self.locate(
                             By.XPATH,
                             '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
                         )
-                        next_button.click()
+                        next_button_two.click()
 
                         if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
                             phone_number.number = None
