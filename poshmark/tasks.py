@@ -112,11 +112,11 @@ def create_redis_object(instance):
                 instance_id = posh_proxy_key
     elif instance_type == 'PoshUser' and not instance.is_registered:
         username = instance.username
-        username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=5)
+        username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=10)
 
         while username_test.status_code == requests.codes.ok:
             username = PoshUser.generate_username(instance.first_name, instance.last_name)
-            username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=5)
+            username_test = requests.get(f'https://poshmark.com/closet/{username}', timeout=10)
 
         instance.username = username
         instance.save()

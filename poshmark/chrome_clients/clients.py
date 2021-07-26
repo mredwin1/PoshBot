@@ -64,7 +64,7 @@ class Captcha:
             'pageurl': self.page_url,
             'json': '1'
         }
-        response = requests.get(url, params=params, timeout=5).json()
+        response = requests.get(url, params=params, timeout=30).json()
         if response['status'] == 1:
             self.request_id = response['request']
             return True
@@ -80,7 +80,7 @@ class Captcha:
             'action': 'get',
             'id': self.request_id
         }
-        response = requests.get(url, params=params, timeout=5).json()
+        response = requests.get(url, params=params, timeout=30).json()
 
         if response['status'] == 0:
             if 'ERROR' in response['request']:
@@ -129,7 +129,7 @@ class PhoneNumber:
             response = None
 
             while not response or response.status_code != requests.codes.ok:
-                response = requests.get(order_history_url, headers=self.headers, timeout=5)
+                response = requests.get(order_history_url, headers=self.headers, timeout=30)
 
             response_json = response.json()
 
@@ -190,7 +190,7 @@ class PhoneNumber:
             service_id_response = None
 
             while not service_id_response or service_id_response.status_code != requests.codes.ok:
-                service_id_response = requests.post(service_id_url, headers=self.headers, data=service_id_parameters, timeout=5)
+                service_id_response = requests.post(service_id_url, headers=self.headers, data=service_id_parameters, timeout=30)
 
             service_id_response_json = service_id_response.json()
 
@@ -206,7 +206,7 @@ class PhoneNumber:
                 phone_number_response = None
 
                 while not phone_number_response or phone_number_response.status_code != requests.codes.ok:
-                    phone_number_response = requests.post(phone_number_url, headers=self.headers, data=phone_number_parameters, timeout=5)
+                    phone_number_response = requests.post(phone_number_url, headers=self.headers, data=phone_number_parameters, timeout=30)
 
                 phone_number_response_json = phone_number_response.json()
 
@@ -239,7 +239,7 @@ class PhoneNumber:
             order_response_json = {'status': False}
             attempts = 0
             while (not order_response or order_response.status_code != requests.codes.ok) and not order_response_json['status'] and attempts < 4:
-                order_response = requests.post(order_number_url, headers=self.headers, data=parameters, timeout=5)
+                order_response = requests.post(order_number_url, headers=self.headers, data=parameters, timeout=30)
                 self.logger.debug(str(order_response.text))
                 if order_response or order_response.status_code == requests.codes.ok:
                     order_response_json = order_response.json()
@@ -266,7 +266,7 @@ class PhoneNumber:
         verification_response_json = {'state': 'WAITING_FOR_SMS'}
 
         while (not verification_response or verification_response.status_code != requests.codes.ok) or verification_response_json['state'] == 'WAITING_FOR_SMS':
-            verification_response = requests.post(check_sms_url, headers=self.headers, data=parameters, timeout=5)
+            verification_response = requests.post(check_sms_url, headers=self.headers, data=parameters, timeout=30)
 
             if verification_response or verification_response.status_code == requests.codes.ok:
                 verification_response_json = verification_response.json()
@@ -1074,9 +1074,9 @@ class PoshMarkClient(BaseClient):
 
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=5)
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=5)
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
                         self.logger.warning(
                             f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1
@@ -1120,9 +1120,9 @@ class PoshMarkClient(BaseClient):
                 elif error_code is None:
                     # Check if Posh User is now registered
                     attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=5)
+                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
                     while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=5)
+                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
                         self.logger.warning(
                             f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
                         attempts += 1

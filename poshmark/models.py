@@ -112,35 +112,38 @@ class PoshUser(models.Model):
         header_image_url = 'https://picsum.photos/1200/200'
         results = []
 
-        while not PoshUser.is_english(user_info['first_name'] + user_info['last_name']):
-            user_response = requests.get(user_url, params=user_payload, timeout=5, headers=headers)
-            response_results = user_response.json()['results']
-            for response_dict in response_results:
-                header_image_response = requests.get(header_image_url, timeout=5, headers=headers)
-                username = response_dict['login']['username']
-                user_info = {
-                    'first_name': response_dict['name']['first'],
-                    'last_name': response_dict['name']['last'],
-                    'gender': response_dict['gender'].capitalize(),
-                    'email': f'{response_dict["email"][:-12]}',
-                    'username': username if len(username) <= 12 else username[:12],
-                    'password': response_dict['login']['password'],
-                    'dob_month': months[response_dict['dob']['date'][5:7]],
-                    'dob_day': response_dict['dob']['date'][8:10],
-                    'dob_year': response_dict['dob']['date'][:4],
-                    'profile_picture': response_dict['picture']['large'],
-                    'header_picture': header_image_response.url,
-                }
+        try:
+            while not PoshUser.is_english(user_info['first_name'] + user_info['last_name']):
+                user_response = requests.get(user_url, params=user_payload, timeout=10, headers=headers)
+                response_results = user_response.json()['results']
+                for response_dict in response_results:
+                    header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
+                    username = response_dict['login']['username']
+                    user_info = {
+                        'first_name': response_dict['name']['first'],
+                        'last_name': response_dict['name']['last'],
+                        'gender': response_dict['gender'].capitalize(),
+                        'email': f'{response_dict["email"][:-12]}',
+                        'username': username if len(username) <= 12 else username[:12],
+                        'password': response_dict['login']['password'],
+                        'dob_month': months[response_dict['dob']['date'][5:7]],
+                        'dob_day': response_dict['dob']['date'][8:10],
+                        'dob_year': response_dict['dob']['date'][:4],
+                        'profile_picture': response_dict['picture']['large'],
+                        'header_picture': header_image_response.url,
+                    }
 
-                username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=5)
+                    username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=10)
 
-                while username_test.status_code == requests.codes.ok:
-                    user_info["username"] = PoshUser.generate_username(user_info['first_name'], user_info['last_name'])
-                    username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=5)
+                    while username_test.status_code == requests.codes.ok:
+                        user_info["username"] = PoshUser.generate_username(user_info['first_name'], user_info['last_name'])
+                        username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=10)
 
-                results.append(user_info)
+                    results.append(user_info)
+        except requests.exceptions.RequestException as e:
+            logging.error('Error occurred while trying to get profiles')
 
-            return results
+        return results
 
     @staticmethod
     def create_posh_user(signup_info):
