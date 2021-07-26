@@ -222,6 +222,7 @@ class PhoneNumber:
     def get_verification_code(self):
         self.logger.info('Getting Verification code')
         if self.reuse:
+            self.logger.info('Phone number is reused, putting in a new order.')
             order_number_url = 'https://portal.easysmsverify.com/order_number'
             parameters = {
                 'previous_order_id': self.order_id
@@ -231,6 +232,7 @@ class PhoneNumber:
             attempts = 0
             while (not order_response or order_response.status_code != requests.codes.ok) and not order_response_json['status'] and attempts < 4:
                 order_response = requests.post(order_number_url, headers=self.headers, data=parameters)
+                self.logger.debug(str(order_response))
                 if order_response or order_response.status_code == requests.codes.ok:
                     order_response_json = order_response.json()
                     if not order_response_json['status']:
@@ -246,7 +248,7 @@ class PhoneNumber:
                 return None
 
             self.order_id = order_response_json['order_id']
-
+        self.logger.info('Starting verification check')
         check_sms_url = 'https://portal.easysmsverify.com/check_sms'
         parameters = {
             'order_id': self.order_id,
