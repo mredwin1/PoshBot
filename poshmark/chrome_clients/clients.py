@@ -551,7 +551,7 @@ class GmailClient(BaseClient):
             attempts = 0
             logo = self.is_present(By.XPATH, '//*[@id="gb"]/div[2]/div[1]/div[4]/div/a/img')
             while not logo and attempts <= 10:
-                self.logger.error('Email not ready yet')
+                self.logger.warning('Email not ready yet')
                 self.sleep(5)
                 logo = self.is_present(By.XPATH, '//*[@id="gb"]/div[2]/div[1]/div[4]/div/a/img')
                 attempts += 1
