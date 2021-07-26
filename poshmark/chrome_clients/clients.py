@@ -457,9 +457,12 @@ class GmailClient(BaseClient):
                         next_button_two.click()
 
                         if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
+                            self.logger.warning('This phone number has already been used, getting a different number.')
                             phone_number.number = None
                             phone_number.reuse = False
                             excluded_numbers.append(selected_number)
+
+                    time.sleep(2)
 
                     code_input = self.locate(By.ID, 'code')
                     verify_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[1]/div/div/button')
