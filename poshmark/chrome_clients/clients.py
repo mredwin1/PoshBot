@@ -505,6 +505,7 @@ class GmailClient(BaseClient):
                             phone_number.number = None
                             phone_number.reuse = False
                             excluded_numbers.append(selected_number)
+                            self.sleep(5)
                         else:
                             self.logger.info('No errors, this number should work')
 
