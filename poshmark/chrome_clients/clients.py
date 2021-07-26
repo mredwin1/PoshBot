@@ -665,7 +665,9 @@ class GmailClient(BaseClient):
             self.web_driver.get('https://gmail.com')
 
             if self.is_present(By.ID, 'bubble-165'):
-                got_it_button = self.locate(By.CLASS_NAME, 'Zd')
+                self.logger.info('Pop up found')
+                bubble = self.locate(By.ID, 'bubble-165')
+                got_it_button = bubble.find_element_by_id(By.CLASS_NAME, 'Zd')
                 got_it_button.click()
 
             settings_button = self.locate(By.XPATH, '//*[@id="gb"]/div[2]/div[2]/div[3]/div[3]/a')
