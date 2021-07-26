@@ -461,7 +461,7 @@ class GmailClient(BaseClient):
                 else:
                     username_field = self.locate(By.ID, 'username')
                     username += str(random.randint(100, 999))
-                    username.clear()
+                    username_field.clear()
                     username_field.send_keys(username)
                     username_field.send_keys(Keys.TAB)
 
