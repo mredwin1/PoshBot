@@ -566,8 +566,7 @@ class GmailClient(BaseClient):
                     return False
                 else:
                     self.logger.info('Email creation success')
-            import logging
-            logging.info(self.user_info['email'])
+
             return self.user_info['email']
         except Exception as e:
             self.logger.error(str(traceback.format_exc()))
@@ -665,9 +664,9 @@ class GmailClient(BaseClient):
 
             self.web_driver.get('https://gmail.com')
 
-            if self.is_present(By.XPATH, '/html/body/div[22]'):
-                overlay = self.locate(By.XPATH, '/html/body/div[22]')
-                overlay.click()
+            if self.is_present(By.ID, 'bubble-165'):
+                got_it_button = self.locate(By.CLASS_NAME, 'Zd')
+                got_it_button.click()
 
             settings_button = self.locate(By.XPATH, '//*[@id="gb"]/div[2]/div[2]/div[3]/div[3]/a')
             settings_button.click()
