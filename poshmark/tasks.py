@@ -266,8 +266,8 @@ def enable_email_forwarding(posh_user_id):
 
     log.info('Enabling email forwarding')
 
-    with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
-        while not posh_user.email_forwarding_enabled and posh_user.email_registered and email_forwarding_attempts <= 3:
+    while not posh_user.email_forwarding_enabled and posh_user.email_registered and email_forwarding_attempts <= 3:
+        with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
             email_forwarding_attempts += 1
             posh_user.email_forwarding_enabled = client.turn_on_email_forwarding(posh_user.user.master_email, posh_user.user.email_password)
             posh_user.save()
