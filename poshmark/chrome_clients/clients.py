@@ -240,7 +240,7 @@ class PhoneNumber:
             attempts = 0
             while (not order_response or order_response.status_code != requests.codes.ok) and not order_response_json['status'] and attempts < 4:
                 order_response = requests.post(order_number_url, headers=self.headers, data=parameters, timeout=5)
-                self.logger.debug(str(order_response.raw))
+                self.logger.debug(str(order_response.text))
                 if order_response or order_response.status_code == requests.codes.ok:
                     order_response_json = order_response.json()
                     if not order_response_json['status']:
