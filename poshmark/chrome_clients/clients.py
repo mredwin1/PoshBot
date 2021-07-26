@@ -134,7 +134,15 @@ class PhoneNumber:
             response_json = response.json()
 
             for order in response_json['order_history']:
-                if order['state'] in ('FINISHED', 'TIMED_OUT'):
+                add = False
+
+                if order['state'] == 'FINISHED':
+                    add = True
+                elif order['state'] == 'TIMED_OUT':
+                    if order['is_reused']:
+                        add = True
+
+                if add:
                     try:
                         service = self.orders[order['service_name']]
                         try:
