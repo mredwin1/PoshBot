@@ -170,9 +170,12 @@ class PhoneNumber:
 
                         while not reuse_response or reuse_response.status_code != requests.codes.ok:
                             reuse_response = requests.post(reuse_number_url, headers=self.headers, data=data, timeout=30)
-                        if reuse_response.json()['status']:
+
+                        reuse_response_json = reuse_response.json()
+
+                        if reuse_response_json['status']:
                             self.number = key
-                            self.order_id = value['order_id']
+                            self.order_id = reuse_response_json['previous_order_id']
                             self.reuse = True
                             return key
                 except ValueError:
