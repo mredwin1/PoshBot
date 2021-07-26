@@ -447,6 +447,9 @@ class GmailClient(BaseClient):
                         phone_number_field.clear()
                         phone_number_field.send_keys(selected_number)
 
+                        self.logger.debug('Put the phone number in the field')
+                        self.web_driver.save_screenshot(f'{selected_number}.png')
+
                         next_button_two = self.locate(
                             By.XPATH,
                             '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
