@@ -409,7 +409,7 @@ class GmailClient(BaseClient):
             username_field = self.locate(By.ID, 'username')
             password_field = self.locate(By.XPATH, '//*[@id="passwd"]/div[1]/div/div[1]/input')
             confirm_field = self.locate(By.XPATH, '//*[@id="confirm-passwd"]/div[1]/div/div[1]/input')
-            next_button = self.locate(By.XPATH, '//*[@id="accountDetailsNext"]/div/button')
+            next_button_one = self.locate(By.XPATH, '//*[@id="accountDetailsNext"]/div/button')
 
             first_name_field.send_keys(self.user_info['first_name'])
             last_name_field.send_keys(self.user_info['last_name'])
@@ -432,7 +432,7 @@ class GmailClient(BaseClient):
 
             self.user_info['email'] = f'{username}@gmail.com'
 
-            next_button.click()
+            next_button_one.click()
 
             if self.is_present(By.ID, 'phoneNumberId'):
                 verification_code = None
