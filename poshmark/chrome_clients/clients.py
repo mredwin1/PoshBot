@@ -750,7 +750,6 @@ class GmailClient(BaseClient):
         """Gets the email forwarding verification code using imap"""
         try:
             attempts = 0
-            socket.setdefaulttimeout(5)
             imap = imaplib.IMAP4_SSL('imap.gmail.com')
             imap.login(forwarding_address, password)
 
