@@ -164,11 +164,16 @@ class PoshUser(models.Model):
         for picture_type in ('profile_picture', 'header_picture'):
             file_name = f'{picture_type}_{new_posh_user.username}.jpg'
 
+            http = urllib3.PoolManager(timeout=urllib3.Timeout(connect=5))
+            response = http.request('GET', signup_info[picture_type], preload_content=False)
             with open(file_name, 'wb') as img_temp:
-                http = urllib3.PoolManager(timeout=urllib3.Timeout(connect=5))
-                r = http.request('GET', signup_info[picture_type])
-
-                img_temp.write(r.data)
+                while True:
+                    data = response.read(65536)
+                    if not data:
+                        break
+                    img_temp.write(data)
+            
+            response.release_conn()
 
             with open(file_name, 'rb') as img_temp:
                 if picture_type == 'profile_picture':
