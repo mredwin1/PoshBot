@@ -279,7 +279,7 @@ class PhoneNumber:
 
 
 class BaseClient:
-    def __init__(self, logger_id, log_function, proxy_ip=None, proxy_port=None):
+    def __init__(self, logger_id, log_function, proxy_ip=None, proxy_port=None, cookies_filename=False):
         proxy = Proxy()
         hostname = proxy_ip if proxy_ip and proxy_port else ''
         port = proxy_port if proxy_ip and proxy_port else ''
@@ -304,6 +304,7 @@ class BaseClient:
         self.web_driver_options.add_argument('--no-sandbox')
 
         self.logger = Logger(logger_id, log_function)
+        self.cookies_filename = cookies_filename
 
     def __enter__(self):
         self.open()
@@ -323,6 +324,8 @@ class BaseClient:
 
     def close(self):
         """Closes the selenium web driver session"""
+        if self.cookies_filename:
+            self.save_cookies()
         self.web_driver.quit()
 
     def locate(self, by, locator, location_type=None):
@@ -365,6 +368,23 @@ class BaseClient:
 
         self.logger.info(f'Sleeping for {seconds} {word}')
         time.sleep(seconds)
+
+    def save_cookies(self):
+        self.logger.info('Saving cookies')
+        with open(f'/shared_volume/cookies/{self.cookies_filename}.pkl', 'wb') as file:
+            pickle.dump(self.web_driver.get_cookies(), file)
+        self.logger.info('Cookies successfully saved')
+
+    def load_cookies(self):
+        self.logger.info('Loading Cookies')
+        try:
+            with open(f'/shared_volume/cookies/{self.cookies_filename}.pkl', 'rb') as cookies:
+                for cookie in pickle.load(cookies):
+                    self.web_driver.add_cookie(cookie)
+                self.web_driver.refresh()
+                self.logger.info('Cookies loaded successfully')
+        except FileNotFoundError:
+            self.logger.warning('Cookies not loaded: Cookie file not found')
 
 
 class GmailClient(BaseClient):
@@ -755,7 +775,7 @@ class PoshMarkClient(BaseClient):
                  update_redis_object, redis_proxy_id=None):
         hostname = get_redis_object_attr(redis_proxy_id, 'ip') if redis_proxy_id else ''
         port = get_redis_object_attr(redis_proxy_id, 'port') if redis_proxy_id else ''
-        super(PoshMarkClient, self).__init__(logger_id, log_function, hostname, port)
+        super(PoshMarkClient, self).__init__(logger_id, log_function, hostname, port, cookies_filename=self.get_redis_object_attr(self.redis_posh_user_id, "username"))
 
         self.redis_posh_user_id = redis_posh_user_id
         self.redis_campaign_id = redis_campaign_id
@@ -983,14 +1003,7 @@ class PoshMarkClient(BaseClient):
         self.logger.info('Checking if user is signed in')
         self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
-        try:
-            with open(f'/shared_volume/cookies/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}.pkl', 'rb') as cookies:
-                for cookie in pickle.load(cookies):
-                    self.web_driver.add_cookie(cookie)
-                self.web_driver.refresh()
-                self.logger.info('Cookies loaded successfully')
-        except FileNotFoundError:
-            self.logger.warning('Cookies not loaded: Cookie file not found')
+        self.load_cookies()
 
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
 
