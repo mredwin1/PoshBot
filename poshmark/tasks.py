@@ -220,6 +220,16 @@ def posh_user_balancer():
 @shared_task
 def register_gmail(posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
+    registration_proxies = PoshProxy.objects.filter()
+    selected_proxy = None
+    while not selected_proxy:
+        for proxy in registration_proxies:
+            proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
+
+            if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
+                selected_proxy = proxy
+            else:
+                time.sleep(30)
     log = Log(description=posh_user.username)
     log.save()
     log.info('Registering email')
@@ -228,7 +238,7 @@ def register_gmail(posh_user_id):
     less_secure_apps_attempts = 0
 
     while not posh_user.email_registered and registration_attempts <= 3:
-        with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
+        with GmailClient(posh_user.to_dict(), log.id, log_to_redis, selected_proxy.ip, selected_proxy.port) as client:
             email = client.register()
             registration_attempts += 1
             if email:

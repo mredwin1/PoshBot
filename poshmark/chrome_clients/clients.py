@@ -306,8 +306,8 @@ class BaseClient:
         proxy.proxy_type = ProxyType.MANUAL if proxy_ip and proxy_port else ProxyType.SYSTEM
 
         if proxy_ip:
-            proxy.http_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
-            proxy.ssl_proxy = '{hostname}:{port}'.format(hostname=hostname, port=port)
+            proxy.http_proxy = f'{hostname}:{port}'
+            proxy.ssl_proxy = f'{hostname}:{port}'
 
         capabilities = webdriver.DesiredCapabilities.CHROME
         proxy.add_to_capabilities(capabilities)
@@ -408,8 +408,8 @@ class BaseClient:
 
 
 class GmailClient(BaseClient):
-    def __init__(self, user_info, logger_id, log_function):
-        super(GmailClient, self).__init__(logger_id, log_function)
+    def __init__(self, user_info, logger_id, log_function, proxy_ip, proxy_port):
+        super(GmailClient, self).__init__(logger_id, log_function, proxy_ip=proxy_ip, proxy_port=proxy_port)
 
         self.user_info = user_info
 
