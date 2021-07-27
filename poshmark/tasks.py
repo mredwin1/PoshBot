@@ -266,6 +266,9 @@ def register_gmail(posh_user_id):
         posh_user.delete()
         log.error('Something is not right, could not change status to idle. Deleting the user.')
 
+    selected_proxy.registered_accounts += 1
+    selected_proxy.save()
+
 
 @shared_task
 def enable_email_forwarding(posh_user_id):
