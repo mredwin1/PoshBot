@@ -490,7 +490,7 @@ class GmailClient(BaseClient):
 
             self.sleep(5)
 
-            if self.is_present(By.XPATH, '//input[@type='tel']'):
+            if self.is_present(By.XPATH, '//input[@type="tel"]'):
                 verification_code = None
                 excluded_numbers = []
                 while not verification_code:
@@ -498,7 +498,7 @@ class GmailClient(BaseClient):
                     while not phone_number.number:
                         phone_number.get_number(excluded_numbers=excluded_numbers)
                         if phone_number.number:
-                            phone_number_field = self.locate(By.XPATH, '//input[@type='tel']')
+                            phone_number_field = self.locate(By.XPATH, '//input[@type="tel"]')
                             phone_number_field.clear()
                             phone_number_field.send_keys(phone_number.number)
 
