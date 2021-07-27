@@ -248,9 +248,8 @@ def register_gmail(posh_user_id):
         posh_user.save()
         log.info('Successfully registered email. Status changed to idle')
     else:
-        posh_user.status = PoshUser.INACTIVE
-        posh_user.save()
-        log.error('Something is not right, could not change status to idle. Status changed to Inactive.')
+        posh_user.delete()
+        log.error('Something is not right, could not change status to idle. Deleting the user.')
 
 
 @shared_task
