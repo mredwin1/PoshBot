@@ -195,6 +195,7 @@ CELERY_TASK_ROUTES = {
     'poshmark.tasks.register_gmail': {'queue': 'gmail_registration', 'routing_key': 'gmail_registration'},
     'poshmark.tasks.register_posh_user': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.enable_email_forwarding': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.gmail_proxy_reset': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks
@@ -212,6 +213,11 @@ CELERY_BEAT_SCHEDULE = {
     'posh_user_balancer': {
         'task': 'poshmark.tasks.posh_user_balancer',
         'schedule': crontab(minute='*/2'),
+        'options': {'queue': 'concurrency'}
+    },
+    'gmail_proxy_reset': {
+        'task': 'poshmark.tasks.gmail_proxy_reset',
+        'schedule': crontab(minute='*/1'),
         'options': {'queue': 'concurrency'}
     },
 }
