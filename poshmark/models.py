@@ -127,7 +127,7 @@ class PoshUser(models.Model):
                     'dob_month': months[response_dict['dob']['date'][5:7]],
                     'dob_day': response_dict['dob']['date'][8:10],
                     'dob_year': response_dict['dob']['date'][:4],
-                    'profile_picture': header_image_response.url,
+                    'profile_picture': profile_image_response.url,
                     'header_picture': header_image_response.url,
                 }
 
