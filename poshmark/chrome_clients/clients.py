@@ -543,11 +543,10 @@ class GmailClient(BaseClient):
             with open("/root/phone_number.html", "w") as f:
                 f.write(self.web_driver.page_source)
             
-            gender_select = Select(self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[4]/div[1]/div/div[2]/select'))
-            month_select = Select(self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[3]/div[1]/div/div/div[2]/select'))
-            day_field = self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[3]/div[2]/div/div/div[1]/div/div[1]/input')
-            year_field = self.locate(By.XPATH, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[3]/div[2]/div/div/div[1]/div/div[1]/input')
-
+            gender_select = Select(self.locate(By.ID, 'gender'))
+            month_select = Select(self.locate(By.ID, 'month'))
+            day_field = self.locate(By.ID, 'day')
+            year_field = self.locate(By.ID, 'year')
 
             day_field.send_keys(self.user_info['dob_day'])
             year_field.send_keys(self.user_info['dob_year'])
