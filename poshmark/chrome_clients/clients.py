@@ -490,7 +490,7 @@ class GmailClient(BaseClient):
 
             self.sleep(2)
 
-            if self.is_present(By.ID, 'phoneNumberId'):
+            if self.is_present(By.ID, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[1]/div/div[1]/input'):
                 verification_code = None
                 excluded_numbers = []
                 while not verification_code:
@@ -498,7 +498,7 @@ class GmailClient(BaseClient):
                     while not phone_number.number:
                         phone_number.get_number(excluded_numbers=excluded_numbers)
                         if phone_number.number:
-                            phone_number_field = self.locate(By.ID, 'phoneNumberId')
+                            phone_number_field = self.locate(By.ID, '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[1]/div/div[1]/input')
                             phone_number_field.clear()
                             phone_number_field.send_keys(phone_number.number)
 
@@ -536,7 +536,8 @@ class GmailClient(BaseClient):
                     else:
                         code_input.send_keys(verification_code)
                         verify_button.click()
-
+                else:
+                    self.logger.error('Could Not find phone number field')
             time.sleep(2)
 
             gender_select = Select(self.locate(By.ID, 'gender'))
