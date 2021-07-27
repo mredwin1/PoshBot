@@ -438,7 +438,7 @@ class GmailClient(BaseClient):
 
             self.web_driver.get('https://gmail.com')
 
-            time.sleep(5)
+            self.sleep(5)
 
             create_account_button = self.locate(
                 By.XPATH,
@@ -452,8 +452,8 @@ class GmailClient(BaseClient):
             )
             for_my_self_button.click()
 
+            self.sleep(5)
 
-            time.sleep(5)
             self.logger.info('Getting fields')
 
             first_name_field = self.locate(By.ID, 'firstName')
