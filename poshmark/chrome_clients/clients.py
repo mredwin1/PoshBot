@@ -481,7 +481,13 @@ class GmailClient(BaseClient):
 
             self.sleep(5)
 
-            if self.is_present(By.XPATH, '//input[@type="tel"]'):
+            phone_number_attempts = 0
+            phone_number_present = self.is_present(By.XPATH, '//input[@type="tel"]')
+
+            while not phone_number_present and phone_number_attempts <= 4:
+                self.sleep(10)
+
+            if phone_number_present:
                 verification_code = None
                 excluded_numbers = []
                 while not verification_code:
@@ -529,7 +535,7 @@ class GmailClient(BaseClient):
                         code_input.send_keys(verification_code)
                         verify_button.click()
             else:
-                self.logger.error('Could Not find phone number field')
+                self.logger.error(f'Could Not find phone number field after {phone_number_attempts}')
             
             self.sleep(2)
             
