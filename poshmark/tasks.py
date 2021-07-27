@@ -238,6 +238,7 @@ def register_gmail(posh_user_id):
 
             if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                 selected_proxy = proxy
+                selected_proxy.add_connection(posh_user)
         if not selected_proxy:
             time.sleep(30)
     log = Log(description=posh_user.username)
@@ -272,6 +273,7 @@ def register_gmail(posh_user_id):
         posh_user.delete()
         log.error('Something is not right, could not change status to idle. Deleting the user.')
 
+    selected_proxy.remove_connection(posh_user)
     selected_proxy.registered_accounts += 1
     selected_proxy.save()
 
