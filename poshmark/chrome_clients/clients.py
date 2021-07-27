@@ -492,7 +492,7 @@ class GmailClient(BaseClient):
                         phone_number_field.clear()
                         phone_number_field.send_keys(selected_number)
 
-                        self.logger.debug('Put the phone number in the field')
+                        self.logger.debug('Putting the phone number in the field')
 
                         next_button_two = self.locate(
                             By.XPATH,
