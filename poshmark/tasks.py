@@ -198,7 +198,8 @@ def posh_user_balancer():
     if available_posh_users_id_list:
         for user in users:
             not_registered_posh_users = PoshUser.objects.filter(is_registered=False, user=user, status__in=(PoshUser.IDLE, PoshUser.FORWARDING))
-            needed_posh_users = user.accounts_to_maintain - len(not_registered_posh_users) if user.accounts_to_maintain else 0
+            desired_level = user.accounts_to_maintain - len(not_registered_posh_users)
+            needed_posh_users = desired_level if desired_level > 0 else 0
             selection_size = len(available_posh_users_id_list) if needed_posh_users > len(available_posh_users_id_list) else needed_posh_users
             selected_ids_list = random.sample(available_posh_users_id_list, selection_size)
 
