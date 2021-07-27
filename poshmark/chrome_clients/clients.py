@@ -547,6 +547,7 @@ class GmailClient(BaseClient):
                             code_input.send_keys(verification_code)
                             verify_button.click()
                 else:
+                    self.web_driver.save_screenshot(f'{username}.png')
                     self.logger.error(f'Could Not find phone number field. Refreshing.')
                     self.web_driver.refresh()
             
