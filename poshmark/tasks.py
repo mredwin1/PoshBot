@@ -692,6 +692,10 @@ def register_posh_user(campaign_id, registration_proxy_id):
 
     remove_proxy_connection(campaign_id, registration_proxy_id)
 
+    registered_accounts = get_redis_object_attr(redis_registration_proxy_id, 'registered_accounts')
+    total_registered = int(registered_accounts) + 1 if registered_accounts else 1
+    update_redis_object(redis_registration_proxy_id, {'registered_accounts': str(total_registered)})
+
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
 
