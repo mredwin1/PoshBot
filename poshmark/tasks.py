@@ -205,16 +205,17 @@ def posh_user_balancer():
             selected_posh_users = PoshUser.objects.filter(id__in=selected_ids_list)
 
             for selected_posh_user in selected_posh_users:
-                try:
-                    log = Log.objects.get(description=selected_posh_user.username)
-                    log.user = user
-                    log.save()
-                except Log.DoesNotExist:
-                    pass
-                selected_posh_user.user = user
-                selected_posh_user.status = PoshUser.FORWARDING
-                selected_posh_user.save()
-                enable_email_forwarding.delay(selected_posh_user.id)
+                if selected_posh_user.status != PoshUser.FORWARDING:
+                    try:
+                        log = Log.objects.get(description=selected_posh_user.username)
+                        log.user = user
+                        log.save()
+                    except Log.DoesNotExist:
+                        pass
+                    selected_posh_user.user = user
+                    selected_posh_user.status = PoshUser.FORWARDING
+                    selected_posh_user.save()
+                    enable_email_forwarding.delay(selected_posh_user.id)
 
 
 @shared_task
