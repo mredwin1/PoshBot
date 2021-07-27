@@ -225,6 +225,12 @@ def gmail_proxy_reset():
 
         if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
             proxy.reset_ip()
+        else:
+            for proxy_connection in proxy_connections:
+                now = timezone.now()
+                elapsed_time = (now - proxy_connection.datetime).seconds
+                if elapsed_time > 900:
+                    proxy_connection.delete()
 
 
 @shared_task
