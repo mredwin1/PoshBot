@@ -497,7 +497,6 @@ class GmailClient(BaseClient):
             found_phone_number = self.is_present(By.XPATH, '//input[@type="tel"]')
 
             if found_phone_number:
-                found_phone_number = True
                 verification_code = None
                 excluded_numbers = []
                 while not verification_code:
@@ -1420,27 +1419,25 @@ class PoshMarkClient(BaseClient):
             if not self.check_logged_in():
                 self.log_in()
 
-    def list_item(self, listing=None):
+    def list_item(self, redis_listing_id):
         """Will list an item on poshmark for the user"""
         try:
-            if listing:
-                self.logger.info(f'Listing the following item: {listing.title}')
+            listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
+            listing_brand = self.get_redis_object_attr(redis_listing_id, 'brand')
+            listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
+            listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
+            listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
+            listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
+            listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
+            listing_tags = int(self.get_redis_object_attr(redis_listing_id, 'tags'))
+            listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
+            listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
+            listing_photos = self.get_redis_object_attr(self.get_redis_object_attr(redis_listing_id, 'photos'))
 
-                if not self.check_logged_in():
-                    self.log_in()
-            else:
-                self.logger.info('Creating a fake listing')
+            self.logger.info(f'Listing the following item: {listing_title}')
 
-                self.go_to_closet()
-
-                if self.is_present(By.CLASS_NAME, 'card--small'):
-                    listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-                    for listed_item in listed_items:
-                        title = listed_item.find_element_by_class_name('tile__title')
-                        if '[FKE]' in title.text:
-                            self.logger.info(f'The following fake listing already exists: {title.text}')
-                            self.logger.info(f'Using this instead of making another')
-                            return title.text
+            if not self.check_logged_in():
+                self.log_in()
 
             self.web_driver.get('https://poshmark.com/create-listing')
 
@@ -1462,9 +1459,9 @@ class PoshMarkClient(BaseClient):
                 )
                 category_dropdown.click()
 
-                space_index = listing.category.find(' ') if listing else ''
-                primary_category = listing.category[:space_index] if listing else 'Men'
-                secondary_category = listing.category[space_index + 1:] if listing else 'Pants'
+                space_index = listing_category.find(' ')
+                primary_category = listing_category[:space_index]
+                secondary_category = listing_category[space_index + 1:]
                 primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
                 for category in primary_categories:
                     if category.text == primary_category:
@@ -1483,7 +1480,7 @@ class PoshMarkClient(BaseClient):
 
                 subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
                 subcategories = subcategory_menu.find_elements_by_tag_name('a')
-                subcategory = listing.subcategory if listing else 'Dress'
+                subcategory = listing_subcategory
                 for available_subcategory in subcategories:
                     if available_subcategory.text == subcategory:
                         available_subcategory.click()
@@ -1513,7 +1510,7 @@ class PoshMarkClient(BaseClient):
                     By.XPATH,
                     '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
                 )
-                size = listing.size if listing else 'Large'
+                size = listing_size
                 custom_size_input.send_keys(size)
                 save_button.click()
                 done_button.click()
@@ -1523,19 +1520,32 @@ class PoshMarkClient(BaseClient):
                 # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
                 # the rest, otherwise errors come up.
                 self.logger.info('Uploading photos')
-                listing_photos = listing.get_photos() if listing else ['/static/poshmark/images/listing.jpg']
-                upload_photos_field = self.locate(By.ID, 'img-file-input')
-                upload_photos_field.send_keys(listing_photos[0])
 
-                apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
+                cover_photo = self.locate(By.XPATH,
+                                          '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
+                cover_photo.click()
+
+                cover_photo_field = self.locate(
+                    By.XPATH,
+                    '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
+                )
+                cover_photo_field.send_keys(listing_cover_photo)
+
+                self.sleep(1)
+
+                apply_button = self.locate(
+                    By.XPATH,
+                    '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
+                )
                 apply_button.click()
 
-                if len(listing_photos) > 1:
+                self.sleep(1)
+
+                for photo in listing_photos:
                     upload_photos_field = self.locate(By.ID, 'img-file-input')
-                    for photo in listing_photos[1:]:
-                        upload_photos_field.clear()
-                        upload_photos_field.send_keys(photo)
-                        self.sleep(1)
+                    upload_photos_field.clear()
+                    upload_photos_field.send_keys(photo)
+                    self.sleep(1)
 
                 self.logger.info('Photos uploaded')
 
@@ -1560,32 +1570,27 @@ class PoshMarkClient(BaseClient):
                         listing_price_field = input_field
 
                 # Send all the information to their respected fields
-                lowercase = string.ascii_lowercase
-                uppercase = string.ascii_uppercase
-                title = listing.title if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} [FKE] {''.join([random.choice(lowercase) for i in range(5)])}"
+                title = listing_title
                 title_field.send_keys(title)
 
-                description = listing.description if listing else f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} {''.join([random.choice(lowercase) for i in range(5)])} {''.join([random.choice(lowercase) for i in range(5)])}"
-
-                for part in description.split('\n'):
+                for part in listing_description.split('\n'):
                     description_field.send_keys(part)
                     ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.SHIFT).key_up(
                         Keys.ENTER).perform()
 
-                original_prize = str(listing.original_price) if listing else '35'
+                original_prize = str(listing_original_price)
                 original_price_field.send_keys(original_prize)
-                listing_price = str(listing.listing_price) if listing else '25'
+                listing_price = str(listing_listing_price)
                 listing_price_field.send_keys(listing_price)
-                brand = listing.brand if listing else 'Saks Fifth Avenue'
+                brand = listing_brand
                 brand_field.send_keys(brand)
 
-                if listing:
-                    if listing.tags:
-                        tags_button = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]',
-                            'clickable'
-                        )
-                        self.web_driver.execute_script("arguments[0].click();", tags_button)
+                if listing_tags:
+                    tags_button = self.locate(
+                        By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[5]/div/div[2]/div[1]/button[1]',
+                        'clickable'
+                    )
+                    self.web_driver.execute_script("arguments[0].click();", tags_button)
 
                 next_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[2]/button')
                 next_button.click()
@@ -1596,6 +1601,69 @@ class PoshMarkClient(BaseClient):
                     By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/div[3]/div[2]/div[2]/div[2]/button'
                 )
                 list_item_button.click()
+
+                if self.is_present(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button'):
+                    verify_email_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
+                    verify_email_button.click()
+
+                    email_verification_code = None
+                    email_verification_code_attempts = 0
+                    while not email_verification_code and email_verification_code_attempts < 4:
+                        email_verification_code = self.get_verification_code(self.get_redis_object_attr('email'), self.get_redis_object_attr('password'))
+                        if not email_verification_code:
+                            self.sleep(60)
+                            email_verification_code_attempts += 1
+
+                    if not email_verification_code:
+                        return False
+
+                    email_verification_code_input = self.locate(By.XPATH, '//input[@type="tel"]')
+                    email_verification_code_input.send_keys(email_verification_code)
+
+                    email_verify_next_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div[2]/div[2]/div[3]/div/button', 'clickable')
+                    email_verify_next_button.click()
+
+                    phone_verification_code = None
+                    excluded_numbers = []
+                    while not phone_verification_code:
+                        phone_number = PhoneNumber('poshmark', self.logger)
+                        while not phone_number.number:
+                            phone_number.get_number(excluded_numbers=excluded_numbers)
+                            if phone_number.number:
+                                phone_number_field = self.locate(By.XPATH, '//input[@type="tel"]')
+                                phone_number_field.clear()
+                                phone_number_field.send_keys(phone_number.number)
+
+                                self.logger.debug('Putting the phone number in the field')
+
+                                next_button_two = self.locate(
+                                    By.XPATH,
+                                    '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[3]/div/div/button'
+                                )
+                                next_button_two.click()
+
+                        self.logger.info(f'Going to get the verification code from {phone_number.number}')
+
+                        if not phone_verification_code:
+                            self.sleep(10)
+
+                        self.sleep(2)
+
+                        code_input = self.locate(By.NAME, 'otp')
+                        phone_verify_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[3]/div/button')
+
+                        phone_verification_code = phone_number.get_verification_code()
+
+                        if not phone_verification_code:
+                            self.logger.warning('Trying again since there is no verification code.')
+                            excluded_numbers.append(phone_number.number)
+                            phone_number.number = None
+                            phone_number.reuse = False
+                            back_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[2]/div/p[2]/a')
+                            back_button.click()
+                        else:
+                            code_input.send_keys(phone_verification_code)
+                            phone_verify_button.click()
 
                 sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
 
@@ -1611,240 +1679,7 @@ class PoshMarkClient(BaseClient):
                     else:
                         self.logger.info('Item listed successfully')
 
-                return title
-
-        except Exception as e:
-            self.logger.error(f'{traceback.format_exc()}')
-            if not self.check_logged_in():
-                self.log_in()
-
-    def update_listing(self, current_title, redis_listing_id, brand=None):
-        """Will update the listing with the current title with all of the information for the listing that was passed,
-        if a brand is given it will update the brand to that otherwise it will use the listings brand"""
-        try:
-            listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
-            listing_brand = self.get_redis_object_attr(redis_listing_id, 'brand')
-            listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
-            listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
-            listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
-            listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
-            listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
-            listing_tags = int(self.get_redis_object_attr(redis_listing_id, 'tags'))
-            listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
-            listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
-            listing_photos = self.get_redis_object_attr(self.get_redis_object_attr(redis_listing_id, 'photos'))
-            self.logger.info(f'Updating the following item: {current_title}')
-
-            self.go_to_closet()
-
-            if self.check_listing(current_title):
-                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-                for listed_item in listed_items:
-                    title = listed_item.find_element_by_class_name('tile__title')
-                    if title.text == current_title:
-                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
-                        listing_button.click()
-
-                        self.sleep(3)
-
-                        edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
-                        edit_listing_button.click()
-
-                        self.sleep(5)
-
-                        if brand:
-                            brand_field = self.locate(
-                                By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
-                            )
-
-                            brand_field.clear()
-                            brand_field.send_keys(listing_brand)
-
-                            self.web_driver.execute_script("window.scrollTo(0, 3000);")
-
-                            availability = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/section[10]/div/div[2]/div/div')
-                            availability.click()
-
-                            availability_selections = self.locate_all(By.CLASS_NAME, 'dropdown__link')
-                            for availability_selection in availability_selections:
-                                if availability_selection.text == 'For Sale':
-                                    availability_selection.click()
-
-                            time.sleep(5)
-                        else:
-                            self.web_driver.execute_script("window.scrollTo(0, 1280);")
-
-                            # Update Category and Sub Category
-                            self.logger.info('Updating category')
-                            category_dropdown = self.locate(
-                                By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[3]/div/div[2]/div[1]/div/div[1]'
-
-                            )
-                            category_dropdown.click()
-
-                            space_index = listing_category.find(' ')
-                            primary_category = listing_category[:space_index]
-                            secondary_category = listing_category[space_index + 1:]
-                            primary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-                            for category in primary_categories:
-                                if category.text == primary_category:
-                                    category.click()
-                                    break
-
-                            secondary_categories = self.locate_all(By.CLASS_NAME, 'p--l--7')
-                            for category in secondary_categories[1:]:
-                                if category.text == secondary_category:
-                                    category.click()
-                                    break
-
-                            self.logger.info('Category Updated')
-
-                            self.logger.info('Updating subcategory')
-
-                            subcategory_menu = self.locate(By.CLASS_NAME, 'dropdown__menu--expanded')
-                            subcategories = subcategory_menu.find_elements_by_tag_name('a')
-                            subcategory = listing_subcategory
-                            for available_subcategory in subcategories:
-                                if available_subcategory.text == subcategory:
-                                    available_subcategory.click()
-                                    break
-
-                            self.logger.info('Subcategory updated')
-
-                            # Set size (This must be done after the category has been selected)
-                            self.logger.info('Updating size')
-                            size_dropdown = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[1]/div'
-                            )
-                            size_dropdown.click()
-                            size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
-
-                            for button in size_buttons:
-                                if button.text == 'Custom':
-                                    button.click()
-                                    break
-
-                            custom_size_input = self.locate(By.ID, 'customSizeInput0')
-                            save_button = self.locate(
-                                By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
-                            )
-                            done_button = self.locate(
-                                By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
-                            )
-                            size = listing_size
-                            custom_size_input.send_keys(size)
-                            save_button.click()
-                            done_button.click()
-
-                            self.logger.info('Size updated')
-
-                            # Update photos
-                            self.logger.info('Uploading photos')
-
-                            cover_photo = self.locate(By.XPATH,
-                                                      '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
-                            cover_photo.click()
-
-                            cover_photo_field = self.locate(
-                                By.XPATH,
-                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
-                            )
-                            cover_photo_field.send_keys(listing_cover_photo)
-
-                            self.sleep(1)
-
-                            apply_button = self.locate(
-                                By.XPATH,
-                                '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
-                            )
-                            apply_button.click()
-
-                            self.sleep(1)
-
-                            for photo in listing_photos:
-                                upload_photos_field = self.locate(By.ID, 'img-file-input')
-                                upload_photos_field.clear()
-                                upload_photos_field.send_keys(photo)
-                                self.sleep(1)
-
-                            self.logger.info('Photos uploaded')
-
-                            # Get all necessary fields
-                            self.logger.info('Updating the rest of the fields')
-                            title_field = self.locate(
-                                By.XPATH,
-                                '//*[@id="content"]/div/div[1]/div/section[2]/div[1]/div[2]/div/div[1]/div/div/input'
-                            )
-                            description_field = self.locate(
-                                By.XPATH, '//*[@id="content"]/div/div[1]/div/section[2]/div[2]/div[2]/textarea'
-                            )
-
-                            input_fields = self.locate_all(By.TAG_NAME, 'input')
-                            for input_field in input_fields:
-                                if input_field.get_attribute('data-vv-name') == 'originalPrice':
-                                    original_price_field = input_field
-                                if input_field.get_attribute('data-vv-name') == 'listingPrice':
-                                    listing_price_field = input_field
-
-                            # Send all the information to their respected fields
-                            title_field.clear()
-                            title_field.send_keys(listing_title)
-
-                            description_field.clear()
-                            for part in listing_description.split('\n'):
-                                description_field.send_keys(part)
-                                ActionChains(self.web_driver).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(
-                                    Keys.SHIFT).key_up(
-                                    Keys.ENTER).perform()
-
-                            original_prize = str(listing_original_price)
-                            original_price_field.clear()
-                            original_price_field.send_keys(original_prize)
-                            listing_price = str(listing_listing_price)
-                            listing_price_field.clear()
-                            listing_price_field.send_keys(listing_price)
-
-                            if listing_tags:
-                                tags_button = self.locate(
-                                    By.XPATH,
-                                    '//*[@id="content"]/div/div[1]/div/section[5]/div/div[2]/div[1]/button[1]',
-                                    'clickable'
-                                )
-                                self.web_driver.execute_script("arguments[0].click();", tags_button)
-
-                        update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
-                        update_button.click()
-
-                        self.sleep(1)
-
-                        list_item_button = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/div[3]/div[2]/div[2]/div[2]/button'
-                        )
-                        list_item_button.click()
-
-                        sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
-
-                        attempts = 0
-
-                        while not sell_button and attempts <= 10:
-                            self.logger.error('Not done updating listing. Checking again...')
-                            sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
-                            attempts += 1
-                        else:
-                            if attempts > 10:
-                                self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
-                            else:
-                                self.logger.info('Updated successfully')
-
-                        break
-            else:
-                if self.check_inactive():
-                    self.logger.warning('Setting user status to inactive')
-                    self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
+                return True
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
@@ -2156,3 +1991,42 @@ class PoshMarkClient(BaseClient):
         host_name = self.locate(By.ID, 'hostname')
 
         self.logger.debug(f'Hostname: {host_name.text}')
+
+    def get_verification_code(self, forwarding_address, password):
+        """Gets the email forwarding verification code using imap"""
+        try:
+            attempts = 0
+            imap = imaplib.IMAP4_SSL('imap.gmail.com')
+            imap.login(forwarding_address, password)
+
+            imap.select('inbox')
+            data = imap.search(None, f'(SUBJECT "Poshmark verification code")')  # (SUBJECT "Receive Mail from")
+
+            mail_ids = data[1]
+            id_list = mail_ids[0].split(b' ')
+            id_list = [email_id.decode('utf-8') for email_id in id_list]
+            id_list.reverse()
+
+            for email_id in id_list:
+                data = imap.fetch(email_id, '(RFC822)')
+                for response_part in data:
+                    arr = response_part[0]
+                    if isinstance(arr, tuple):
+                        msg = email.message_from_string(str(arr[1], 'utf-8'))
+                        msg_str = msg.as_string()
+                        verification_index = msg_str.find('Your verification code is ') + 26
+                        end_verification_index = msg_str.find('</p><p>For your security')
+                        verification_code = msg[verification_index:end_verification_index]
+
+                        self.logger.info(f'Verification code retrieved successfully: {verification_code}')
+
+                        return verification_code
+                self.logger.warning('Verification code not ready')
+                time.sleep(60)
+                attempts += 1
+
+            self.logger.error('Could not get verification code from email')
+            return None
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            return None

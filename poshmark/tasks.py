@@ -197,7 +197,7 @@ def posh_user_balancer():
     available_posh_users_id_list = [posh_user.id for posh_user in PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)]
     if available_posh_users_id_list:
         for user in users:
-            not_registered_posh_users = PoshUser.objects.filter(is_registered=False, user=user, status=PoshUser.IDLE)
+            not_registered_posh_users = PoshUser.objects.filter(is_registered=False, user=user, status__in=(PoshUser.IDLE, PoshUser.FORWARDING))
             needed_posh_users = user.accounts_to_maintain - len(not_registered_posh_users) if user.accounts_to_maintain else 0
             selection_size = len(available_posh_users_id_list) if needed_posh_users > len(available_posh_users_id_list) else needed_posh_users
             selected_ids_list = random.sample(available_posh_users_id_list, selection_size)
@@ -602,24 +602,14 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                     posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
 
-                meet_your_posh_retries = 0
                 if posh_user_is_registered:
                     listing_title = get_redis_object_attr(redis_listing_id, 'title')
                     listing_found = proxy_client.check_listing(listing_title)
                     while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
                         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-                        while not proxy_client.check_listing('Meet your Posher') and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and meet_your_posh_retries < 8:
-                            meet_your_posh_retries += 1
-                            proxy_client.sleep(30)
-                        if meet_your_posh_retries >= 8:
-                            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Meet your posher did not come up after {meet_your_posh_retries}. Setting the user inactive.'})
-                            update_redis_object(redis_posh_user_id, {'status': PoshUser.INACTIVE})
-                        else:
-                            posh_user_first_name = get_redis_object_attr(redis_posh_user_id, 'first_name')
-                            proxy_client.update_listing(f'Meet your Posher, {posh_user_first_name}', redis_listing_id)
-                            proxy_client.update_listing(listing_title, redis_listing_id, True)
-                            listed_item = True
+                        listed_item = proxy_client.list_item(redis_listing_id)
+
                     else:
                         if not listed_item and listing_found:
                             listed_item = True
