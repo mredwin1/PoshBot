@@ -107,6 +107,7 @@ class PoshUser(models.Model):
         }
         user_url = 'https://randomuser.me/api/'
         header_image_url = 'https://picsum.photos/1200/200'
+        profile_image_url = 'https://source.unsplash.com/200x200/?person'
         results = []
 
         try:
@@ -114,6 +115,7 @@ class PoshUser(models.Model):
             response_results = user_response.json()['results']
             for response_dict in response_results:
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
+                profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 username = response_dict['login']['username']
                 user_info = {
                     'first_name': response_dict['name']['first'],
@@ -125,7 +127,7 @@ class PoshUser(models.Model):
                     'dob_month': months[response_dict['dob']['date'][5:7]],
                     'dob_day': response_dict['dob']['date'][8:10],
                     'dob_year': response_dict['dob']['date'][:4],
-                    'profile_picture': response_dict['picture']['large'],
+                    'profile_picture': header_image_response.url,
                     'header_picture': header_image_response.url,
                 }
 
