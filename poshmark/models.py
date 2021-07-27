@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import re
 import requests
 import time
 import traceback
@@ -117,13 +118,15 @@ class PoshUser(models.Model):
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
                 profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 username = response_dict['login']['username']
+                password = response_dict['login']['password'] if bool(re.search(r'\d', response_dict['login']['password'])) else f'{response_dict["login"]["password"]}1'
+
                 user_info = {
                     'first_name': response_dict['name']['first'],
                     'last_name': response_dict['name']['last'],
                     'gender': response_dict['gender'].capitalize(),
                     'email': f'{response_dict["email"][:-12]}',
                     'username': username if len(username) <= 12 else username[:12],
-                    'password': response_dict['login']['password'],
+                    'password': password,
                     'dob_month': months[response_dict['dob']['date'][5:7]],
                     'dob_day': response_dict['dob']['date'][8:10],
                     'dob_year': response_dict['dob']['date'][:4],

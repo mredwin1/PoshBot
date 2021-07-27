@@ -452,105 +452,101 @@ class GmailClient(BaseClient):
             )
             for_my_self_button.click()
 
-            found_phone_number = False
 
-            while not found_phone_number:
-                time.sleep(5)
-                self.logger.info('Getting fields')
+            time.sleep(5)
+            self.logger.info('Getting fields')
 
-                first_name_field = self.locate(By.ID, 'firstName')
-                last_name_field = self.locate(By.ID, 'lastName')
-                username_field = self.locate(By.ID, 'username')
-                password_field = self.locate(By.XPATH, '//*[@id="passwd"]/div[1]/div/div[1]/input')
-                confirm_field = self.locate(By.XPATH, '//*[@id="confirm-passwd"]/div[1]/div/div[1]/input')
-                next_button_one = self.locate(By.XPATH, '//*[@id="accountDetailsNext"]/div/button')
+            first_name_field = self.locate(By.ID, 'firstName')
+            last_name_field = self.locate(By.ID, 'lastName')
+            username_field = self.locate(By.ID, 'username')
+            password_field = self.locate(By.XPATH, '//*[@id="passwd"]/div[1]/div/div[1]/input')
+            confirm_field = self.locate(By.XPATH, '//*[@id="confirm-passwd"]/div[1]/div/div[1]/input')
+            next_button_one = self.locate(By.XPATH, '//*[@id="accountDetailsNext"]/div/button')
 
-                self.logger.info('Putting information into fields')
+            self.logger.info('Putting information into fields')
 
-                first_name_field.send_keys(self.user_info['first_name'])
-                last_name_field.send_keys(self.user_info['last_name'])
-                username_field.send_keys(self.user_info['email'])
-                password_field.send_keys(self.user_info['password'])
-                confirm_field.send_keys(self.user_info['password'])
+            first_name_field.send_keys(self.user_info['first_name'])
+            last_name_field.send_keys(self.user_info['last_name'])
+            username_field.send_keys(self.user_info['email'])
+            password_field.send_keys(self.user_info['password'])
+            confirm_field.send_keys(self.user_info['password'])
 
-                username = self.user_info['email']
-                username.replace('@gmail.com', '')
-                while self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[1]/div/div[2]/div[2]/div'):
-                    self.logger.warning(f'This email is taken, {username}')
-                    if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button'):
-                        other_email = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button')
-                        username = other_email.text
-                        self.logger.info(f'Other email available clicking now, {username}')
-                        other_email.click()
-                    else:
-                        username_field = self.locate(By.ID, 'username')
-                        username = f'{self.user_info["first_name"]}.{self.user_info["last_name"]}{random.randint(100, 999)}'
-                        self.logger.info(f'Other email not available, generating random email, {username}')
-                        username_field.clear()
-                        username_field.send_keys(username)
-                        username_field.send_keys(Keys.TAB)
-
-                self.user_info['email'] = f'{username}@gmail.com'
-
-                next_button_one.click()
-
-                self.sleep(5)
-
-                found_phone_number = self.is_present(By.XPATH, '//input[@type="tel"]')
-
-                if found_phone_number:
-                    found_phone_number = True
-                    verification_code = None
-                    excluded_numbers = []
-                    while not verification_code:
-                        phone_number = PhoneNumber('google', self.logger)
-                        while not phone_number.number:
-                            phone_number.get_number(excluded_numbers=excluded_numbers)
-                            if phone_number.number:
-                                phone_number_field = self.locate(By.XPATH, '//input[@type="tel"]')
-                                phone_number_field.clear()
-                                phone_number_field.send_keys(phone_number.number)
-
-                                self.logger.debug('Putting the phone number in the field')
-
-                                next_button_two = self.locate(
-                                    By.XPATH,
-                                    '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
-                                )
-                                next_button_two.click()
-
-                                if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
-                                    self.logger.warning('This phone number has already been used, getting a different number.')
-                                    excluded_numbers.append(phone_number.number)
-                                    phone_number.number = None
-                                    phone_number.reuse = False
-                                else:
-                                    self.logger.info('No errors, this number should work')
-                        if not verification_code:
-                            self.sleep(10)
-
-                        self.sleep(2)
-
-                        code_input = self.locate(By.ID, 'code')
-                        verify_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[1]/div/div/button')
-
-                        verification_code = phone_number.get_verification_code()
-
-                        if not verification_code:
-                            self.logger.warning('Trying again since there is no verification code.')
-                            excluded_numbers.append(phone_number.number)
-                            phone_number.number = None
-                            phone_number.reuse = False
-                            back_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[1]/div/div/button')
-                            back_button.click()
-                        else:
-                            code_input.send_keys(verification_code)
-                            verify_button.click()
+            username = self.user_info['email']
+            username.replace('@gmail.com', '')
+            while self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[1]/div/div[2]/div[2]/div'):
+                self.logger.warning(f'This email is taken, {username}')
+                if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button'):
+                    other_email = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button')
+                    username = other_email.text
+                    self.logger.info(f'Other email available clicking now, {username}')
+                    other_email.click()
                 else:
-                    self.web_driver.save_screenshot(f'{username}.png')
-                    self.logger.error(f'Could Not find phone number field. Refreshing.')
-                    self.web_driver.refresh()
-            
+                    username_field = self.locate(By.ID, 'username')
+                    username = f'{self.user_info["first_name"]}.{self.user_info["last_name"]}{random.randint(100, 999)}'
+                    self.logger.info(f'Other email not available, generating random email, {username}')
+                    username_field.clear()
+                    username_field.send_keys(username)
+                    username_field.send_keys(Keys.TAB)
+
+            self.user_info['email'] = f'{username}@gmail.com'
+
+            next_button_one.click()
+
+            self.sleep(5)
+
+            found_phone_number = self.is_present(By.XPATH, '//input[@type="tel"]')
+
+            if found_phone_number:
+                found_phone_number = True
+                verification_code = None
+                excluded_numbers = []
+                while not verification_code:
+                    phone_number = PhoneNumber('google', self.logger)
+                    while not phone_number.number:
+                        phone_number.get_number(excluded_numbers=excluded_numbers)
+                        if phone_number.number:
+                            phone_number_field = self.locate(By.XPATH, '//input[@type="tel"]')
+                            phone_number_field.clear()
+                            phone_number_field.send_keys(phone_number.number)
+
+                            self.logger.debug('Putting the phone number in the field')
+
+                            next_button_two = self.locate(
+                                By.XPATH,
+                                '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
+                            )
+                            next_button_two.click()
+
+                            if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
+                                self.logger.warning('This phone number has already been used, getting a different number.')
+                                excluded_numbers.append(phone_number.number)
+                                phone_number.number = None
+                                phone_number.reuse = False
+                            else:
+                                self.logger.info('No errors, this number should work')
+                    if not verification_code:
+                        self.sleep(10)
+
+                    self.sleep(2)
+
+                    code_input = self.locate(By.ID, 'code')
+                    verify_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[1]/div/div/button')
+
+                    verification_code = phone_number.get_verification_code()
+
+                    if not verification_code:
+                        self.logger.warning('Trying again since there is no verification code.')
+                        excluded_numbers.append(phone_number.number)
+                        phone_number.number = None
+                        phone_number.reuse = False
+                        back_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[1]/div/div/button')
+                        back_button.click()
+                    else:
+                        code_input.send_keys(verification_code)
+                        verify_button.click()
+            else:
+                self.logger.error(f'Could Not find phone number field.')
+
             self.sleep(2)
             
             gender_select = Select(self.locate(By.ID, 'gender'))
