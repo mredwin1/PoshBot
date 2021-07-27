@@ -192,6 +192,7 @@ class PhoneNumber:
 
     def get_number(self, excluded_numbers=None, state=None):
         self.logger.info('Getting a new number')
+        self.logger.debug(str(excluded_numbers))
         order_check = self._check_order_history(excluded_numbers)
         if order_check:
             self.logger.info(f'Reusing number {self.number}')
