@@ -118,11 +118,13 @@ class PhoneNumber:
         self.order_id = None
         self.number = None
         self.reuse = False
+        self.order = False
         self.orders = {}
 
     def _check_order_history(self, excluded_numbers=None):
         self.logger.info('Checking order history')
         selected_service = 'Google / Gmail / Google Voice / Youtube' if self.service_name == 'google' else 'Poshmark'
+        self.order = False
         if not self.orders:
             order_history_url = 'https://portal.easysmsverify.com/get_order_history'
 
@@ -141,6 +143,9 @@ class PhoneNumber:
                 elif order['state'] == 'TIMED_OUT':
                     if order['is_reused']:
                         add = True
+                elif order['state'] == 'WAITING_FOR_SMS' and order['service_name'] == selected_service:
+                    self.logger.warning(f'Already waiting for an SMS on this service - {selected_service}')
+                    return False
 
                 if add:
                     try:
@@ -177,20 +182,23 @@ class PhoneNumber:
                             self.number = key
                             self.order_id = reuse_response_json['previous_order_id']
                             self.reuse = True
-                            return key
+                            return True
                 except ValueError:
                     pass
         except KeyError:
             pass
-        return None
+        self.order = True
+        return False
 
     def get_number(self, excluded_numbers=None, state=None):
         self.logger.info('Getting a new number')
-        number = self._check_order_history(excluded_numbers)
-        if number:
-            self.logger.info(f'Reusing number {number}')
-            return number
-        else:
+        order_check = self._check_order_history(excluded_numbers)
+        if order_check:
+            self.logger.info(f'Reusing number {self.number}')
+        elif not order_check and not self.order:
+            self.logger.info('Sleeping for 30 seconds')
+            time.sleep(30)
+        elif not order_check and self.order:
             service_id_url = 'https://portal.easysmsverify.com/get_service_id'
             phone_number_url = 'https://portal.easysmsverify.com/order_number'
 
@@ -488,11 +496,11 @@ class GmailClient(BaseClient):
                 while not verification_code:
                     phone_number = PhoneNumber('google', self.logger, os.environ['SMS_API_KEY'])
                     while not phone_number.number:
-                        selected_number = str(phone_number.get_number(excluded_numbers=excluded_numbers))
-                        if selected_number:
+                        phone_number.get_number(excluded_numbers=excluded_numbers)
+                        if phone_number.number:
                             phone_number_field = self.locate(By.ID, 'phoneNumberId')
                             phone_number_field.clear()
-                            phone_number_field.send_keys(selected_number)
+                            phone_number_field.send_keys(phone_number.number)
 
                             self.logger.debug('Putting the phone number in the field')
 
@@ -506,7 +514,7 @@ class GmailClient(BaseClient):
                                 self.logger.warning('This phone number has already been used, getting a different number.')
                                 phone_number.number = None
                                 phone_number.reuse = False
-                                excluded_numbers.append(selected_number)
+                                excluded_numbers.append(phone_number.number)
                                 self.sleep(5)
                             else:
                                 self.logger.info('No errors, this number should work')
