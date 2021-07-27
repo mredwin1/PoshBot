@@ -232,8 +232,8 @@ def register_gmail(posh_user_id):
 
             if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                 selected_proxy = proxy
-            else:
-                time.sleep(30)
+        if not selected_proxy:
+            time.sleep(30)
     log = Log(description=posh_user.username)
     log.save()
     log.info('Registering email')
@@ -283,8 +283,8 @@ def enable_email_forwarding(posh_user_id):
 
             if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                 selected_proxy = proxy
-            else:
-                time.sleep(30)
+        if not selected_proxy:
+            time.sleep(30)
 
     other_logs = Log.objects.filter(description=posh_user.email)
     if other_logs:
