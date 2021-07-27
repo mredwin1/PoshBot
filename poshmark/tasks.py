@@ -223,11 +223,12 @@ def register_gmail(posh_user_id):
     log = Log(description=posh_user.username)
     log.save()
     log.info('Registering email')
-    with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
-        registration_attempts = 0
-        less_secure_apps_attempts = 0
+    
+    registration_attempts = 0
+    less_secure_apps_attempts = 0
 
-        while not posh_user.email_registered and registration_attempts <= 3:
+    while not posh_user.email_registered and registration_attempts <= 3:
+        with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
             email = client.register()
             registration_attempts += 1
             if email:
@@ -238,10 +239,10 @@ def register_gmail(posh_user_id):
                 log.description = email
                 log.save()
 
-        while not posh_user.email_less_secure_apps_allowed and posh_user.email_registered and less_secure_apps_attempts <= 3:
-            less_secure_apps_attempts += 1
-            posh_user.email_less_secure_apps_allowed = client.allow_less_secure_apps()
-            posh_user.save()
+            while not posh_user.email_less_secure_apps_allowed and posh_user.email_registered and less_secure_apps_attempts <= 3:
+                less_secure_apps_attempts += 1
+                posh_user.email_less_secure_apps_allowed = client.allow_less_secure_apps()
+                posh_user.save()
 
     if posh_user.email_registered and posh_user.email_less_secure_apps_allowed:
         posh_user.status = PoshUser.IDLE
