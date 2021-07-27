@@ -113,7 +113,7 @@ class PoshUser(models.Model):
             user_response = requests.get(user_url, params=user_payload, timeout=10, headers=headers)
             response_results = user_response.json()['results']
             for response_dict in response_results:
-                profile_image_url = f'https://source.unsplash.com/200x200/?{response_dict['gender']}'
+                profile_image_url = f'https://source.unsplash.com/200x200/?{response_dict["gender"]}'
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
                 profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 username = response_dict['login']['username']
