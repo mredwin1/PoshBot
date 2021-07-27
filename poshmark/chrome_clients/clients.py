@@ -484,7 +484,7 @@ class GmailClient(BaseClient):
                         other_email.click()
                     else:
                         username_field = self.locate(By.ID, 'username')
-                        username += str(random.randint(100, 999))
+                        username = f'{self.user_info["first_name"]}.{self.user_info["last_name"]}{random.randint(100, 999)}'
                         self.logger.info(f'Other email not available, generating random email, {username}')
                         username_field.clear()
                         username_field.send_keys(username)
