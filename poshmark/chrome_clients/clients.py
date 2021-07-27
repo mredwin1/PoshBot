@@ -474,6 +474,7 @@ class GmailClient(BaseClient):
                 confirm_field.send_keys(self.user_info['password'])
 
                 username = self.user_info['email']
+                username.replace('@gmail.com', '')
                 while self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[1]/div/div[2]/div[2]/div'):
                     self.logger.warning(f'This email is taken, {username}')
                     if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div[2]/div/ul/li[2]/button'):
