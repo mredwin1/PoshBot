@@ -1521,22 +1521,10 @@ class PoshMarkClient(BaseClient):
                 # the rest, otherwise errors come up.
                 self.logger.info('Uploading photos')
 
-                cover_photo = self.locate(By.XPATH,
-                                          '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
-                cover_photo.click()
-
-                cover_photo_field = self.locate(
-                    By.XPATH,
-                    '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[1]/div/div/div/div[2]/div/span/label/input'
-                )
+                cover_photo_field = self.locate(By.ID, 'img-file-input')
                 cover_photo_field.send_keys(listing_cover_photo)
 
-                self.sleep(1)
-
-                apply_button = self.locate(
-                    By.XPATH,
-                    '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
-                )
+                apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
                 apply_button.click()
 
                 self.sleep(1)
@@ -1602,9 +1590,13 @@ class PoshMarkClient(BaseClient):
                 )
                 list_item_button.click()
 
+                self.sleep(5)
+
                 if self.is_present(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button'):
                     verify_email_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
                     verify_email_button.click()
+
+                    self.sleep(2)
 
                     email_verification_code = None
                     email_verification_code_attempts = 0
@@ -1617,8 +1609,10 @@ class PoshMarkClient(BaseClient):
                     if not email_verification_code:
                         return False
 
-                    email_verification_code_input = self.locate(By.XPATH, '//input[@type="tel"]')
+                    email_verification_code_input = self.locate(By.NAME, 'otp')
                     email_verification_code_input.send_keys(email_verification_code)
+
+                    self.sleep(1)
 
                     email_verify_next_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div[2]/div[2]/div[3]/div/button', 'clickable')
                     email_verify_next_button.click()
@@ -2016,7 +2010,7 @@ class PoshMarkClient(BaseClient):
                         msg_str = msg.as_string()
                         verification_index = msg_str.find('Your verification code is ') + 26
                         end_verification_index = msg_str.find('</p><p>For your security')
-                        verification_code = msg[verification_index:end_verification_index]
+                        verification_code = msg_str[verification_index:end_verification_index]
 
                         self.logger.info(f'Verification code retrieved successfully: {verification_code}')
 
