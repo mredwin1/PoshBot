@@ -220,10 +220,10 @@ def posh_user_balancer():
 @shared_task
 def register_gmail(posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
-    registration_proxies = PoshProxy.objects.filter()
+    proxies = PoshProxy.objects.filter(registration_proxy=False)
     selected_proxy = None
     while not selected_proxy:
-        for proxy in registration_proxies:
+        for proxy in proxies:
             proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
 
             if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
@@ -271,10 +271,10 @@ def register_gmail(posh_user_id):
 def enable_email_forwarding(posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
 
-    registration_proxies = PoshProxy.objects.filter()
+    proxies = PoshProxy.objects.filter(registration_proxy=False)
     selected_proxy = None
     while not selected_proxy:
-        for proxy in registration_proxies:
+        for proxy in proxies:
             proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
 
             if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
@@ -289,6 +289,7 @@ def enable_email_forwarding(posh_user_id):
     other_logs = Log.objects.filter(description=posh_user.email)
     if other_logs:
         other_logs.update(user=posh_user.user)
+
     log = Log(description=posh_user.email, user=posh_user.user)
     log.save()
     email_forwarding_attempts = 0

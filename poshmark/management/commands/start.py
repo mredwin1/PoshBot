@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from django.db.utils import OperationalError
 
 from users.models import User
-from poshmark.models import Campaign, ProxyConnection, PoshUser
+from poshmark.models import Campaign, ProxyConnection, PoshUser, Log
 from poshmark.tasks import redis_log_reader, redis_instance_reader
 
 
@@ -80,6 +80,11 @@ class Command(BaseCommand):
 
         posh_users_to_delete = PoshUser.objects.filter(status__in=(PoshUser.CREATING, PoshUser.FORWARDING))
         for posh_user_to_delete in posh_users_to_delete:
+            logs = Log.objects.filter(description=posh_user_to_delete.email)
+
+            for log in logs:
+                log.delete()
+
             posh_user_to_delete.delete()
 
         logging.info('Removing all proxy connections')
