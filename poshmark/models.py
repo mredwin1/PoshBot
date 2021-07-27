@@ -181,6 +181,8 @@ class PoshUser(models.Model):
                 else:
                     new_posh_user.header_picture.save(file_name, ContentFile(img_temp.read()), save=True)
 
+            os.remove(file_name)
+
         return new_posh_user
 
     @staticmethod
