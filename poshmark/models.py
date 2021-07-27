@@ -474,7 +474,7 @@ class PoshProxy(models.Model):
             connection.delete()
 
     def __str__(self):
-        return f'Registration Proxy #{self.id}' if self.registration_proxy else f'Sharing Proxy #{self.id}'
+        return f'Registration Proxy #{self.id}' if self.registration_proxy else f'Gmail Proxy #{self.id}'
 
 
 class ProxyConnection(models.Model):
