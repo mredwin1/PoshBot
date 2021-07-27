@@ -226,6 +226,10 @@ def register_gmail(posh_user_id):
         for proxy in registration_proxies:
             proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
 
+            if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
+                proxy.reset_ip()
+                proxy.refresh_from_db()
+
             if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
                 selected_proxy = proxy
             else:
@@ -267,6 +271,21 @@ def register_gmail(posh_user_id):
 def enable_email_forwarding(posh_user_id):
     posh_user = PoshUser.objects.get(id=posh_user_id)
 
+    registration_proxies = PoshProxy.objects.filter()
+    selected_proxy = None
+    while not selected_proxy:
+        for proxy in registration_proxies:
+            proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
+
+            if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
+                proxy.reset_ip()
+                proxy.refresh_from_db()
+
+            if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
+                selected_proxy = proxy
+            else:
+                time.sleep(30)
+
     other_logs = Log.objects.filter(description=posh_user.email)
     if other_logs:
         other_logs.update(user=posh_user.user)
@@ -277,7 +296,7 @@ def enable_email_forwarding(posh_user_id):
     log.info('Enabling email forwarding')
 
     while not posh_user.email_forwarding_enabled and posh_user.email_registered and email_forwarding_attempts <= 3:
-        with GmailClient(posh_user.to_dict(), log.id, log_to_redis) as client:
+        with GmailClient(posh_user.to_dict(), log.id, log_to_redis, selected_proxy.ip, selected_proxy.port) as client:
             email_forwarding_attempts += 1
             posh_user.email_forwarding_enabled = client.turn_on_email_forwarding(posh_user.user.master_email, posh_user.user.email_password)
             posh_user.save()
