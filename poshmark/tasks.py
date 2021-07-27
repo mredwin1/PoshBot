@@ -3,7 +3,6 @@ import logging
 import os
 import pytz
 import random
-import re
 import redis
 import requests
 import time
@@ -188,15 +187,11 @@ def posh_user_balancer():
     if needed_users > 0:
         all_user_info = PoshUser.generate_sign_up_info(needed_users)
         for user_info in all_user_info:
-            full_name = user_info['first_name'] + user_info['last_name']
-            pattern = re.compile('[A-Za-z]+')
+            new_user = PoshUser.create_posh_user(user_info)
+            new_user.status = PoshUser.CREATING
+            new_user.save()
 
-            if pattern.fullmatch(full_name):
-                new_user = PoshUser.create_posh_user(user_info)
-                new_user.status = PoshUser.CREATING
-                new_user.save()
-
-                register_gmail.delay(new_user.id)
+            register_gmail.delay(new_user.id)
 
     users = User.objects.all()
     available_posh_users_id_list = [posh_user.id for posh_user in PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)]

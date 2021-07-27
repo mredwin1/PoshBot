@@ -100,8 +100,9 @@ class PoshUser(models.Model):
         }
 
         user_payload = {
+            'nat': 'US',
             'password': 'upper,lower,number,10-12',
-            'inc': 'gender,name,email,login,dob,picture,password',
+            'inc': 'gender,nat,name,email,login,dob,picture,password',
             'results': str(results)
         }
         user_url = 'https://randomuser.me/api/'
