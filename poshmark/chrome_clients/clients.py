@@ -513,9 +513,9 @@ class GmailClient(BaseClient):
 
                             if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
                                 self.logger.warning('This phone number has already been used, getting a different number.')
+                                excluded_numbers.append(phone_number.number)
                                 phone_number.number = None
                                 phone_number.reuse = False
-                                excluded_numbers.append(phone_number.number)
                                 self.sleep(5)
                             else:
                                 self.logger.info('No errors, this number should work')
