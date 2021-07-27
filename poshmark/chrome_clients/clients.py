@@ -213,26 +213,27 @@ class PhoneNumber:
                 if state:
                     phone_number_parameters['state'] = state
 
-                phone_number_response = None
-
-                while not phone_number_response or phone_number_response.status_code != requests.codes.ok:
+                try:
                     phone_number_response = requests.post(phone_number_url, headers=self.headers, data=phone_number_parameters, timeout=30)
+                    phone_number_response_json = phone_number_response.json()
 
-                phone_number_response_json = phone_number_response.json()
+                    if phone_number_response_json['status']:
+                        phone_number = phone_number_response_json['number']
+                        order_id = phone_number_response_json['order_id']
+                        self.order_id = order_id
+                        self.number = phone_number
+                        self.reuse = False
 
-                if phone_number_response_json['status']:
-                    phone_number = phone_number_response_json['number']
-                    order_id = phone_number_response_json['order_id']
-                    self.order_id = order_id
-                    self.number = phone_number
-                    self.reuse = False
+                        self.logger.info(f'Using a new number: {phone_number}')
 
-                    self.logger.info(f'Using a new number: {phone_number}')
+                        return phone_number
+                    else:
+                        error_msg = phone_number_response_json['msg']
+                        self.logger.error(error_msg)
 
-                    return phone_number
-                else:
-                    error_msg = phone_number_response_json['msg']
-                    self.logger.error(error_msg)
+                except Exception as e:
+                    self.logger.error(traceback.format_exc())
+                    self.logger.error('Error while ordering number')
             else:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
@@ -488,26 +489,27 @@ class GmailClient(BaseClient):
                     phone_number = PhoneNumber('google', self.logger, os.environ['SMS_API_KEY'])
                     while not phone_number.number:
                         selected_number = str(phone_number.get_number(excluded_numbers=excluded_numbers))
-                        phone_number_field = self.locate(By.ID, 'phoneNumberId')
-                        phone_number_field.clear()
-                        phone_number_field.send_keys(selected_number)
+                        if selected_number:
+                            phone_number_field = self.locate(By.ID, 'phoneNumberId')
+                            phone_number_field.clear()
+                            phone_number_field.send_keys(selected_number)
 
-                        self.logger.debug('Putting the phone number in the field')
+                            self.logger.debug('Putting the phone number in the field')
 
-                        next_button_two = self.locate(
-                            By.XPATH,
-                            '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
-                        )
-                        next_button_two.click()
+                            next_button_two = self.locate(
+                                By.XPATH,
+                                '/html/body/div[1]/div[1]/div[2]/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div[1]/div/div/button'
+                            )
+                            next_button_two.click()
 
-                        if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
-                            self.logger.warning('This phone number has already been used, getting a different number.')
-                            phone_number.number = None
-                            phone_number.reuse = False
-                            excluded_numbers.append(selected_number)
-                            self.sleep(5)
-                        else:
-                            self.logger.info('No errors, this number should work')
+                            if self.is_present(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div[2]/div/div[2]/div[2]/div[2]/div'):
+                                self.logger.warning('This phone number has already been used, getting a different number.')
+                                phone_number.number = None
+                                phone_number.reuse = False
+                                excluded_numbers.append(selected_number)
+                                self.sleep(5)
+                            else:
+                                self.logger.info('No errors, this number should work')
 
                     time.sleep(2)
 
