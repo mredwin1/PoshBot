@@ -536,12 +536,10 @@ class GmailClient(BaseClient):
                     else:
                         code_input.send_keys(verification_code)
                         verify_button.click()
-                else:
-                    self.logger.error('Could Not find phone number field')
-            time.sleep(2)
+            else:
+                self.logger.error('Could Not find phone number field')
             
-            with open("/root/phone_number.html", "w") as f:
-                f.write(self.web_driver.page_source)
+            time.sleep(2)
             
             gender_select = Select(self.locate(By.ID, 'gender'))
             month_select = Select(self.locate(By.ID, 'month'))
