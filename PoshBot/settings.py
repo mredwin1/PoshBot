@@ -202,12 +202,12 @@ CELERY_BEAT_SCHEDULE = {
     'log_cleanup': {
         'task': 'poshmark.tasks.log_cleanup',
         'schedule': crontab(minute=0, hour=0),
-        'options': {'queue': 'no_concurrency'}
+        'options': {'queue': 'concurrency'}
     },
     'redis_cleaner': {
         'task': 'poshmark.tasks.redis_cleaner',
         'schedule': crontab(minute='*/10'),
-        'options': {'queue': 'no_concurrency'}
+        'options': {'queue': 'concurrency'}
     },
     'posh_user_balancer': {
         'task': 'poshmark.tasks.posh_user_balancer',
