@@ -247,7 +247,8 @@ class CreateCampaign(forms.Form):
         except Campaign.DoesNotExist:
             pass
 
-        self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
+        if self.cleaned_data['delay']:
+            self.cleaned_data['delay'] = round(self.cleaned_data['delay'] * 60, 2)
 
         if self.cleaned_data['lowest_price'] is None:
             self.cleaned_data['lowest_price'] = 0
