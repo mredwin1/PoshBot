@@ -761,6 +761,11 @@ class GmailClient(BaseClient):
             imap_enable_button = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[3]/td[2]/div[1]/table[1]/tbody/tr/td[1]/input')
             imap_enable_button.click()
 
+            save_changes = self.locate(By.XPATH, '/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div/div/div/div/div[6]/div/table/tbody/tr[4]/td/div/button[1]')
+            save_changes.click()
+
+            self.sleep(10)
+
             return True
 
         except Exception as e:
