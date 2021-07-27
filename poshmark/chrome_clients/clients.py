@@ -6,7 +6,6 @@ import pickle
 import random
 import re
 import requests
-import socket
 import string
 import time
 import traceback
@@ -109,12 +108,14 @@ class Captcha:
 
 
 class PhoneNumber:
-    def __init__(self, service_name, logger, api_key):
+    def __init__(self, service_name, logger):
         self.service_name = service_name
         self.logger = logger
-        self.headers = {
-            'X-API-KEY': api_key
+        self.get_headers = {
+            'X-API-KEY': os.environ['SMS_API_KEY'],
         }
+        self.post_headers = self.get_headers
+        self.post_headers['Content-Type'] = 'application/x-www-form-urlencoded'
         self.order_id = None
         self.number = None
         self.reuse = False
@@ -130,8 +131,7 @@ class PhoneNumber:
 
             response = None
 
-            while not response or response.status_code != requests.codes.ok:
-                response = requests.get(order_history_url, headers=self.headers, timeout=30)
+            response = requests.get(order_history_url, headers=self.get_headers, timeout=30)
 
             response_json = response.json()
 
@@ -145,6 +145,7 @@ class PhoneNumber:
                         add = True
                 elif order['state'] == 'WAITING_FOR_SMS' and order['service_name'] == selected_service:
                     self.logger.warning(f'Already waiting for an SMS on this service - {selected_service}')
+                    self.order = False
                     return False
 
                 if add:
@@ -170,11 +171,9 @@ class PhoneNumber:
                 try:
                     if value['quantity'] < 3 and key not in excluded_numbers:
                         reuse_number_url = 'https://portal.easysmsverify.com/check_if_reusable'
-                        reuse_response = None
                         data = {'number': key}
 
-                        while not reuse_response or reuse_response.status_code != requests.codes.ok:
-                            reuse_response = requests.post(reuse_number_url, headers=self.headers, data=data, timeout=30)
+                        reuse_response = requests.post(reuse_number_url, headers=self.post_headers, data=data, timeout=30)
 
                         reuse_response_json = reuse_response.json()
 
@@ -206,10 +205,8 @@ class PhoneNumber:
             service_id_parameters = {
                 'service_name': self.service_name
             }
-            service_id_response = None
 
-            while not service_id_response or service_id_response.status_code != requests.codes.ok:
-                service_id_response = requests.post(service_id_url, headers=self.headers, data=service_id_parameters, timeout=30)
+            service_id_response = requests.post(service_id_url, headers=self.post_headers, data=service_id_parameters, timeout=30)
 
             service_id_response_json = service_id_response.json()
 
@@ -222,27 +219,20 @@ class PhoneNumber:
                 if state:
                     phone_number_parameters['state'] = state
 
-                try:
-                    phone_number_response = requests.post(phone_number_url, headers=self.headers, data=phone_number_parameters, timeout=30)
-                    phone_number_response_json = phone_number_response.json()
+                phone_number_response = requests.post(phone_number_url, headers=self.post_headers, data=phone_number_parameters, timeout=30)
+                phone_number_response_json = phone_number_response.json()
 
-                    if phone_number_response_json['status']:
-                        phone_number = phone_number_response_json['number']
-                        order_id = phone_number_response_json['order_id']
-                        self.order_id = order_id
-                        self.number = phone_number
-                        self.reuse = False
+                if phone_number_response_json['status']:
+                    phone_number = phone_number_response_json['number']
+                    order_id = phone_number_response_json['order_id']
+                    self.order_id = order_id
+                    self.number = phone_number
+                    self.reuse = False
 
-                        self.logger.info(f'Using a new number: {phone_number}')
+                    self.logger.info(f'Using a new number: {phone_number}')
 
-                        return phone_number
-                    else:
-                        error_msg = phone_number_response_json['msg']
-                        self.logger.error(error_msg)
+                    return phone_number
 
-                except Exception as e:
-                    self.logger.error(traceback.format_exc())
-                    self.logger.error('Error while ordering number')
             else:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
@@ -259,7 +249,7 @@ class PhoneNumber:
             order_response_json = {'status': False}
             attempts = 0
             while (not order_response or order_response.status_code != requests.codes.ok) and not order_response_json['status'] and attempts < 4:
-                order_response = requests.post(order_number_url, headers=self.headers, data=parameters, timeout=30)
+                order_response = requests.post(order_number_url, headers=self.post_headers, data=parameters, timeout=30)
                 self.logger.debug(str(order_response.text))
                 if order_response or order_response.status_code == requests.codes.ok:
                     order_response_json = order_response.json()
@@ -286,7 +276,7 @@ class PhoneNumber:
         verification_response_json = {'state': 'WAITING_FOR_SMS'}
 
         while (not verification_response or verification_response.status_code != requests.codes.ok) or verification_response_json['state'] == 'WAITING_FOR_SMS':
-            verification_response = requests.post(check_sms_url, headers=self.headers, data=parameters, timeout=30)
+            verification_response = requests.post(check_sms_url, headers=self.post_headers, data=parameters, timeout=30)
 
             if verification_response or verification_response.status_code == requests.codes.ok:
                 verification_response_json = verification_response.json()
@@ -495,7 +485,7 @@ class GmailClient(BaseClient):
                 verification_code = None
                 excluded_numbers = []
                 while not verification_code:
-                    phone_number = PhoneNumber('google', self.logger, os.environ['SMS_API_KEY'])
+                    phone_number = PhoneNumber('google', self.logger)
                     while not phone_number.number:
                         phone_number.get_number(excluded_numbers=excluded_numbers)
                         if phone_number.number:
@@ -516,11 +506,12 @@ class GmailClient(BaseClient):
                                 excluded_numbers.append(phone_number.number)
                                 phone_number.number = None
                                 phone_number.reuse = False
-                                self.sleep(5)
                             else:
                                 self.logger.info('No errors, this number should work')
+                    if not verification_code:
+                        self.sleep(10)
 
-                    time.sleep(2)
+                    self.sleep(2)
 
                     code_input = self.locate(By.ID, 'code')
                     verify_button = self.locate(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[2]/div[2]/div[1]/div/div/button')
@@ -540,7 +531,7 @@ class GmailClient(BaseClient):
             else:
                 self.logger.error('Could Not find phone number field')
             
-            time.sleep(2)
+            self.sleep(2)
             
             gender_select = Select(self.locate(By.ID, 'gender'))
             month_select = Select(self.locate(By.ID, 'month'))
