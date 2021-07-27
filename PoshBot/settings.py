@@ -212,6 +212,6 @@ CELERY_BEAT_SCHEDULE = {
     'posh_user_balancer': {
         'task': 'poshmark.tasks.posh_user_balancer',
         'schedule': crontab(minute='*/3'),
-        'options': {'queue': 'no_concurrency'}
+        'options': {'queue': 'concurrency'}
     },
 }
