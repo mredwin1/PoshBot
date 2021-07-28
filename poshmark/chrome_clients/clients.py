@@ -1652,8 +1652,9 @@ class PoshMarkClient(BaseClient):
 
                         code_input = self.locate(By.NAME, 'otp')
                         phone_verify_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[3]/div/button')
+                        send_again_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[2]/div/p[1]/a')
 
-                        phone_verification_code = phone_number.get_verification_code()
+                        phone_verification_code = phone_number.get_verification_code(send_again_button)
 
                         self.web_driver.save_screenshot(f'{phone_verification_code}.png')
 
