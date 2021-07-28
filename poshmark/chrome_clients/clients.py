@@ -285,6 +285,7 @@ class PhoneNumber:
                     self.logger.info('SMS not received, sleeping for 15 seconds')
                     if send_again_element and self.retries == 20:
                         send_again_element.click()
+                        self.logger.info('Clicked send again button')
                     self.retries += 1
                     time.sleep(15)
 
