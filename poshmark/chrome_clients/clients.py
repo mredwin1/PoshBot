@@ -1671,6 +1671,7 @@ class PoshMarkClient(BaseClient):
 
                         else:
                             code_input.send_keys(phone_verification_code)
+                            self.web_driver.save_screenshot(f'{phone_verification_code}_verified.png')
                             phone_verify_button.click()
 
                 sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
@@ -2028,7 +2029,9 @@ class PoshMarkClient(BaseClient):
                         verification_code = msg_str[verification_index:end_verification_index]
 
                         self.logger.info(f'Verification code retrieved successfully: {verification_code}')
-
+                        self.logger.info('Marking email for deletion')
+                        imap.store(email_id, "+FLAGS", "\\Deleted")
+                        
                         return verification_code
                 self.logger.warning('Verification code not ready')
                 time.sleep(60)
