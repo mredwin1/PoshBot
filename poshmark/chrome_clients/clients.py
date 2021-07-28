@@ -1628,6 +1628,8 @@ class PoshMarkClient(BaseClient):
                                 phone_number_field.clear()
                                 phone_number_field.send_keys(phone_number.number)
 
+                                self.web_driver.save_screenshot(f'{phone_number.number}.png')
+
                                 self.logger.debug('Putting the phone number in the field')
 
                                 next_button_two = self.locate(
@@ -1648,6 +1650,8 @@ class PoshMarkClient(BaseClient):
 
                         phone_verification_code = phone_number.get_verification_code()
 
+                        self.web_driver.save_screenshot(f'{phone_verification_code}.png')
+
                         if not phone_verification_code:
                             self.logger.warning('Trying again since there is no verification code.')
                             excluded_numbers.append(phone_number.number)
@@ -1664,7 +1668,7 @@ class PoshMarkClient(BaseClient):
                 attempts = 0
 
                 while not sell_button and attempts <= 10:
-                    self.logger.error('Not done listing item. Checking again...')
+                    self.logger.warning('Not done listing item. Checking again...')
                     sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
                     attempts += 1
                 else:
