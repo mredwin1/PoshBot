@@ -143,7 +143,7 @@ class PhoneNumber:
                 elif order['state'] == 'TIMED_OUT':
                     if order['is_reused']:
                         add = True
-                elif order['state'] == 'WAITING_FOR_SMS' and order['service_name'] == selected_service:
+                elif order['state'] == 'WAITING_FOR_SMS' and order['service_name'] == selected_service and selected_service == 'Google / Gmail / Google Voice / Youtube':
                     self.logger.warning(f'Already waiting for an SMS on this service - {selected_service}')
                     self.order = False
                     return False
@@ -237,7 +237,7 @@ class PhoneNumber:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
 
-    def get_verification_code(self):
+    def get_verification_code(self, send_again_element=None):
         self.logger.info('Getting Verification code')
         if self.reuse:
             self.logger.info('Phone number is reused, putting in a new order.')
@@ -281,8 +281,11 @@ class PhoneNumber:
             if verification_response or verification_response.status_code == requests.codes.ok:
                 verification_response_json = verification_response.json()
                 if verification_response_json['state'] == 'WAITING_FOR_SMS':
-                    self.logger.info('SMS not received, sleeping for 10 seconds')
-                    time.sleep(10)
+                    message = 'Clicked send again, sleeping for 30 seconds' if send_again_element else 'SMS not received, sleeping for 30 seconds'
+                    self.logger.info(message)
+                    if send_again_element:
+                        send_again_element.click()
+                    time.sleep(30)
 
         if verification_response_json['state'] == 'ERROR':
             self.logger.error(verification_response_json['msg'])
@@ -1617,6 +1620,8 @@ class PoshMarkClient(BaseClient):
                     email_verify_next_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div[2]/div[2]/div[3]/div/button', 'clickable')
                     email_verify_next_button.click()
 
+                    self.sleep(2)
+
                     phone_verification_code = None
                     excluded_numbers = []
                     while not phone_verification_code:
@@ -1659,6 +1664,10 @@ class PoshMarkClient(BaseClient):
                             phone_number.reuse = False
                             back_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[2]/div/p[2]/a')
                             back_button.click()
+
+                            self.sleep(2)
+                            self.web_driver.save_screenshot(f'{phone_verification_code}_back.png')
+
                         else:
                             code_input.send_keys(phone_verification_code)
                             phone_verify_button.click()
@@ -1674,6 +1683,7 @@ class PoshMarkClient(BaseClient):
                 else:
                     if attempts > 10:
                         self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
+                        self.web_driver.save_screenshot(f'{phone_verification_code}_end.png')
                     else:
                         self.logger.info('Item listed successfully')
 
