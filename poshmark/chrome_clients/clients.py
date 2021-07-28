@@ -400,11 +400,13 @@ class BaseClient:
     def load_cookies(self):
         self.logger.info('Loading Cookies')
         try:
-            with open(f'/shared_volume/cookies/{self.cookies_filename}.pkl', 'rb') as cookies:
-                for cookie in pickle.load(cookies):
-                    self.web_driver.add_cookie(cookie)
-                self.web_driver.refresh()
-                self.logger.info('Cookies loaded successfully')
+            filename = f'/shared_volume/cookies/{self.cookies_filename}.pkl'
+            if os.path.getsize(filename) > 0:
+                with open(filename, 'rb') as cookies:
+                    for cookie in pickle.load(cookies):
+                        self.web_driver.add_cookie(cookie)
+                    self.web_driver.refresh()
+                    self.logger.info('Cookies loaded successfully')
         except FileNotFoundError:
             self.logger.warning('Cookies not loaded: Cookie file not found')
 
