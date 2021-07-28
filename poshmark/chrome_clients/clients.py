@@ -281,7 +281,7 @@ class PhoneNumber:
             if verification_response or verification_response.status_code == requests.codes.ok:
                 verification_response_json = verification_response.json()
                 if verification_response_json['state'] == 'WAITING_FOR_SMS':
-                    message = 'Clicked send again, sleeping for 30 seconds' if send_again_element else 'SMS not received, sleeping for 10 seconds'
+                    message = 'Clicked send again, sleeping for 10 seconds' if send_again_element else 'SMS not received, sleeping for 10 seconds'
                     self.logger.info(message)
                     if send_again_element:
                         send_again_element.click()
