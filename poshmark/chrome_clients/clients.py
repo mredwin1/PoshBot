@@ -348,8 +348,6 @@ class BaseClient:
 
     def close(self):
         """Closes the selenium web driver session"""
-        if self.cookies_filename:
-            self.save_cookies()
         self.web_driver.quit()
 
     def locate(self, by, locator, location_type=None):
@@ -1251,6 +1249,8 @@ class PoshMarkClient(BaseClient):
             self.login_error = None
 
             self.sleep(5)
+
+            self.save_cookies()
 
             return True
 
