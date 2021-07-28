@@ -1538,13 +1538,13 @@ class PoshMarkClient(BaseClient):
                 apply_button = self.locate(By.XPATH, '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]')
                 apply_button.click()
 
-                self.sleep(1)
+                self.sleep(2)
 
                 for photo in listing_photos:
                     upload_photos_field = self.locate(By.ID, 'img-file-input')
                     upload_photos_field.clear()
                     upload_photos_field.send_keys(photo)
-                    self.sleep(1)
+                    self.sleep(2)
 
                 self.logger.info('Photos uploaded')
 
