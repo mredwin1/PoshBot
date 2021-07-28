@@ -1147,7 +1147,9 @@ class PoshMarkClient(BaseClient):
                         self.sleep(1, 3)  # Sleep for realism
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
-
+                        
+                        self.save_cookies()
+                        
                         self.logger.info('Registration Complete')
                     else:
                         self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
@@ -1193,7 +1195,9 @@ class PoshMarkClient(BaseClient):
                         self.sleep(1, 3)  # Sleep for realism
                         start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
                         start_shopping_button.click()
-
+                        
+                        self.save_cookies()
+                        
                         self.logger.info('Registration Complete')
                     else:
                         self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
