@@ -2031,7 +2031,7 @@ class PoshMarkClient(BaseClient):
                         self.logger.info(f'Verification code retrieved successfully: {verification_code}')
                         self.logger.info('Marking email for deletion')
                         imap.store(email_id, "+FLAGS", "\\Deleted")
-                        
+
                         return verification_code
                 self.logger.warning('Verification code not ready')
                 time.sleep(60)
