@@ -210,14 +210,14 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute='*/10'),
         'options': {'queue': 'concurrency'}
     },
-    'posh_user_balancer': {
-        'task': 'poshmark.tasks.posh_user_balancer',
-        'schedule': crontab(minute='*/2'),
-        'options': {'queue': 'concurrency'}
-    },
-    'gmail_proxy_reset': {
-        'task': 'poshmark.tasks.gmail_proxy_reset',
-        'schedule': crontab(minute='*/1'),
-        'options': {'queue': 'concurrency'}
-    },
+#     'posh_user_balancer': {
+#         'task': 'poshmark.tasks.posh_user_balancer',
+#         'schedule': crontab(minute='*/2'),
+#         'options': {'queue': 'concurrency'}
+#     },
+#     'gmail_proxy_reset': {
+#         'task': 'poshmark.tasks.gmail_proxy_reset',
+#         'schedule': crontab(minute='*/1'),
+#         'options': {'queue': 'concurrency'}
+#     },
 }
