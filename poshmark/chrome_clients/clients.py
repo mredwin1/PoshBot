@@ -1599,7 +1599,7 @@ class PoshMarkClient(BaseClient):
                     verify_email_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
                     verify_email_button.click()
 
-                    self.sleep(2)
+                    self.sleep(30)
 
                     email_verification_code = None
                     email_verification_code_attempts = 0
