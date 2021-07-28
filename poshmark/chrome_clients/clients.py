@@ -120,7 +120,7 @@ class PhoneNumber:
         self.number = None
         self.reuse = False
         self.order = False
-        self.sent_again = False
+        self.retries = 0
         self.orders = {}
 
     def _check_order_history(self, excluded_numbers=None):
@@ -283,9 +283,9 @@ class PhoneNumber:
                 verification_response_json = verification_response.json()
                 if verification_response_json['state'] == 'WAITING_FOR_SMS':
                     self.logger.info('SMS not received, sleeping for 15 seconds')
-                    if not self.sent_again and send_again_element:
+                    if send_again_element and self.retries == 20:
                         send_again_element.click()
-                        self.sent_again = True
+                    self.retries += 1
                     time.sleep(15)
 
         if verification_response_json['state'] == 'ERROR':
@@ -1664,6 +1664,7 @@ class PoshMarkClient(BaseClient):
                             excluded_numbers.append(phone_number.number)
                             phone_number.number = None
                             phone_number.reuse = False
+                            phone_number.retries = 0
                             back_button = self.locate(By.XPATH, '/html/body/div[1]/main/div[2]/div/div[3]/div[2]/div[2]/div[2]/div/p[2]/a')
                             back_button.click()
 
