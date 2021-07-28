@@ -1601,6 +1601,9 @@ class PoshMarkClient(BaseClient):
                     email_verification_code = None
                     email_verification_code_attempts = 0
                     while not email_verification_code and email_verification_code_attempts < 4:
+                        self.logger.info(self.get_redis_object_attr('email'))
+                        self.logger.info(self.get_redis_object_attr('password'))
+                        self.logger.info(type(self.get_redis_object_attr('password')))
                         email_verification_code = self.get_verification_code(self.get_redis_object_attr('email'), self.get_redis_object_attr('password'))
                         if not email_verification_code:
                             self.sleep(60)
