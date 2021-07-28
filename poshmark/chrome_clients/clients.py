@@ -1607,7 +1607,7 @@ class PoshMarkClient(BaseClient):
                     email_verification_code = None
                     email_verification_code_attempts = 0
                     while not email_verification_code and email_verification_code_attempts < 4:
-                        email_verification_code = self.get_verification_code(self.get_redis_object_attr(self.redis_posh_user_id, 'email'), self.get_redis_object_attr(self.redis_posh_user_id, 'password'))
+                        email_verification_code = self.get_verification_code(self.get_redis_object_attr(self.redis_posh_user_id, 'email'), self.get_redis_object_attr(self.redis_posh_user_id, 'password'), self.get_redis_object_attr(self.redis_posh_user_id, 'first_name'))
                         if not email_verification_code:
                             self.sleep(60)
                             email_verification_code_attempts += 1
@@ -1998,7 +1998,7 @@ class PoshMarkClient(BaseClient):
 
         self.logger.debug(f'Hostname: {host_name.text}')
 
-    def get_verification_code(self, forwarding_address, password):
+    def get_verification_code(self, forwarding_address, password, first_name):
         """Gets the email forwarding verification code using imap"""
         try:
             attempts = 0
@@ -2020,15 +2020,16 @@ class PoshMarkClient(BaseClient):
                     if isinstance(arr, tuple):
                         msg = email.message_from_string(str(arr[1], 'utf-8'))
                         msg_str = msg.as_string()
-                        verification_index = msg_str.find('Your verification code is ') + 26
-                        end_verification_index = msg_str.find('</p><p>For your security')
-                        verification_code = msg_str[verification_index:end_verification_index]
+                        if first_name in msg_str:
+                            verification_index = msg_str.find('Your verification code is ') + 26
+                            end_verification_index = msg_str.find('</p><p>For your security')
+                            verification_code = msg_str[verification_index:end_verification_index]
 
-                        self.logger.info(f'Verification code retrieved successfully: {verification_code}')
-                        self.logger.info('Marking email for deletion')
-                        # imap.store(email_id, "+FLAGS", "\\Deleted")
+                            self.logger.info(f'Verification code retrieved successfully: {verification_code}')
+                            self.logger.info('Marking email for deletion')
+                            # imap.store(email_id, "+FLAGS", "\\Deleted")
 
-                        return verification_code
+                            return verification_code
                 self.logger.warning('Verification code not ready')
                 time.sleep(60)
                 attempts += 1
