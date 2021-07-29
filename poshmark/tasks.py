@@ -97,8 +97,6 @@ def get_redis_object_attr(object_id, field_name=None):
     if field_name:
         return r.hget(object_id, field_name)
     else:
-        for key in r.scan_iter():
-            logging.info(key)
         return r.lrange(object_id, 0, -1)
 
 
@@ -129,15 +127,10 @@ def create_redis_object(instance):
         r.hset(instance_id, 'instance_type', instance_type)
         r.hset(instance_id, mapping=instance.to_dict())
     
-    logging.info(f'Instance Type: {instance_type}')
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
-        photos = instance.get_photos()
-        logging.info(f'The photos_id is: {photos_id}')
-        logging.info(f'The photos are: {photos}')
-        for listing_photo in photos:
+        for listing_photo in instance.get_photos():
             r.lpush(photos_id, listing_photo)
-        logging.info(f'Photos from redis: {r.lrange(photos_id, 0, -1)}')
         r.hset(instance_id, 'photos', photos_id)
 
     instance.redis_id = instance_id
@@ -445,11 +438,11 @@ def redis_cleaner():
         instance_type = key[:key.find('_')]
         if instance_type in instance_types.keys():
             model = instance_types[instance_type]
-            if instance_type == 'Listing':
-                r.delete(r.hget(key, 'photos'))
             try:
                 model.objects.get(redis_id=key)
             except model.DoesNotExist:
+                if instance_type == 'Listing':
+                    r.delete(r.hget(key, 'photos'))
                 r.delete(key)
 
 
