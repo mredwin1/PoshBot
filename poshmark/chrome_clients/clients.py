@@ -234,7 +234,8 @@ class PhoneNumber:
                     self.logger.info(f'Using a new number: {phone_number}')
 
                     return phone_number
-
+                else:
+                    self.logger.error(phone_number_response_json['msg'])
             else:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
