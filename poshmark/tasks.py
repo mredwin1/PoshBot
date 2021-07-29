@@ -97,6 +97,8 @@ def get_redis_object_attr(object_id, field_name=None):
     if field_name:
         return r.hget(object_id, field_name)
     else:
+        for key in r.scan_item():
+            logging.info(key)
         return r.lrange(object_id, 0, -1)
 
 
