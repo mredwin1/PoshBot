@@ -337,6 +337,8 @@ class BaseClient:
 
         self.logger = Logger(logger_id, log_function)
         self.cookies_filename = cookies_filename
+        self.cookies_loaded = False
+        self.cookies_saved = False
 
     def __enter__(self):
         self.open()
@@ -1061,8 +1063,9 @@ class PoshMarkClient(BaseClient):
         self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
         time.sleep(2)
-
-        self.load_cookies()
+        
+        if not self.cookies_loaded:
+            self.load_cookies()
 
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
 
@@ -1267,8 +1270,9 @@ class PoshMarkClient(BaseClient):
             self.login_error = None
 
             self.sleep(5)
-
-            self.save_cookies()
+            
+            if not self.cookies_saved:
+                self.save_cookies()
 
             return True
 
