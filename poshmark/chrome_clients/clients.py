@@ -194,7 +194,7 @@ class PhoneNumber:
     def get_number(self, excluded_numbers=None, state=None):
         self.logger.info('Getting a new number')
         self.logger.debug(str(excluded_numbers))
-        if self.selected_service != 'poshmark':
+        if self.service_name != 'poshmark':
             order_check = self._check_order_history(excluded_numbers)
         else:
             order_check = False
