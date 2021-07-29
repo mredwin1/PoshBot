@@ -130,6 +130,7 @@ def create_redis_object(instance):
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
         for listing_photo in instance.get_photos():
+            logging.info(listing_photo)
             r.lpush(photos_id, str(listing_photo))
         r.hset(instance_id, 'photos', photos_id)
 
