@@ -604,7 +604,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                 posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
                 
                 registration_attempts = 0
-                while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 4:
+                while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 2:
                     proxy_client.register()
                     registration_attempts += 1
                     posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))

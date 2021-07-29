@@ -170,7 +170,8 @@ class PhoneNumber:
         try:
             for key, value in self.orders[selected_service].items():
                 try:
-                    if value['quantity'] < 3 and key not in excluded_numbers:
+                    quantity = 3 if self.service_name == 'google' else 1
+                    if value['quantity'] < quantity and key not in excluded_numbers:
                         reuse_number_url = 'https://portal.easysmsverify.com/check_if_reusable'
                         data = {'number': key}
 
