@@ -9,61 +9,6 @@ from django.core.files.base import ContentFile
 from poshmark.models import PoshUser, Listing, ListingPhotos, Campaign
 
 
-class CreatePoshUser(forms.ModelForm):
-    is_registered = forms.BooleanField(required=False, label='User is Registered')
-
-    class Meta:
-        model = PoshUser
-        fields = ['profile_picture', 'header_picture', 'first_name', 'last_name', 'email', 'username', 'password',
-                  'gender']
-
-    def __init__(self, request, *args, **kwargs):
-        super(CreatePoshUser, self).__init__(*args, **kwargs)
-        self.request = request
-
-        self.fields['profile_picture'].required = False
-        self.fields['header_picture'].required = False
-        self.fields['first_name'].required = False
-        self.fields['last_name'].required = False
-        self.fields['email'].required = False
-        self.fields['gender'].required = False
-
-    def clean(self):
-        if not self.cleaned_data['is_registered']:
-            response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
-
-            if response.status_code == requests.codes.ok:
-                self.add_error('username', 'This username already exists, please pick another.')
-
-            symbols = '[@_!#$%^&*()<>?/\|}{~:]'
-            password = self.cleaned_data['password']
-            meets_criteria = False
-
-            for character in password:
-                if character.isdigit() or character in symbols:
-                    meets_criteria = True
-                    break
-
-            if not meets_criteria or len(password) < 6:
-                self.add_error('password', 'Password does not meet requirements')
-        else:
-            response = requests.get(f'https://poshmark.com/closet/{self.cleaned_data["username"]}')
-
-            if response.status_code != requests.codes.ok:
-                self.add_error('username', 'This PoshUser does not exists. '
-                                           'Please sign up at poshmark.com or deselect the registered checkbox.')
-
-    def save(self, commit=True):
-        new_user = super(CreatePoshUser, self).save(commit=False)
-
-        new_user.user = self.request.user
-        new_user.status = PoshUser.IDLE
-        new_user.is_registered = self.cleaned_data['is_registered']
-        new_user.email_registered = True
-
-        new_user.save()
-
-
 class CreateListing(forms.Form):
     categories_select = [
         ('Women', 'Women'),

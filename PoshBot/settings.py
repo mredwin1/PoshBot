@@ -196,6 +196,7 @@ CELERY_TASK_ROUTES = {
     'poshmark.tasks.register_posh_user': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.enable_email_forwarding': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.gmail_proxy_reset': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.generate_posh_users': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks

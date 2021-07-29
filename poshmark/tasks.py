@@ -180,6 +180,16 @@ def log_to_redis(log_id, fields):
 
 
 @shared_task
+def generate_posh_users(email, quantity, user_id):
+    user = User.objects.get(id=user_id)
+    all_user_info = PoshUser.generate_sign_up_info(email, quantity)
+    for user_info in all_user_info:
+        new_posh_user = PoshUser.create_posh_user(user_info)
+        new_posh_user.user = user
+        new_posh_user.save()
+
+
+@shared_task
 def posh_user_balancer():
     available_posh_users = PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)
     creating_posh_users = PoshUser.objects.filter(status=PoshUser.CREATING, user__isnull=True)
@@ -757,16 +767,11 @@ def restart_task(campaign_id):
             basic_sharing.delay(campaign_id, False)
     elif campaign.mode == Campaign.ADVANCED_SHARING:
         if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
-            available_users = PoshUser.objects.filter(status=PoshUser.IDLE, is_registered=False)
-            while not available_users:
-                available_users = PoshUser.objects.filter(status=PoshUser.IDLE, is_registered=False)
-                for available_user in available_users:
-                    if not Campaign.objects.filter(posh_user=available_user):
-                        campaign.posh_user = available_user
-                        campaign.save()
-                        break
-                time.sleep(30)
+            new_user_info = PoshUser.generate_sign_up_info(PoshUser.get_last_email())
+            new_posh_user = PoshUser.create_posh_user(new_user_info)
 
+            campaign.posh_user = new_posh_user
+            campaign.save()
         elif old_posh_user.status == PoshUser.INACTIVE:
             run_again = False
 

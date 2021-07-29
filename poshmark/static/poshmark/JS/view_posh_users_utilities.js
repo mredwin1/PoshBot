@@ -49,4 +49,31 @@ $(document).ready(function () {
             });
         }
     })
+    $('#add_users').click(function () {
+        let modal = $('#mainModal');
+        let title = $('#mainModalTitle');
+
+        modal.modal('show');
+        title.text('Add Basic Campaign');
+    });
+    $('#addPoshUserForm').submit(function (event) {
+        event.preventDefault();
+
+        let form = $(this);
+        let main_modal = $('#mainModal');
+        let data = new FormData(form.get(0));
+
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            data: data,
+            cache: false,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                main_modal.modal('hide');
+                alert(data.success)
+            },
+        });
+    });
 });

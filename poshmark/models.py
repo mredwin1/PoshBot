@@ -81,7 +81,14 @@ class PoshUser(models.Model):
         return data
 
     @staticmethod
-    def generate_sign_up_info(results=1):
+    def get_last_email():
+        posh_users = PoshUser.objects.all()
+        max_email = max(posh_users, key=lambda posh_user: int(posh_user.email[posh_user.email.index('+') + 1:posh_user.email.index('@')])).email
+
+        return max_email
+
+    @staticmethod
+    def generate_sign_up_info(email, results=1):
         months = {
             '01': 'January',
             '02': 'February',
@@ -109,6 +116,17 @@ class PoshUser(models.Model):
         user_url = 'https://randomuser.me/api/'
         header_image_url = 'https://picsum.photos/1920/300'
         results = []
+        email_at_index = email.index('@')
+
+        try:
+            email_plus_index = email.index('+')
+            email_domain = email[email_at_index:]
+            email_base = email[:email_plus_index]
+            email_start = int(email[email_plus_index + 1:email_at_index])
+        except ValueError:
+            email_domain = email[email_at_index:]
+            email_base = email[:email_at_index]
+            email_start = 1
 
         try:
             user_response = requests.get(user_url, params=user_payload, timeout=10, headers=headers)
@@ -124,7 +142,7 @@ class PoshUser(models.Model):
                     'first_name': response_dict['name']['first'],
                     'last_name': response_dict['name']['last'],
                     'gender': response_dict['gender'].capitalize(),
-                    'email': f'{response_dict["email"][:-12]}',
+                    'email': f'{email_base}+{email_start}{email_domain}',
                     'username': username if len(username) <= 12 else username[:12],
                     'password': password,
                     'dob_month': months[response_dict['dob']['date'][5:7]],
@@ -147,6 +165,7 @@ class PoshUser(models.Model):
                     username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=10)
 
                 results.append(user_info)
+                email_start += 1
         except requests.exceptions.RequestException as e:
             logging.error('Error occurred while trying to get profiles')
 
@@ -164,7 +183,7 @@ class PoshUser(models.Model):
             dob_month=signup_info['dob_month'],
             dob_day=signup_info['dob_day'],
             dob_year=signup_info['dob_year'],
-            status=PoshUser.CREATING,
+            status=PoshUser.IDLE,
         )
 
         for picture_type in ('profile_picture', 'header_picture'):

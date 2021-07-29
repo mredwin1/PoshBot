@@ -12,31 +12,15 @@ from django.views.generic.edit import DeleteView
 from django.views.generic.list import ListView
 
 from .models import PoshUser, Log, LogEntry, Listing, Campaign, User
-from .forms import CreatePoshUser, CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
+from .forms import CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
     EditListingForm
-from .tasks import basic_sharing, start_campaign, update_redis_object
+from .tasks import generate_posh_users, start_campaign, update_redis_object
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
 @login_required
 def home(request):
     return render(request, 'poshmark/home.html')
-
-
-@login_required
-def create_posh_user(request):
-    if request.method == 'GET':
-        form = CreatePoshUser(request)
-
-        return render(request, 'poshmark/create_posh_user.html', {'form': form})
-    else:
-        form = CreatePoshUser(data=request.POST, files=request.FILES, request=request)
-        if form.is_valid():
-            form.save()
-
-            return redirect('posh-users')
-        else:
-            return render(request, 'poshmark/create_posh_user.html', {'form': form})
 
 
 @login_required
@@ -72,17 +56,24 @@ def create_campaign(request):
             return render(request, 'poshmark/campaigns.html', {'form': form})
 
 
-class DeletePoshUser(DeleteView):
+class CreatePoshUsers(View, LoginRequiredMixin):
+    def post(self, *args, **kwargs):
+        generate_posh_users.delay(self.request.POST['email'], int(self.request.POST['quantity']), self.request.user.id)
+
+        return JsonResponse(data={'success': f'Please wait, Generating {self.request.POST["quantity"]} users'}, status=200)
+
+
+class DeletePoshUser(DeleteView, LoginRequiredMixin):
     model = PoshUser
     success_url = reverse_lazy('posh-users')
 
 
-class DeleteListing(DeleteView):
+class DeleteListing(DeleteView, LoginRequiredMixin):
     model = Listing
     success_url = reverse_lazy('view-listings')
 
 
-class DeleteCampaign(DeleteView):
+class DeleteCampaign(DeleteView, LoginRequiredMixin):
     model = Campaign
     success_url = reverse_lazy('view-campaigns')
 
