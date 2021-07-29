@@ -1456,10 +1456,12 @@ class PoshMarkClient(BaseClient):
                 listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
                 if not listing_photos:
                     listing_photo_retries += 1
+                    self.logger.warning('System returned no photos, trying again.')
                     self.sleep(2)
 
-            self.logger.info(f'This is the redis listing photos id: {redis_listing_photos_id}')
-            self.logger.info(f'These are all the listing paths: {listing_photos}')
+            self.logger.debug(f'This is the listing cover photo paths: {listing_cover_photo}')
+            self.logger.debug(f'This is the redis listing photos id: {redis_listing_photos_id}')
+            self.logger.debug(f'These are all the listing photos paths: {listing_photos}')
 
             self.logger.info(f'Listing the following item: {listing_title}')
 
