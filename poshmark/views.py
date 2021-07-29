@@ -88,6 +88,7 @@ class DeleteCampaign(DeleteView, LoginRequiredMixin):
 
 class EditCampaign(View, LoginRequiredMixin):
     form_class = EditCampaignForm
+    login_url = '/login/'
 
     def get(self, *args, **kwargs):
         campaign_id = self.kwargs['campaign_id']
@@ -124,6 +125,7 @@ class EditCampaign(View, LoginRequiredMixin):
 
 class EditListing(View, LoginRequiredMixin):
     form_class = EditListingForm
+    login_url = '/login/'
 
     def get(self, *args, **kwargs):
         listing_id = self.kwargs['listing_id']
@@ -160,6 +162,7 @@ class EditListing(View, LoginRequiredMixin):
 
 class PoshUserListView(ListView, LoginRequiredMixin):
     model = PoshUser
+    login_url = '/login/'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(PoshUserListView, self).get_context_data(**kwargs)
@@ -187,6 +190,7 @@ class PoshUserListView(ListView, LoginRequiredMixin):
 
 class ListingListView(ListView, LoginRequiredMixin):
     model = Listing
+    login_url = '/login/'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(ListingListView, self).get_context_data(**kwargs)
@@ -221,6 +225,7 @@ class GeneratePoshUserInfo(View, LoginRequiredMixin):
 
 class ActionLogListView(ListView, LoginRequiredMixin):
     model = Log
+    login_url = '/login/'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(ActionLogListView, self).get_context_data(**kwargs)
@@ -265,6 +270,7 @@ class ActionLogListView(ListView, LoginRequiredMixin):
 
 class LogEntryListView(ListView, LoginRequiredMixin):
     model = LogEntry
+    login_url = '/login/'
 
     def get_queryset(self):
         log_entries = LogEntry.objects.filter(logger=self.kwargs['logger_id']).order_by('timestamp')
@@ -273,6 +279,8 @@ class LogEntryListView(ListView, LoginRequiredMixin):
 
 
 class GetLogEntries(View, LoginRequiredMixin):
+    login_url = '/login/'
+
     def get(self, *args, **kwargs):
         timestamp_str = self.kwargs['datetime']
         logger_id = self.kwargs["logger_id"]
@@ -422,6 +430,7 @@ class StartCampaign(View, LoginRequiredMixin):
 
 class CampaignListView(ListView, LoginRequiredMixin):
     model = Campaign
+    login_url = '/login/'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         search = self.request.GET.get('search', '')
