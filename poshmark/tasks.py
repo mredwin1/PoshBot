@@ -133,8 +133,8 @@ def create_redis_object(instance):
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
         photos = instance.get_photos()
-        logging.info('The photos_id is: {photos_id}')
-        logging.info('The photos are: {photos}')
+        logging.info(f'The photos_id is: {photos_id}')
+        logging.info(f'The photos are: {photos}')
         for listing_photo in photos:
             r.lpush(photos_id, listing_photo)
         logging.info(f'Photos from redis: {r.lrange(photos_id, 0, -1)}')
