@@ -84,7 +84,7 @@ def initialize_campaign(campaign_id, registration_proxy_id=None):
 
     campaign.posh_user.refresh_from_db()
 
-    logger = Log(campaign=campaign, user=campaign.user, description=campaign.posh_user.username)
+    logger = Log(campaign=campaign, user=campaign.user, posh_user=posh_user, description=campaign.posh_user.username)
     logger.save()
 
     db.connections.close_all()
