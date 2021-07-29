@@ -82,8 +82,8 @@ class PoshUser(models.Model):
         return data
 
     @staticmethod
-    def get_last_email():
-        posh_users = PoshUser.objects.all()
+    def get_last_email(user):
+        posh_users = PoshUser.objects.filter(user=user)
         selected_user = max(posh_users, key=lambda posh_user: int(posh_user.email[posh_user.email.index('+') + 1:posh_user.email.index('@')]))
 
         return selected_user.email, selected_user.password
