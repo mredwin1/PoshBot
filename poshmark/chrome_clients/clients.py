@@ -1683,12 +1683,12 @@ class PoshMarkClient(BaseClient):
 
                 attempts = 0
 
-                while not sell_button and attempts <= 10:
+                while not sell_button and attempts < 10:
                     self.logger.warning('Not done listing item. Checking again...')
                     sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
                     attempts += 1
                 else:
-                    if attempts > 10:
+                    if attempts >= 10:
                         self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
                         self.web_driver.save_screenshot(f'{phone_verification_code}.png')
                         return False
@@ -2037,7 +2037,7 @@ class PoshMarkClient(BaseClient):
 
                             self.logger.info(f'Verification code retrieved successfully: {verification_code}')
                             self.logger.info('Marking email for deletion')
-                            # imap.store(email_id, "+FLAGS", "\\Deleted")
+                            imap.store(email_id, "+FLAGS", "\\Deleted")
 
                             return verification_code
                 self.logger.warning('Verification code not ready')
