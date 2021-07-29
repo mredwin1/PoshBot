@@ -408,8 +408,10 @@ class BaseClient:
                     for cookie in pickle.load(cookies):
                         self.web_driver.add_cookie(cookie)
                     self.web_driver.refresh()
+                    self.sleep(2)
                     self.logger.info('Cookies loaded successfully')
-        except FileNotFoundError:
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
             self.logger.warning('Cookies not loaded: Cookie file not found')
 
 
