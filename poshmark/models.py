@@ -331,7 +331,9 @@ class Listing(models.Model):
         """Returns the paths for all the listing's photos"""
         listing_photos = ListingPhotos.objects.filter(listing=self)
         listing_photo_paths = [listing_photo.photo.path for listing_photo in listing_photos]
-
+        
+        logging.info(listing_photo_paths)
+        
         return listing_photo_paths
 
     @staticmethod
