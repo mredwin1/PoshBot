@@ -123,7 +123,7 @@ class PoshUser(models.Model):
             email_plus_index = email.index('+')
             email_domain = email[email_at_index:]
             email_base = email[:email_plus_index]
-            email_start = int(email[email_plus_index + 1:email_at_index])
+            email_start = int(email[email_plus_index + 1:email_at_index]) + 1
         except ValueError:
             email_domain = email[email_at_index:]
             email_base = email[:email_at_index]
