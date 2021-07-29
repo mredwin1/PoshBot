@@ -120,6 +120,20 @@ $(document).ready(function () {
             });
         }
     });
+    $('#assign_users').click(function () {
+        let url = $(this).data('url')
+        $.ajax({
+            url: url,
+            type: 'POST',
+            cache: false,
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+            processData: false,
+            contentType: false,
+            success: function () {
+                location.reload()
+            }
+        });
+    })
     $('#start_all').click(function () {
         let campaigns = $('.campaign-container')
 

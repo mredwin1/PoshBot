@@ -3,6 +3,7 @@ import pytz
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -14,7 +15,7 @@ from django.views.generic.list import ListView
 from .models import PoshUser, Log, LogEntry, Listing, Campaign, User
 from .forms import CreateListing, CreateCampaign, CreateBasicCampaignForm, EditCampaignForm,\
     EditListingForm
-from .tasks import generate_posh_users, start_campaign, update_redis_object
+from .tasks import generate_posh_users, start_campaign, update_redis_object, assign_posh_users
 from poshmark.templatetags.custom_filters import log_entry_return
 
 
@@ -54,6 +55,13 @@ def create_campaign(request):
             return redirect('view-campaigns')
         else:
             return render(request, 'poshmark/campaigns.html', {'form': form})
+
+
+class AssignPoshUsers(View, LoginRequiredMixin):
+    def post(self, *args, **kwargs):
+        assign_posh_users.delay(self.request.user.id)
+
+        return JsonResponse({}, status=200)
 
 
 class CreatePoshUsers(View, LoginRequiredMixin):
@@ -416,12 +424,12 @@ class CampaignListView(ListView, LoginRequiredMixin):
     model = Campaign
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        title = self.request.GET.get('title', '')
+        search = self.request.GET.get('search', '')
         username_select = self.request.GET.get('username_select', '')
         campaigns = Campaign.objects.filter(status='1')
 
-        if title:
-            campaigns = campaigns.filter(title__icontains=title)
+        if search:
+            campaigns = campaigns.filter(Q(title__icontains=search) | Q(posh_user__username__icontains=search))
 
         if username_select:
             campaigns = campaigns.filter(user__username=username_select)

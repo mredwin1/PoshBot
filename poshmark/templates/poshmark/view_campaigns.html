@@ -38,7 +38,7 @@
         </div>
         <form class="col-lg-5 col-md-7 col-12 mb-2" method="GET">
             <div class="row align-items-center h-100">
-                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Title" value="{{ request.GET.title }}" name="title">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Title/Username" value="{{ request.GET.search }}" name="search">
                 <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
                     <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
                     {% if perms.can_view_all_users %}
@@ -51,6 +51,9 @@
         </form>
         <div class="col-lg-3 col-12">
             <div class="d-flex align-items-center justify-content-between h-100">
+                <button class="btn btn-sm btn-dark text-light cursor-pointer" data-toggle="tooltip" data-placement="top" title="Assign Users" id="assign_users" data-url="{% url 'assign-posh-users' %}">
+                    <i class="fas fa-cart-arrow-down"></i>
+                </button>
                 <button class="btn btn-sm btn-dark text-light cursor-pointer" data-toggle="tooltip" data-placement="top" title="Start All" id="start_all">
                     <i class="fas fa-play" ></i>
                 </button>

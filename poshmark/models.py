@@ -49,6 +49,7 @@ class PoshUser(models.Model):
     dob_month = models.CharField(max_length=20, default='')
     dob_day = models.CharField(max_length=20, default='')
     dob_year = models.CharField(max_length=20, default='')
+    phone_number = models.CharField(max_length=20, default='')
 
     email = models.EmailField(blank=True)
     username = models.CharField(max_length=15, unique=True)
@@ -83,12 +84,12 @@ class PoshUser(models.Model):
     @staticmethod
     def get_last_email():
         posh_users = PoshUser.objects.all()
-        max_email = max(posh_users, key=lambda posh_user: int(posh_user.email[posh_user.email.index('+') + 1:posh_user.email.index('@')])).email
+        selected_user = max(posh_users, key=lambda posh_user: int(posh_user.email[posh_user.email.index('+') + 1:posh_user.email.index('@')]))
 
-        return max_email
+        return selected_user.email, selected_user.password
 
     @staticmethod
-    def generate_sign_up_info(email, results=1):
+    def generate_sign_up_info(email, password, results=1):
         months = {
             '01': 'January',
             '02': 'February',
@@ -136,7 +137,6 @@ class PoshUser(models.Model):
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
                 profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 username = response_dict['login']['username']
-                password = response_dict['login']['password'] if bool(re.search(r'\d', response_dict['login']['password'])) else f'{response_dict["login"]["password"]}1'
 
                 user_info = {
                     'first_name': response_dict['name']['first'],

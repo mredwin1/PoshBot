@@ -114,6 +114,30 @@
                                 {% endif %}
                             </div>
                         {% endif %}
+                        {% if posh_user.date_added or posh_user.phone_number %}
+                            <div class="row mb-2">
+                                <div class="col-7">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <b>Date Added:</b>
+                                        </div>
+                                        <div class="col-12">
+                                            {{ posh_user.date_added.timestamp|date:"m-d-Y" }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-5">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <b>Phone Number:</b>
+                                        </div>
+                                        <div class="col-12">
+                                            {{ posh_user.phone_number }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                         {% if posh_user.email %}
                             <div class="row">
                                 <div class="col">
