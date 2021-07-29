@@ -1962,7 +1962,7 @@ class PoshMarkClient(BaseClient):
 
             self.go_to_closet()
 
-            bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen')
+            bad_words = ('scam', 'scammer', 'fake', 'replica', 'reported', 'counterfeit', 'stolen', 'chinesecrap')
             reported = False
 
             if self.check_listing(listing_title):

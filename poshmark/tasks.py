@@ -603,7 +603,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                 posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                 campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                 posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
-                
+
                 registration_attempts = 0
                 while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 2:
                     proxy_client.register()
@@ -611,11 +611,11 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                     posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
                     posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-                
-                if registration_attempts >= 4:
+
+                if registration_attempts >= 2:
                     update_redis_object(redis_campaign_id, {'status': '5'})
                     log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Could not register after {registration_attempts} attempts. Restarting Campaign.'})
-                
+
                 posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
                 while posh_user_is_registered and not posh_user_profile_updated and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                     proxy_client.update_profile()
