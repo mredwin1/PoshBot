@@ -1447,7 +1447,14 @@ class PoshMarkClient(BaseClient):
             listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
             listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
             redis_listing_photos_id = self.get_redis_object_attr(redis_listing_id, 'photos')
-            listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
+            listing_photos = None
+
+            listing_photo_retries = 0
+            while not listing_photos and listing_photo_retries < 4:
+                listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
+                if not listing_photos:
+                    listing_photo_retries += 1
+                    self.sleep(2)
 
             self.logger.info(f'This is the redis listing photos id: {redis_listing_photos_id}')
             self.logger.info(f'These are all the listing paths: {listing_photos}')
