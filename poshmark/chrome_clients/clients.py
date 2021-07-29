@@ -1054,6 +1054,8 @@ class PoshMarkClient(BaseClient):
         self.logger.info('Checking if user is signed in')
         self.web_driver.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
+        time.sleep(2)
+
         self.load_cookies()
 
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
