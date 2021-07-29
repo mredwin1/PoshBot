@@ -778,7 +778,7 @@ def restart_task(campaign_id):
     elif campaign.mode == Campaign.ADVANCED_SHARING:
         if old_posh_user.status == PoshUser.INACTIVE and campaign.generate_users:
             email, password = PoshUser.get_last_email(old_posh_user.user)
-            new_user_info = PoshUser.generate_sign_up_info(email, password)
+            new_user_info = PoshUser.generate_sign_up_info(email, password)[0]
             new_posh_user = PoshUser.create_posh_user(new_user_info)
             new_posh_user.user = old_posh_user.user
             new_posh_user.save()
