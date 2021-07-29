@@ -198,6 +198,8 @@ class PhoneNumber:
             order_check = self._check_order_history(excluded_numbers)
         else:
             order_check = False
+            self.order = True
+            
         if order_check:
             self.logger.info(f'Reusing number {self.number}')
         elif not order_check and not self.order:
