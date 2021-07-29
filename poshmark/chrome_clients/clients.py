@@ -1164,6 +1164,8 @@ class PoshMarkClient(BaseClient):
                         start_shopping_button.click()
                         
                         self.save_cookies()
+                        self.cookies_saved = True
+                        self.cookied_loaded = True
                         
                         self.logger.info('Registration Complete')
                     else:
@@ -1212,6 +1214,8 @@ class PoshMarkClient(BaseClient):
                         start_shopping_button.click()
                         
                         self.save_cookies()
+                        self.cookies_saved = True
+                        self.cookies_loaded = True
                         
                         self.logger.info('Registration Complete')
                     else:
