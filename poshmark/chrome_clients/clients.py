@@ -194,7 +194,10 @@ class PhoneNumber:
     def get_number(self, excluded_numbers=None, state=None):
         self.logger.info('Getting a new number')
         self.logger.debug(str(excluded_numbers))
-        order_check = self._check_order_history(excluded_numbers)
+        if self.selected_service != 'poshmark':
+            order_check = self._check_order_history(excluded_numbers)
+        else:
+            order_check = False
         if order_check:
             self.logger.info(f'Reusing number {self.number}')
         elif not order_check and not self.order:
@@ -236,6 +239,8 @@ class PhoneNumber:
                     return phone_number
                 else:
                     self.logger.error(phone_number_response_json['msg'])
+                    self.logger.info('Sleeping for 30 seconds')
+                    time.sleep(30)
             else:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
