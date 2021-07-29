@@ -428,8 +428,13 @@ class CampaignListView(ListView, LoginRequiredMixin):
         username_select = self.request.GET.get('username_select', '')
         campaigns = Campaign.objects.filter(status='1')
 
+        import logging
+        logging.info(search)
+
         if search:
             campaigns = campaigns.filter(Q(title__icontains=search) | Q(posh_user__username__icontains=search))
+            logging.info(campaigns)
+
 
         if username_select:
             campaigns = campaigns.filter(user__username=username_select)

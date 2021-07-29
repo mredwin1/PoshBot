@@ -757,7 +757,7 @@ def register_posh_user(campaign_id, registration_proxy_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    if campaign_status == '5':
+    if campaign_status == '5' or campaign_status == '1':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
