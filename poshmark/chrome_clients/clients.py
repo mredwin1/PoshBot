@@ -407,6 +407,7 @@ class BaseClient:
         self.logger.info('Saving cookies')
         with open(f'/shared_volume/cookies/{self.cookies_filename}.pkl', 'wb') as file:
             pickle.dump(self.web_driver.get_cookies(), file)
+        self.cookies_saved = True
         self.logger.info('Cookies successfully saved')
 
     def load_cookies(self):
@@ -419,6 +420,7 @@ class BaseClient:
                         self.web_driver.add_cookie(cookie)
                     self.web_driver.refresh()
                     self.sleep(2)
+                    self.cookies_loaded = True
                     self.logger.info('Cookies loaded successfully')
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -1068,6 +1070,7 @@ class PoshMarkClient(BaseClient):
         
         if not self.cookies_loaded:
             self.load_cookies()
+            
 
         result = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[1]/div/ul/li[5]/div/div[1]/div')
 
