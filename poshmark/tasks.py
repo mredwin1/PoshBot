@@ -129,7 +129,7 @@ def create_redis_object(instance):
         r.hset(instance_id, 'instance_type', instance_type)
         r.hset(instance_id, mapping=instance.to_dict())
     
-    logging.info('Instance Type: {instance_type}')
+    logging.info(f'Instance Type: {instance_type}')
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
         photos = instance.get_photos()
