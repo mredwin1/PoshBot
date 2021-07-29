@@ -128,12 +128,16 @@ def create_redis_object(instance):
 
         r.hset(instance_id, 'instance_type', instance_type)
         r.hset(instance_id, mapping=instance.to_dict())
-
+    
+    logging.info('Instance Type: {instance_type}')
     if instance_type == 'Listing':
         photos_id = get_new_id('photos')
-        for listing_photo in instance.get_photos():
-            logging.info(listing_photo)
-            r.lpush(photos_id, str(listing_photo))
+        photos = instance.get_photos()
+        logging.info('The photos_id is: {photos_id}')
+        logging.info('The photos are: {photos}')
+        for listing_photo in photos:
+            r.lpush(photos_id, listing_photo)
+        logging.info(f'Photos from redis: {r.lrange(photos_id, 0, -1)}')
         r.hset(instance_id, 'photos', photos_id)
 
     instance.redis_id = instance_id
