@@ -1445,6 +1445,8 @@ class PoshMarkClient(BaseClient):
             listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
             listing_photos = self.get_redis_object_attr(self.get_redis_object_attr(redis_listing_id, 'photos'))
 
+            self.logger.info(f'These are all the listing paths: {listing_photos}')
+
             self.logger.info(f'Listing the following item: {listing_title}')
 
             if not self.check_logged_in():
