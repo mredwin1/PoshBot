@@ -428,13 +428,8 @@ class CampaignListView(ListView, LoginRequiredMixin):
         username_select = self.request.GET.get('username_select', '')
         campaigns = Campaign.objects.filter(status='1')
 
-        import logging
-        logging.info(search)
-
         if search:
             campaigns = campaigns.filter(Q(title__icontains=search) | Q(posh_user__username__icontains=search))
-            logging.info(campaigns)
-
 
         if username_select:
             campaigns = campaigns.filter(user__username=username_select)
@@ -448,7 +443,7 @@ class CampaignListView(ListView, LoginRequiredMixin):
         return context
 
     def get_queryset(self):
-        title = self.request.GET.get('title', '')
+        search = self.request.GET.get('search', '')
         username_select = self.request.GET.get('username_select', '')
         campaigns = Campaign.objects.order_by('status')
 
@@ -457,8 +452,8 @@ class CampaignListView(ListView, LoginRequiredMixin):
         else:
             campaigns = campaigns.filter(user=self.request.user)
 
-        if title:
-            campaigns = campaigns.filter(title__icontains=title)
+        if search:
+            campaigns = campaigns.filter(Q(title__icontains=search) | Q(posh_user__username__icontains=search))
 
         return campaigns
 
