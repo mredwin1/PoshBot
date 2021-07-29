@@ -185,7 +185,7 @@ def assign_posh_users(user_id):
     user = User.objects.get(id=user_id)
     campaigns = Campaign.objects.filter(mode=Campaign.ADVANCED_SHARING, posh_user__isnull=True, user=user)
     for campaign in campaigns:
-        posh_user = PoshUser.objects.filter(is_registered=False, user=user, status=PoshUser.IDLE)
+        posh_user = PoshUser.objects.filter(is_registered=False, user=user, status=PoshUser.IDLE).first()
         campaign.posh_user = posh_user
         campaign.save()
 
