@@ -192,6 +192,7 @@ def assign_posh_users(user_id):
             except Campaign.DoesNotExist:
                 campaign.posh_user = posh_user
                 campaign.save()
+                break
 
 
 @shared_task
