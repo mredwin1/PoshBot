@@ -1688,6 +1688,7 @@ class PoshMarkClient(BaseClient):
                 else:
                     if attempts > 10:
                         self.logger.error(f'Attempted to locate the sell button {attempts} times but could not find it.')
+                        self.web_driver.save_screenshot(f'{phone_verification_code}.png')
                         return False
                     else:
                         self.logger.info('Item listed successfully')
