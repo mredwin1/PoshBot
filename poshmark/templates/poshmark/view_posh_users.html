@@ -30,7 +30,7 @@
         </div>
         <form class="col-lg-5 col-md-6 col-10 pr-0" method="GET">
             <div class="row align-items-center h-100">
-                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Title" value="{{ request.GET.username }}" name="username">
+                <input class="form-control col-6 mr-2 ml-2" type="text"  placeholder="Search by Username/Name" value="{{ request.GET.search }}" name="search">
                 <select class="form-control col-5" name="username_select" onchange="this.form.submit()">
                     <option value="{{ request.user.username }}" onchange="this.submit()" {% if request.GET.username_select == request.user.username or request.GET.username_select == '' %}selected{% endif %}>{{ request.user.username }}</option>
                     {% if perms.can_view_all_users %}

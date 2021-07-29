@@ -168,7 +168,7 @@ class PoshUserListView(ListView, LoginRequiredMixin):
         return context
 
     def get_queryset(self):
-        username = self.request.GET.get('username', '')
+        search = self.request.GET.get('search', '')
         username_select = self.request.GET.get('username_select', '')
 
         if username_select:
@@ -176,8 +176,8 @@ class PoshUserListView(ListView, LoginRequiredMixin):
         else:
             posh_users = PoshUser.objects.filter(user=self.request.user)
 
-        if username:
-            posh_users = posh_users.filter(username__icontains=username)
+        if search:
+            posh_users = posh_users.filter(Q(username__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search))
 
         if username_select:
             posh_users = posh_users.filter(user__username=username_select)
