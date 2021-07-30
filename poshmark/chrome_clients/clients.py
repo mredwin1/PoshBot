@@ -241,8 +241,12 @@ class PhoneNumber:
                     return phone_number
                 else:
                     self.logger.error(phone_number_response_json['msg'])
-                    self.logger.info('Sleeping for 30 seconds')
-                    time.sleep(30)
+                    if phone_number_response_json['error_code'] == 'UNDER_MAINTENANCE':
+                        self.logger.info('Sleeping for 5 minutes')
+                        time.sleep(300)
+                    else:
+                        self.logger.info('Sleeping for 30 seconds')
+                        time.sleep(30)
             else:
                 error_msg = f'{service_id_response_json["error_code"]} - {service_id_response_json["msg"]}'
                 self.logger.error(error_msg)
