@@ -242,8 +242,8 @@ class PhoneNumber:
                 else:
                     self.logger.error(phone_number_response_json['msg'])
                     if phone_number_response_json['error_code'] == 'UNDER_MAINTENANCE':
-                        self.logger.info('Sleeping for 5 minutes')
-                        time.sleep(300)
+                        self.logger.info('Sleeping for 10 minutes')
+                        time.sleep(600)
                     else:
                         self.logger.info('Sleeping for 30 seconds')
                         time.sleep(30)
