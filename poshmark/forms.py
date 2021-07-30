@@ -286,7 +286,8 @@ class CreateCampaign(forms.Form):
                 username=self.cleaned_data['posh_username'],
                 password=self.cleaned_data['posh_password'],
                 user=self.request.user,
-                is_registered=True
+                is_registered=True,
+                status=PoshUser.IDLE
             )
             posh_user.save()
 
