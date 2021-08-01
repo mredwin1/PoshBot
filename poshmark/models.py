@@ -136,7 +136,7 @@ class PoshUser(models.Model):
                 profile_image_url = f'https://source.unsplash.com/600x600/?{response_dict["gender"]}'
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
                 profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
-                username = f'{response_dict["name"]["first"]}_{response_dict["name"]["last"]}'
+                username = f'{response_dict["name"]["first"].lower()}_{response_dict["name"]["last"].lower()}'
 
                 user_info = {
                     'first_name': response_dict['name']['first'],
