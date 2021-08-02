@@ -6,7 +6,6 @@ import pickle
 import random
 import re
 import requests
-import string
 import time
 import traceback
 
@@ -129,8 +128,6 @@ class PhoneNumber:
         self.order = False
         if not self.orders:
             order_history_url = 'https://portal.easysmsverify.com/get_order_history'
-
-            response = None
 
             response = requests.get(order_history_url, headers=self.get_headers, timeout=30)
 
