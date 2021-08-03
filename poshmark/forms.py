@@ -311,8 +311,8 @@ class EditCampaignForm(CreateCampaign):
         datetimes = []
 
         for time in times:
-            local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=datetime.timezone.utc)
-            utc_time = (local_time.astimezone(local_tz) + datetime.timedelta(hours=1)).strftime('%I %p')
+            local_time = datetime.datetime.strptime(time, '%I %p').replace(tzinfo=local_tz)
+            utc_time = local_time.astimezone(datetime.timezone.utc).strftime('%I %p')
             datetimes.append(utc_time)
 
         self.fields['title'].initial = campaign.title
