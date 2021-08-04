@@ -627,10 +627,16 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                 if posh_user_is_registered:
                     listing_title = get_redis_object_attr(redis_listing_id, 'title')
                     listing_found = proxy_client.check_listing(listing_title)
-                    while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item:
+                    listing_attempts = 0
+                    while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not listed_item and listing_attempts < 2:
                         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                         listed_item = proxy_client.list_item(redis_listing_id)
+
+                    if listing_attempts >= 2:
+                        update_redis_object(redis_campaign_id, {'status': '5'})
+                        log_to_redis(str(logger_id), {'level': 'ERROR',
+                                                      'message': f'Could not list item after {listing_attempts} attempts. Restarting Campaign.'})
 
                     else:
                         if not listed_item and listing_found:
