@@ -489,6 +489,7 @@ def start_campaign(campaign_id, registration_ip):
             campaign.save()
             basic_sharing.delay(campaign_id)
         elif campaign.mode == Campaign.REGISTER:
+            registration_proxy.add_connection(campaign.posh_user)
             campaign.status = '1'
             campaign.save()
             register_posh_user.delay(campaign.id, registration_proxy.id)
