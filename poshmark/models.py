@@ -50,6 +50,7 @@ class PoshUser(models.Model):
     dob_day = models.CharField(max_length=20, default='')
     dob_year = models.CharField(max_length=20, default='')
     phone_number = models.CharField(max_length=20, default='')
+    profile_picture_id = models.CharField(max_length=40)
 
     email = models.EmailField(blank=True)
     username = models.CharField(max_length=15, unique=True)
@@ -132,11 +133,18 @@ class PoshUser(models.Model):
         try:
             user_response = requests.get(user_url, params=user_payload, timeout=10, headers=headers)
             response_results = user_response.json()['results']
+            profile_picture_ids = [posh_user.profile_picture_id for posh_user in PoshUser.objects.all()]
             for response_dict in response_results:
                 profile_image_url = f'https://source.unsplash.com/600x600/?{response_dict["gender"]}'
                 header_image_response = requests.get(header_image_url, timeout=10, headers=headers)
-                profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 username = f'{response_dict["name"]["first"].lower()}_{response_dict["name"]["last"].lower()}'
+
+                profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
+                retries = 0
+                while PoshUser.get_image_id(profile_image_response.url) in profile_picture_ids and retries < 4:
+                    profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
+                    retries += 1
+                profile_picture_ids.append(PoshUser.get_image_id(profile_image_response.url))
 
                 user_info = {
                     'first_name': response_dict['name']['first'],
@@ -170,6 +178,10 @@ class PoshUser(models.Model):
             logging.error('Error occurred while trying to get profiles')
 
         return results
+
+    @staticmethod
+    def get_image_id(url):
+        return url[url.rfind('/') + 1:url.find('?')]
 
     @staticmethod
     def create_posh_user(signup_info):
