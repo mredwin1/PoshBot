@@ -124,7 +124,7 @@ class CreateCampaign(forms.Form):
     posh_username = forms.CharField(required=False)
     posh_password = forms.CharField(required=False)
     mode = forms.CharField(initial='')
-    delay = forms.FloatField()
+    delay = forms.FloatField(required=False)
     auto_run = forms.BooleanField(required=False)
     generate_users = forms.BooleanField(required=False)
     lowest_price = forms.IntegerField(required=False)
