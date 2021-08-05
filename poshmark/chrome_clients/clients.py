@@ -391,7 +391,7 @@ class BaseClient:
         """Checks if a web element is present"""
         try:
             self.web_driver.find_element(by=by, value=locator)
-        except NoSuchElementException:
+        except (NoSuchElementException, TimeoutException):
             return False
         return True
 
