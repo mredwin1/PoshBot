@@ -1627,9 +1627,15 @@ class PoshMarkClient(BaseClient):
                 )
                 list_item_button.click()
 
-                self.sleep(5)
+                pop_up = self.is_present(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
+                pop_up_retries = 0
 
-                if self.is_present(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button'):
+                while not pop_up and pop_up_retries < 5:
+                    self.sleep(5)
+                    pop_up_retries += 1
+                    pop_up = self.is_present(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
+
+                if pop_up:
                     verify_email_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[3]/div/div[2]/div[3]/button')
                     verify_email_button.click()
 
@@ -1703,8 +1709,7 @@ class PoshMarkClient(BaseClient):
                             self.update_redis_object(self.redis_posh_user_id, {'phone_number': phone_number.number})
                             phone_verify_button.click()
                 else:
-                    self.web_driver.save_screenshot(f'/root/no_pop_up.png')
-                    self.logger.info("Saved")
+                    self.logger.warning(f'No SMS Verification pop up after {pop_up_retries} retries')
                 sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
 
                 attempts = 0
