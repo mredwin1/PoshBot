@@ -1702,7 +1702,8 @@ class PoshMarkClient(BaseClient):
                             code_input.send_keys(phone_verification_code)
                             self.update_redis_object(self.redis_posh_user_id, {'phone_number': phone_number.number})
                             phone_verify_button.click()
-
+                else:
+                    self.web_driver.save_screenshot(f'{listing_title}_no_pop_up.png')
                 sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
 
                 attempts = 0
