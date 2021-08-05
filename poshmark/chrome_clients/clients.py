@@ -22,8 +22,6 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from poshmark.models import PoshUser
 
-CAPTCHA_API_KEY = os.environ['CAPTCHA_API_KEY']
-
 
 class Logger:
     def __init__(self, logger_id, log_function):
@@ -52,11 +50,12 @@ class Captcha:
         self.google_key = google_key
         self.page_url = page_url
         self.logger = logger
+        self.captcha_api_key = os.environ['CAPTCHA_API_KEY']
 
     def send_captcha(self):
         url = 'https://2captcha.com/in.php'
         params = {
-            'key': CAPTCHA_API_KEY,
+            'key': self.captcha_api_key,
             'method': 'userrecaptcha',
             'googlekey': self.google_key,
             'pageurl': self.page_url,
@@ -73,7 +72,7 @@ class Captcha:
     def get_response(self):
         url = 'https://2captcha.com/res.php'
         params = {
-            'key': CAPTCHA_API_KEY,
+            'key': self.captcha_api_key,
             'json': 1,
             'action': 'get',
             'id': self.request_id
