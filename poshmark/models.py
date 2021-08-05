@@ -199,7 +199,7 @@ class PoshUser(models.Model):
         )
 
         for picture_type in ('profile_picture', 'header_picture'):
-            file_name = f'{picture_type}_{new_posh_user.username}.jpg'
+            file_name = f'{picture_type}_{new_posh_user.username}.png'
 
             http = urllib3.PoolManager(timeout=urllib3.Timeout(connect=5))
             response = http.request('GET', signup_info[picture_type], preload_content=False)
