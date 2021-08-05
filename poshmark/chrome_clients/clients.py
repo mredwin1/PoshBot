@@ -1730,6 +1730,7 @@ class PoshMarkClient(BaseClient):
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
+            self.web_driver.save_screenshot('list_item_error.png')
             if not self.check_logged_in():
                 self.log_in()
 
