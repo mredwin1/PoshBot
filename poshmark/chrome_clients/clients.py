@@ -1482,7 +1482,8 @@ class PoshMarkClient(BaseClient):
                             self.logger.info('There is a fake listing already there, using that one')
                             return True
 
-
+                lowercase = string.ascii_lowercase
+                uppercase = string.ascii_uppercase
                 listing_title = f"{uppercase[0]}{''.join([random.choice(lowercase) for i in range(7)])} [FKE] {''.join([random.choice(lowercase) for i in range(5)])}"
                 listing_brand = 'Saks Fifth Avenue'
                 listing_category = 'Men Pants'
