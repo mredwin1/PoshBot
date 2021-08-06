@@ -637,7 +637,8 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         if not item_listed:
                             item_listed = proxy_client.list_item()
 
-                        item_updated = proxy_client.replace_fke_listing(redis_listing_id)
+                        if item_listed:
+                            item_updated = proxy_client.replace_fke_listing(redis_listing_id)
 
                     if update_attempts >= 2:
                         update_redis_object(redis_campaign_id, {'status': '5'})
