@@ -1775,7 +1775,7 @@ class PoshMarkClient(BaseClient):
             redis_listing_photos_id = self.get_redis_object_attr(redis_listing_id, 'photos')
             listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
 
-            self.logger.info(f'Updating the following item: {current_title}')
+            self.logger.info(f'Updating a fake listing')
 
             self.go_to_closet()
 
