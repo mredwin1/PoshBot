@@ -659,59 +659,59 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     remove_proxy_connection(campaign_id, registration_proxy_id)
 
-    # if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
-    #     with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
-    #         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
-    #         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    #         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
-    #             now = datetime.datetime.now(pytz.utc)
-    #             posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
-    #             campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    #             campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
-    #             campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
-    #             # This inner loop is to run the task for the given hour
-    #             while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
-    #                 now = datetime.datetime.now(pytz.utc)
-    #                 posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
-    #                 campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    #
-    #                 listing_titles = no_proxy_client.get_all_listings()
-    #                 if listing_titles:
-    #                     if listing_titles['shareable_listings']:
-    #                         for listing_title in listing_titles['shareable_listings']:
-    #                             if '[FKE]' in listing_title:
-    #                                 update_redis_object(redis_campaign_id, {'status': '5'})
-    #                                 break
-    #                             else:
-    #                                 pre_share_time = time.time()
-    #                                 no_proxy_client.share_item(listing_title)
-    #
-    #                                 no_proxy_client.check_offers(redis_listing_id=redis_listing_id)
-    #                                 no_proxy_client.check_comments(listing_title=listing_title)
-    #                                 if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
-    #                                     sent_offer = no_proxy_client.send_offer_to_likers(redis_listing_id=redis_listing_id)
-    #
-    #                                 positive_negative = 1 if random.random() < 0.5 else -1
-    #                                 deviation = random.randint(0, max_deviation) * positive_negative
-    #                                 post_share_time = time.time()
-    #                                 elapsed_time = round(post_share_time - pre_share_time, 2)
-    #                                 sleep_amount = (campaign_delay - elapsed_time) + deviation
-    #
-    #                                 if elapsed_time < sleep_amount:
-    #                                     no_proxy_client.sleep(sleep_amount)
-    #                     elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-    #                         log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
-    #                         update_redis_object(redis_campaign_id, {'status': '3'})
-    #                     # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-    #                     #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
-    #                     #     update_redis_object(redis_campaign_id, {'status': '4'})
-    #
-    #             if logged_hour_message:
-    #                     logged_hour_message = False
-    #
-    #             if not logged_hour_message and campaign_status == '1' and posh_user_status == PoshUser.RUNNING:
-    #                 log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping..."})
-    #                 logged_hour_message = True
+    if int(get_redis_object_attr(redis_posh_user_id, 'is_registered')):
+        with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as no_proxy_client:
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                now = datetime.datetime.now(pytz.utc)
+                posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
+                campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
+                # This inner loop is to run the task for the given hour
+                while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                    now = datetime.datetime.now(pytz.utc)
+                    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+
+                    listing_titles = no_proxy_client.get_all_listings()
+                    if listing_titles:
+                        if listing_titles['shareable_listings']:
+                            for listing_title in listing_titles['shareable_listings']:
+                                if '[FKE]' in listing_title:
+                                    update_redis_object(redis_campaign_id, {'status': '5'})
+                                    break
+                                else:
+                                    pre_share_time = time.time()
+                                    no_proxy_client.share_item(listing_title)
+
+                                    no_proxy_client.check_offers(redis_listing_id=redis_listing_id)
+                                    no_proxy_client.check_comments(listing_title=listing_title)
+                                    if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
+                                        sent_offer = no_proxy_client.send_offer_to_likers(redis_listing_id=redis_listing_id)
+
+                                    positive_negative = 1 if random.random() < 0.5 else -1
+                                    deviation = random.randint(0, max_deviation) * positive_negative
+                                    post_share_time = time.time()
+                                    elapsed_time = round(post_share_time - pre_share_time, 2)
+                                    sleep_amount = (campaign_delay - elapsed_time) + deviation
+
+                                    if elapsed_time < sleep_amount:
+                                        no_proxy_client.sleep(sleep_amount)
+                        elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                            log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
+                            update_redis_object(redis_campaign_id, {'status': '3'})
+                        # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
+                        #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
+                        #     update_redis_object(redis_campaign_id, {'status': '4'})
+
+                if logged_hour_message:
+                        logged_hour_message = False
+
+                if not logged_hour_message and campaign_status == '1' and posh_user_status == PoshUser.RUNNING:
+                    log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping..."})
+                    logged_hour_message = True
 
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
@@ -720,11 +720,11 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     update_redis_object(redis_campaign_id, {'status': '2'})
 
-    # campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    # if campaign_status == '5' or campaign_status == '1':
-    #     restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
-    # else:
-    #     update_redis_object(redis_campaign_id, {'status': '2'})
+    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+    if campaign_status == '5' or campaign_status == '1':
+        restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
+    else:
+        update_redis_object(redis_campaign_id, {'status': '2'})
 
 
 @shared_task
