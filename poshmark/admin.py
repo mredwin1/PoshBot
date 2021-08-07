@@ -14,11 +14,11 @@ class PoshUserAdmin(admin.ModelAdmin):
     fieldsets = (
         ('General Information', {
             'fields': (
-                ('is_registered', ),
+                ('is_registered', 'profile_updated', ),
                 ('profile_picture', 'header_picture'),
                 ('first_name', 'last_name'),
                 ('username', 'password'),
-                ('email',),
+                ('email', 'profile_picture_id'),
                 ('user', 'status', 'gender'),
             )
         }),

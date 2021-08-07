@@ -141,7 +141,7 @@ class PoshUser(models.Model):
 
                 profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                 retries = 0
-                while PoshUser.get_image_id(profile_image_response.url) in profile_picture_ids and retries < 4:
+                while PoshUser.get_image_id(profile_image_response.url) in profile_picture_ids and retries < 10:
                     profile_image_response = requests.get(profile_image_url, timeout=10, headers=headers)
                     retries += 1
                 profile_picture_ids.append(PoshUser.get_image_id(profile_image_response.url))
