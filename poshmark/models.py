@@ -158,6 +158,7 @@ class PoshUser(models.Model):
                     'dob_year': response_dict['dob']['date'][:4],
                     'profile_picture': profile_image_response.url,
                     'header_picture': header_image_response.url,
+                    'profile_picture_id': PoshUser.get_image_id(profile_image_response.url),
                 }
 
                 posh_user = PoshUser.objects.filter(username=user_info['username'])
@@ -195,6 +196,7 @@ class PoshUser(models.Model):
             dob_month=signup_info['dob_month'],
             dob_day=signup_info['dob_day'],
             dob_year=signup_info['dob_year'],
+            profile_picture_id=signup_info['profile_picture_id'],
             status=PoshUser.IDLE,
         )
 
