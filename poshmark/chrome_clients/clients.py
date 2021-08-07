@@ -1977,6 +1977,7 @@ class PoshMarkClient(BaseClient):
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
                 self.log_in()
+            self.check_inactive()
 
     def share_item(self, listing_title):
         """Will share an item in the closet"""
