@@ -493,6 +493,11 @@ def start_campaign(campaign_id, registration_ip):
             campaign.status = '1'
             campaign.save()
             register_posh_user.delay(campaign.id, registration_proxy.id)
+        elif campaign.mode == Campaign.LIST_ITEM:
+            registration_proxy.add_connection(campaign.posh_user)
+            campaign.status = '1'
+            campaign.save()
+            list_item.delay(campaign.id, registration_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
