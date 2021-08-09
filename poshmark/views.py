@@ -374,7 +374,7 @@ class StartCampaign(View, LoginRequiredMixin):
                     campaign.status = '4'
                     campaign.save()
                     start_campaign.delay(int(campaign_ids[0]), False)
-                elif campaign.mode == Campaign.ADVANCED_SHARING:
+                elif campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
                     listings = Listing.objects.filter(campaign=campaign)
                     if listings:
                         campaign.status = '4'
@@ -408,7 +408,7 @@ class StartCampaign(View, LoginRequiredMixin):
                             campaign.save()
                             start_campaign.delay(int(campaign_id), False)
                             started_campaigns.append(campaign_id)
-                        elif campaign.mode == Campaign.ADVANCED_SHARING:
+                        elif campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
                             listings = Listing.objects.filter(campaign=campaign)
                             if listings:
                                 campaign.status = '4'
