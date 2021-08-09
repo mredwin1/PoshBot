@@ -739,6 +739,8 @@ def list_item(campaign_id, registration_proxy_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
     with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_registration_proxy_id) as proxy_client:
+        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
 
         registration_attempts = 0
