@@ -1,6 +1,7 @@
 import datetime
 import email
 import imaplib
+import logging
 import os
 import pickle
 import random
@@ -1459,6 +1460,7 @@ class PoshMarkClient(BaseClient):
         """Will list an item on poshmark for the user"""
         try:
             if redis_listing_id:
+                self.logger.info(redis_listing_id)
                 listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
                 listing_brand = self.get_redis_object_attr(redis_listing_id, 'brand')
                 listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
