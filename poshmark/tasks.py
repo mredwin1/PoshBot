@@ -795,7 +795,7 @@ def list_item(campaign_id, registration_proxy_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    if campaign_status == '5' or campaign_status == '1':
+    if campaign_status == '5':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
@@ -885,7 +885,7 @@ def restart_task(campaign_id):
         else:
             campaign.status = '2'
             campaign.save()
-    elif campaign.mode == Campaign.REGISTER:
+    elif campaign.mode == Campaign.REGISTER or campaign.mode == Campaign.LIST_ITEM:
         campaign.status = '4'
         campaign.save()
         start_campaign.delay(campaign_id, True)
