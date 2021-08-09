@@ -63,7 +63,7 @@ def initialize_campaign(campaign_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
 
-    if campaign.mode == Campaign.ADVANCED_SHARING:
+    if campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
         listing = Listing.objects.get(campaign=campaign)
     else:
         listing = None
@@ -737,7 +737,6 @@ def list_item(campaign_id, registration_proxy_id):
         update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
-    log_to_redis(str(logger_id), {'level': 'INFO', 'message': f'Redis Listing ID: {redis_listing_id}'})
 
     with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_registration_proxy_id) as proxy_client:
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
