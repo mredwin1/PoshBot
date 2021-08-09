@@ -63,9 +63,9 @@ def initialize_campaign(campaign_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
 
-    if campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
+    try:
         listing = Listing.objects.get(campaign=campaign)
-    else:
+    except Listing.DoesNotExist:
         listing = None
 
     if registration_proxy_id:
