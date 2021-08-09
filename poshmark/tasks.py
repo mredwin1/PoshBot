@@ -773,7 +773,7 @@ def list_item(campaign_id, registration_proxy_id):
                     posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                     if not item_listed:
-                        item_listed = proxy_client.list_item()
+                        item_listed = proxy_client.list_item(redis_listing_id=redis_listing_id)
 
                 if listing_attempts >= 2:
                     update_redis_object(redis_campaign_id, {'status': '5'})
