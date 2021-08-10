@@ -1764,37 +1764,40 @@ class PoshMarkClient(BaseClient):
     def replace_fke_listing(self, redis_listing_id, brand=None):
         """Will update a fake listing the listing that was passed"""
         try:
-            if brand:
-                listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
-                listing_brand = brand
-                listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
-                listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
-                listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
-                listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
-                listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
-                listing_tags = int(self.get_redis_object_attr(redis_listing_id, 'tags'))
-                listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
-                listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
-                redis_listing_photos_id = self.get_redis_object_attr(redis_listing_id, 'photos')
-                listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
+            self.go_to_closet()
+            listing_title = self.get_redis_object_attr(redis_listing_id, 'title')
 
-                self.logger.info(f'Updating a fake listing')
+            listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
+            for listed_item in listed_items:
+                title = listed_item.find_element_by_class_name('tile__title')
+                if '[FKE]' in title.text or listing_title == title.text:
+                    listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                    listing_button.click()
 
-                self.go_to_closet()
+                    self.sleep(3)
 
-                listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
-                for listed_item in listed_items:
-                    title = listed_item.find_element_by_class_name('tile__title')
-                    if '[FKE]' in title.text:
-                        listing_button = listed_item.find_element_by_class_name('tile__covershot')
-                        listing_button.click()
+                    edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
+                    edit_listing_button.click()
 
-                        self.sleep(3)
+                    self.sleep(5)
 
-                        edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
-                        edit_listing_button.click()
 
-                        self.sleep(5)
+                    if brand:
+                        listing_brand = brand
+                        listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
+                        listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
+                        listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
+                        listing_cover_photo = self.get_redis_object_attr(redis_listing_id, 'cover_photo')
+                        listing_description = self.get_redis_object_attr(redis_listing_id, 'description')
+                        listing_tags = int(self.get_redis_object_attr(redis_listing_id, 'tags'))
+                        listing_original_price = self.get_redis_object_attr(redis_listing_id, 'original_price')
+                        listing_listing_price = self.get_redis_object_attr(redis_listing_id, 'listing_price')
+                        redis_listing_photos_id = self.get_redis_object_attr(redis_listing_id, 'photos')
+                        listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
+
+                        self.logger.info(f'Updating a fake listing')
+
+
 
                         self.web_driver.execute_script("window.scrollTo(0, 1280);")
 
