@@ -638,6 +638,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             item_listed = proxy_client.list_item()
 
                         if item_listed:
+                            item_updated = proxy_client.replace_fke_listing(redis_listing_id, brand='Saks Fifth')
                             item_updated = proxy_client.replace_fke_listing(redis_listing_id)
 
                     if update_attempts >= 2:
@@ -702,9 +703,6 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                             log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
                             update_redis_object(redis_campaign_id, {'status': '3'})
-                        # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                        #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
-                        #     update_redis_object(redis_campaign_id, {'status': '4'})
 
                 if logged_hour_message:
                         logged_hour_message = False
