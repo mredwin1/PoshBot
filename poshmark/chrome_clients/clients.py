@@ -1,6 +1,7 @@
 import datetime
 import email
 import imaplib
+import logging
 import os
 import pickle
 import random
@@ -1495,7 +1496,6 @@ class PoshMarkClient(BaseClient):
                 listing_tags = 0
                 listing_original_price = '30'
                 listing_listing_price = '15'
-                redis_listing_photos_id = ''
                 listing_photos = ''
 
             self.logger.info(f'Listing the following item: {listing_title}')

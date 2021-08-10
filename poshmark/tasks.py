@@ -63,9 +63,9 @@ def initialize_campaign(campaign_id, registration_proxy_id=None):
     campaign = Campaign.objects.get(id=campaign_id)
     posh_user = campaign.posh_user
 
-    if campaign.mode == Campaign.ADVANCED_SHARING:
+    try:
         listing = Listing.objects.get(campaign=campaign)
-    else:
+    except Listing.DoesNotExist:
         listing = None
 
     if registration_proxy_id:
@@ -493,6 +493,11 @@ def start_campaign(campaign_id, registration_ip):
             campaign.status = '1'
             campaign.save()
             register_posh_user.delay(campaign.id, registration_proxy.id)
+        elif campaign.mode == Campaign.LIST_ITEM:
+            registration_proxy.add_connection(campaign.posh_user)
+            campaign.status = '1'
+            campaign.save()
+            list_item.delay(campaign.id, registration_proxy.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
@@ -644,12 +649,10 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                     if update_attempts >= 2:
                         update_redis_object(redis_campaign_id, {'status': '5'})
                         log_to_redis(str(logger_id), {'level': 'ERROR',
-                                                      'message': f'Could not update item after {listing_attempts} attempts. Restarting Campaign.'})
-
-                    else:
-                        if not listed_item and listing_found:
-                            listed_item = True
-                            log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
+                                                      'message': f'Could not update item after {update_attempts} attempts. Restarting Campaign.'})
+                    elif not listed_item and listing_found:
+                        listed_item = True
+                        log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
 
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
         update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
@@ -716,10 +719,81 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
-    update_redis_object(redis_campaign_id, {'status': '2'})
+    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+    if campaign_status == '5':  # or campaign_status == '1'
+        restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
+    else:
+        update_redis_object(redis_campaign_id, {'status': '2'})
+
+
+@shared_task
+def list_item(campaign_id, registration_proxy_id):
+    redis_campaign_id, redis_posh_user_id, logger_id, redis_listing_id, redis_registration_proxy_id = initialize_campaign(campaign_id, registration_proxy_id)
+    listed_item = False
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.REGISTERING})
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
+
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object, redis_registration_proxy_id) as proxy_client:
+        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+        posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+
+        registration_attempts = 0
+        while not posh_user_is_registered and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and registration_attempts < 2:
+            proxy_client.register()
+            registration_attempts += 1
+            posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+
+        if registration_attempts >= 2:
+            update_redis_object(redis_campaign_id, {'status': '5'})
+            log_to_redis(str(logger_id), {'level': 'ERROR', 'message': f'Could not register after {registration_attempts} attempts. Restarting Campaign.'})
+
+        posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+        while posh_user_is_registered and not posh_user_profile_updated and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+            proxy_client.update_profile()
+            posh_user_is_registered = int(get_redis_object_attr(redis_posh_user_id, 'is_registered'))
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            posh_user_profile_updated = int(get_redis_object_attr(redis_posh_user_id, 'profile_updated'))
+
+        if posh_user_is_registered:
+            listing_title = get_redis_object_attr(redis_listing_id, 'title')
+            listing_found = proxy_client.check_listing(listing_title)
+            if not listing_found:
+                listing_attempts = 0
+                item_listed = False
+                while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not item_listed and listing_attempts < 2:
+                    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+                    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+                    if not item_listed:
+                        item_listed = proxy_client.list_item(redis_listing_id=redis_listing_id)
+
+                if listing_attempts >= 2:
+                    update_redis_object(redis_campaign_id, {'status': '5'})
+                    log_to_redis(str(logger_id), {'level': 'ERROR',
+                                                  'message': f'Could not update item after {listing_attempts} attempts. Restarting Campaign.'})
+                elif not listed_item and listing_found:
+                    log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
+
+    registered_accounts = get_redis_object_attr(redis_registration_proxy_id, 'registered_accounts')
+    total_registered = int(registered_accounts) + 1 if registered_accounts else 1
+    update_redis_object(redis_registration_proxy_id, {'registered_accounts': str(total_registered)})
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
 
     campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
-    if campaign_status == '5' or campaign_status == '1':
+    if campaign_status == '5':
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
@@ -809,7 +883,7 @@ def restart_task(campaign_id):
         else:
             campaign.status = '2'
             campaign.save()
-    elif campaign.mode == Campaign.REGISTER:
+    elif campaign.mode == Campaign.REGISTER or campaign.mode == Campaign.LIST_ITEM:
         campaign.status = '4'
         campaign.save()
         start_campaign.delay(campaign_id, True)

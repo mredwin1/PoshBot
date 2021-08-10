@@ -58,17 +58,18 @@
                             <option value="0" title="Will share everything in the Posh User's account" {% if form.mode.value == '0' %}selected{% endif %}>Basic Sharing</option>
                             <option value="1" title="Will list and share the given listings in the Posh User's account" {% if form.mode.value == '1' %}selected{% endif %}>Advanced Sharing</option>
                             <option value="2" title="Will register the given user" {% if form.mode.value == '2' %}selected{% endif %}>Register User</option>
+                            <option value="3" title="Will list the given item" {% if form.mode.value == '3' %}selected{% endif %}>List Item</option>
                         </select>
                     </div>
                 </div>
                 <div class="col-3">
-                    <div id="auto_run"{% if form.mode.value == '2' %} style="display: none"{% endif %}>
+                    <div id="auto_run"{% if form.mode.value == '2' or form.mode.value == '3' %} style="display: none"{% endif %}>
                         <label for="{{ form.auto_run.id_for_label }}" class="pr-2">AUTO-RUN</label>
                         <input type="checkbox"{% if form.auto_run.value %} checked{% endif %} data-toggle="toggle" data-size="sm" data-onstyle="dark" id="{{ form.auto_run.auto_id }}" name="{{ form.auto_run.name }}" value="{{ form.auto_run.value }}">
                     </div>
                 </div>
                 <div class="col-3">
-                    <div id="generate_users"{% if form.mode.value == '0' or form.mode.value == '2' %} style="display: none"{% endif %}>
+                    <div id="generate_users"{% if form.mode.value != '1' %} style="display: none"{% endif %}>
                         <label for="{{ form.generate_users.id_for_label }}" class="pr-2">REPLACE USERS</label>
                         <input type="checkbox"{% if form.generate_users.value %} checked{% endif %} data-toggle="toggle" data-size="sm"  data-onstyle="dark" id="{{ form.generate_users.auto_id }}" name="{{ form.generate_users.name }}" value="{{ form.generate_users.value }}">
                     </div>
@@ -78,7 +79,7 @@
                 <label for="{{ form.title.id_for_label }}" class="col-2 col-form-label">TITLE</label>
                 <input type="text" id="{{ form.title.auto_id }}" value="{% if form.title.value %}{{ form.title.value }}{% endif %}" name="{{ form.title.name }}" class="form-control col-6" placeholder="Title" maxlength="30" required>
                 {{ form.title.errors }}
-                <label for="{{ form.lowest_price.id_for_label }}" class="col-2 col-form-label" id="lowest_price_label" {% if form.mode.value == '1' or form.mode.value == '2' %} style="display: none"{% endif %}>LOWEST PRICE</label>
+                <label for="{{ form.lowest_price.id_for_label }}" class="col-2 col-form-label" id="lowest_price_label" {% if form.mode.value != '0' %} style="display: none"{% endif %}>LOWEST PRICE</label>
                 <input type="text" id="{{ form.lowest_price.auto_id }}" value="{% if form.lowest_price.value %}{{ form.lowest_price.value }}{% endif %}" name="{{ form.lowest_price.name }}" class="form-control col-2" {% if form.mode.value == '1' or form.mode.value == '2' %} style="display: none"{% endif %}>
                 {{ form.lowest_price.errors }}
             </div>
@@ -96,8 +97,8 @@
                 {{ form.posh_user.errors }}
                 {{ form.posh_username.errors }}
             </div>
-            <hr class="my-4">
-            <div class="form-group justify-content-between row px-2" id="times"{% if form.mode.value == '2' %} style="display: none"{% endif %}>
+            <hr class="my-4"{% if form.mode.value == '2' or form.mode.value == '3' %} style="display: none"{% endif %}>
+            <div class="form-group justify-content-between row px-2" id="times"{% if form.mode.value == '2' or form.mode.value == '3' %} style="display: none"{% endif %}>
                 <div class="col-1 pl-2 pr-0">
                     <p class="mb-1">TIMES</p>
                     {{ form.times.errors }}
