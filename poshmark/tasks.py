@@ -643,7 +643,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             item_listed = proxy_client.list_item()
 
                         if item_listed:
-                            item_updated = proxy_client.replace_fke_listing(redis_listing_id, brand='Saks Fifth')
+                            item_updated = proxy_client.replace_fke_listing(redis_listing_id, brand='Guess')
                             item_updated = proxy_client.replace_fke_listing(redis_listing_id)
 
                     if update_attempts >= 2:
