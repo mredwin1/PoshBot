@@ -1973,6 +1973,7 @@ class PoshMarkClient(BaseClient):
                         if attempts > 10:
                             self.logger.error(
                                 f'Attempted to locate the sell button {attempts} times but could not find it.')
+                            self.web_driver.save_screenshot('update_failed.png')
                         else:
                             self.logger.info('Updated successfully')
 
