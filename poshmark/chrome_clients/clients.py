@@ -1782,7 +1782,7 @@ class PoshMarkClient(BaseClient):
                     self.sleep(5)
 
                     if brand:
-                        listing_brand = brand
+                        listing_brand = ''
                         listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
                         listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
                         listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
