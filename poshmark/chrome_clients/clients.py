@@ -1762,20 +1762,22 @@ class PoshMarkClient(BaseClient):
                 self.log_in()
 
     def update_listing(self, current_title, **kwargs):
-        listing_brand = kwargs.pop('brand', None)
-        listing_title = kwargs.pop('title', None)
-        listing_category = kwargs.pop('category', None)
-        listing_subcategory = kwargs.pop('subcategory', None)
-        listing_size = kwargs.pop('size', None)
-        listing_cover_photo = kwargs.pop('cover_photo', None)
-        listing_description = kwargs.pop('description', None)
-        listing_tags = kwargs.pop('tags', None)
-        listing_original_price = kwargs.pop('original_price', None)
-        listing_listing_price = kwargs.pop('listing_price', None)
-        listing_photos = kwargs.pop('photos', None)
-
         try:
+            listing_brand = kwargs.pop('brand', None)
+            listing_title = kwargs.pop('title', None)
+            listing_category = kwargs.pop('category', None)
+            listing_subcategory = kwargs.pop('subcategory', None)
+            listing_size = kwargs.pop('size', None)
+            listing_cover_photo = kwargs.pop('cover_photo', None)
+            listing_description = kwargs.pop('description', None)
+            listing_tags = kwargs.pop('tags', None)
+            listing_original_price = kwargs.pop('original_price', None)
+            listing_listing_price = kwargs.pop('listing_price', None)
+            listing_photos = kwargs.pop('photos', None)
+
             self.go_to_closet()
+
+            self.logger.info(f'Updating the following listing: {current_title}')
 
             listed_items = self.locate_all(By.CLASS_NAME, 'card--small')
             for listed_item in listed_items:
