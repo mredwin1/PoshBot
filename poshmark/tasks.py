@@ -647,7 +647,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         if not item_listed_title:
                             item_listed_title = proxy_client.list_item()
 
-                        if item_listed:
+                        if item_listed_title:
                             if not photos_updated:
                                 redis_listing_photos_id = self.get_redis_object_attr(redis_listing_id, 'photos')
                                 listing_photos = self.get_redis_object_attr(redis_listing_photos_id)
@@ -681,8 +681,8 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         update_redis_object(redis_campaign_id, {'status': '5'})
                         log_to_redis(str(logger_id), {'level': 'ERROR',
                                                       'message': f'Could not update item after {update_attempts} attempts. Restarting Campaign.'})
-                    elif not listed_item and listing_found:
-                        listed_item = True
+                    elif not item_listed_title and listing_found:
+                        item_listed_title = True
                         log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
 
     if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
