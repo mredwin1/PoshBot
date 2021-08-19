@@ -663,7 +663,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                 listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
                                 listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
                                 listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
-                                prices_updated = proxy_client.update_listing(item_listed_title, original_price=listing_original_price, listing_price=listing_listing_price, brand=listing_brand)
+                                prices_updated = proxy_client.update_listing(item_listed_title, original_price=listing_original_price, listing_price=listing_listing_price)
 
                             if photos_updated and categories_size_updated and prices_updated and not other_updated:
                                 listing_description = get_redis_object_attr(redis_listing_id, 'description')
@@ -675,7 +675,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             #     listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
                             #     brand_updated = proxy_client.update_listing(get_redis_object_attr(redis_listing_id, 'title'), brand=listing_brand)
 
-                            item_updated = categories_size_updated and prices_updated and other_updated and brand_updated and photos_updated
+                            item_updated = categories_size_updated and prices_updated and other_updated and photos_updated
                             update_attempts += 1
 
                     if update_attempts >= 4:
