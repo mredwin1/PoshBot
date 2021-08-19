@@ -1783,6 +1783,16 @@ class PoshMarkClient(BaseClient):
             for listed_item in listed_items:
                 title = listed_item.find_element_by_class_name('tile__title')
                 if '[FKE]' in title.text or current_title == title.text:
+                    listing_button = listed_item.find_element_by_class_name('tile__covershot')
+                    listing_button.click()
+
+                    self.sleep(3)
+
+                    edit_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div/div[3]/div[2]/div[1]/a')
+                    edit_listing_button.click()
+
+                    self.sleep(5)
+
                     if listing_category and listing_subcategory:
                         self.logger.info('Updating category')
 

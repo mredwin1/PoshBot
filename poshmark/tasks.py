@@ -641,7 +641,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                     brand_updated = False
                     item_updated = False
                     item_listed_title = None
-                    while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not item_updated and update_attempts < 2:
+                    while not listing_found and posh_user_status != PoshUser.INACTIVE and campaign_status == '1' and not item_updated and update_attempts < 4:
                         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
                         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
                         if not item_listed_title:
@@ -653,31 +653,31 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                 listing_photos = get_redis_object_attr(redis_listing_photos_id)
                                 proxy_client.update_listing(item_listed_title, photos=listing_photos)
 
-                            if not categories_size_updated:
+                            if photos_updated and not categories_size_updated:
                                 listing_category = get_redis_object_attr(redis_listing_id, 'category')
                                 listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
                                 listing_size = get_redis_object_attr(redis_listing_id, 'size')
                                 proxy_client.update_listing(item_listed_title, category=listing_category, subcategory=listing_subcategory, size=listing_size)
 
-                            if not prices_updated:
+                            if photos_updated and categories_size_updated and not prices_updated:
                                 listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
                                 listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
                                 proxy_client.update_listing(item_listed_title, original_price=listing_original_price, listing_price=listing_listing_price)
 
-                            if not other_updated:
+                            if photos_updated and categories_size_updated and prices_updated and not other_updated:
                                 listing_description = get_redis_object_attr(redis_listing_id, 'description')
                                 listing_title = get_redis_object_attr(redis_listing_id, 'title')
                                 listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
                                 proxy_client.update_listing(item_listed_title, description=listing_description, title=listing_title, cover_photo=listing_cover_photo)
 
-                            if not brand_updated:
+                            if photos_updated and categories_size_updated and prices_updated and other_updated and not brand_updated:
                                 listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
                                 proxy_client.update_listing(get_redis_object_attr(redis_listing_id, 'title'), brand=listing_brand)
 
                             item_updated = categories_size_updated and prices_updated and other_updated and brand_updated and photos_updated
                             update_attempts += 1
 
-                    if update_attempts >= 2:
+                    if update_attempts >= 4:
                         update_redis_object(redis_campaign_id, {'status': '5'})
                         log_to_redis(str(logger_id), {'level': 'ERROR',
                                                       'message': f'Could not update item after {update_attempts} attempts. Restarting Campaign.'})
