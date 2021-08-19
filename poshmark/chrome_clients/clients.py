@@ -2000,7 +2000,7 @@ class PoshMarkClient(BaseClient):
                     self.sleep(5)
 
                     if brand:
-                        listing_brand = brand
+                        listing_brand = ''
                         listing_category = self.get_redis_object_attr(redis_listing_id, 'category')
                         listing_subcategory = self.get_redis_object_attr(redis_listing_id, 'subcategory')
                         listing_size = self.get_redis_object_attr(redis_listing_id, 'size')
@@ -2191,6 +2191,7 @@ class PoshMarkClient(BaseClient):
                         if attempts > 10:
                             self.logger.error(
                                 f'Attempted to locate the sell button {attempts} times but could not find it.')
+                            self.web_driver.save_screenshot('update_failed.png')
                         else:
                             self.logger.info('Updated successfully')
 
