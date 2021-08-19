@@ -672,7 +672,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
                             if not brand_updated:
                                 listing_brand = self.get_redis_object_attr(redis_listing_id, 'brand')
-                                proxy_client.update_listing(item_listed_title, brand=listing_brand)
+                                proxy_client.update_listing(self.get_redis_object_attr(redis_listing_id, 'title'), brand=listing_brand)
 
                             item_updated = categories_size_updated and prices_updated and other_updated and brand_updated and photos_updated
                             update_attempts += 1
