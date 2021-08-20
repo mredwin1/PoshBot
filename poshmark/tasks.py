@@ -686,7 +686,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                         log_to_redis(str(logger_id), {'level': 'ERROR',
                                                       'message': f'Could not update item after {update_attempts} attempts. Restarting Campaign.'})
                     elif not item_listed_title and listing_found:
-                        item_listed_title = True
+                        item_updated = True
                         log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f'{listing_title} already listed, not re listing'})
                     elif not item_updated:
                         update_redis_object(redis_campaign_id, {'status': '5'})
