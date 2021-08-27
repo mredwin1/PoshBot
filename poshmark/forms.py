@@ -228,7 +228,7 @@ class CreateCampaign(forms.Form):
 
         new_campaign.save()
 
-        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING:
+        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data['mode'] == Campaign.LIST_ITEM:
             for listing in self.cleaned_data['listings']:
                 listing.campaign = new_campaign
                 listing.save()
