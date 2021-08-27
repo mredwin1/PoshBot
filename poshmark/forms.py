@@ -301,7 +301,7 @@ class CreateBasicCampaignForm(forms.Form):
 
 class EditCampaignForm(CreateCampaign):
     def __init__(self, request, campaign, *args, **kwargs):
-        super(EditCampaignForm, self).__init__(request,  *args, **kwargs)
+        super(EditCampaignForm, self).__init__(request, campaign, *args, **kwargs)
         self.request = request
         self.campaign = campaign
 
