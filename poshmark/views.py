@@ -371,9 +371,12 @@ class StartCampaign(View, LoginRequiredMixin):
             campaign = Campaign.objects.get(id=int(campaign_ids[0]))
             if campaign.posh_user and campaign.status == '2':
                 if campaign.mode == Campaign.BASIC_SHARING or campaign.mode == Campaign.AGING:
-                    campaign.status = '4'
-                    campaign.save()
-                    start_campaign.delay(int(campaign_ids[0]), False)
+                    if campaign.posh_user.is_registered:
+                        campaign.status = '4'
+                        campaign.save()
+                        start_campaign.delay(int(campaign_ids[0]), False)
+                    else:
+                        data['error'] = 'Campaign could not be started: PoshUser is not registered'
                 elif campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
                     listings = Listing.objects.filter(campaign=campaign)
                     if listings:
@@ -403,11 +406,12 @@ class StartCampaign(View, LoginRequiredMixin):
                 campaign = Campaign.objects.get(id=int(campaign_id))
                 if campaign:
                     if campaign.posh_user and campaign.status == '2':
-                        if campaign.mode == Campaign.BASIC_SHARING:
-                            campaign.status = '4'
-                            campaign.save()
-                            start_campaign.delay(int(campaign_id), False)
-                            started_campaigns.append(campaign_id)
+                        if campaign.mode == Campaign.BASIC_SHARING or campaign.mode == Campaign.AGING:
+                            if campaign.posh_user.is_registered:
+                                campaign.status = '4'
+                                campaign.save()
+                                start_campaign.delay(int(campaign_id), False)
+                                started_campaigns.append(campaign_id)
                         elif campaign.mode == Campaign.ADVANCED_SHARING or campaign.mode == Campaign.LIST_ITEM:
                             listings = Listing.objects.filter(campaign=campaign)
                             if listings:
