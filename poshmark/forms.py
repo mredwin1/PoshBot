@@ -376,7 +376,7 @@ class EditCampaignForm(CreateCampaign):
 
                 for listing_id in listing_ids:
                     if listing_id != '':
-                        listing_objects.append(Listing.objects.get(id=int(listing_id)))
+                        listing_objects.append(Listing.objects.get(id=int(listing_id), user=self.campaign.user))
 
                 self.cleaned_data[listings_field] = listing_objects
             else:
