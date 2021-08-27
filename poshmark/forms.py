@@ -179,7 +179,7 @@ class CreateCampaign(forms.Form):
                 listing_objects = []
 
                 for listing_id in listing_ids:
-                    listing_objects.append(Listing.objects.get(id=int(listing_id)))
+                    listing_objects.append(Listing.objects.get(id=int(listing_id), user=self.request.user))
 
                 self.cleaned_data[listings_field] = listing_objects
             else:
@@ -424,7 +424,6 @@ class EditCampaignForm(CreateCampaign):
             old_listing.save()
 
         if self.cleaned_data['listings']:
-            import logging
             for listing in self.cleaned_data['listings']:
                 listing.campaign = self.campaign
                 listing.save()
