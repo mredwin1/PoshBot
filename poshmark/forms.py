@@ -424,6 +424,8 @@ class EditCampaignForm(CreateCampaign):
             old_listing.save()
 
         if self.cleaned_data['listings']:
+            import logging
             for listing in self.cleaned_data['listings']:
+                logging.info(listing)
                 listing.campaign = self.campaign
                 listing.save()
