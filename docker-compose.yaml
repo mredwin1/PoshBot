@@ -96,7 +96,7 @@ services:
     image: ghcr.io/mredwin1/poshbot:latest
     container_name: celery_concurrency_poshbot
     restart: always
-    entrypoint: celery -A PoshBot worker --autoscale=500,40 -Q concurrency -l INFO
+    entrypoint: celery -A PoshBot worker --autoscale=500,15 -Q concurrency -l INFO
     depends_on:
       - redis
       - db
