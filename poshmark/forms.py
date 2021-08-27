@@ -174,7 +174,7 @@ class CreateCampaign(forms.Form):
 
         import logging
         logging.info(f'Mode: {self.cleaned_data["mode"]}')
-        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data == Campaign.LIST_ITEM:
+        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data['mode'] == Campaign.LIST_ITEM:
             logging.info(f'First if worked.')
             listings_field = 'listings'
             if listings_field in self.cleaned_data.keys():
