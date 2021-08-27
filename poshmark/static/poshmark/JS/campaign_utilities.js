@@ -234,6 +234,16 @@ $(document).ready(function () {
             lowest_price_input.hide();
             lowest_price_input.prop('required', false);
             delay.prop('required', false);
+        } else if (mode === '4') {
+            auto_run.show();
+            posh_user.show();
+            times.show();
+            listing_items.hide();
+            generate_users.hide();
+            lowest_price_label.hide();
+            lowest_price_input.hide();
+            lowest_price_input.prop('required', false);
+            delay.prop('required', true);
         }
     });
     $('#mainModal').on('show.bs.modal', function (event) {
