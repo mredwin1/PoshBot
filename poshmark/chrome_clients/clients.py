@@ -2520,7 +2520,7 @@ class PoshMarkClient(BaseClient):
             self.logger.info('Scrolling randomly')
 
             height = self.web_driver.execute_script("return document.body.scrollHeight")
-            scroll_amount = self.web_driver.execute_script("return window.scrolly")
+            scroll_amount = self.web_driver.execute_script("return window.pageYOffset;")
             lower_limit = 0 - scroll_amount
             upper_limit = height - scroll_amount
             scroll_chosen = random.randint(lower_limit, upper_limit)
