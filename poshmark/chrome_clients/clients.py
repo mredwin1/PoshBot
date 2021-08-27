@@ -2563,7 +2563,7 @@ class PoshMarkClient(BaseClient):
 
                     self.logger.info(f'The following user was selected to be followed: {selected_user}')
 
-                    time.sleep(3, 5)
+                    self.sleep(3, 5)
 
                     follow_button.click()
 
