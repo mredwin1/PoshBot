@@ -374,7 +374,7 @@ class EditCampaignForm(CreateCampaign):
             pass
 
         listings_field = 'listings'
-        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data == Campaign.LIST_ITEM:
+        if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data['mode'] == Campaign.LIST_ITEM:
             if listings_field in self.cleaned_data.keys():
                 listing_ids = self.cleaned_data[listings_field].split(',')
                 listing_objects = []
