@@ -172,14 +172,19 @@ class CreateCampaign(forms.Form):
 
             self.cleaned_data[times_field] = ','.join(datetimes)
 
+        import logging
+        logging.info(f'Mode: {self.cleaned_data["mode"]}')
         if self.cleaned_data['mode'] == Campaign.ADVANCED_SHARING or self.cleaned_data == Campaign.LIST_ITEM:
+            logging.info(f'First if worked.')
             listings_field = 'listings'
             if listings_field in self.cleaned_data.keys():
                 listing_ids = self.cleaned_data[listings_field].split(',')
                 listing_objects = []
 
                 for listing_id in listing_ids:
-                    listing_objects.append(Listing.objects.get(id=int(listing_id), user=self.request.user))
+                    listing_object = Listing.objects.get(id=int(listing_id), user=self.request.user)
+                    logging.info(f'Listing: {listing_object}')
+                    listing_objects.append(listing_object)
 
                 self.cleaned_data[listings_field] = listing_objects
             else:
