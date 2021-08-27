@@ -2515,6 +2515,65 @@ class PoshMarkClient(BaseClient):
             if not self.check_logged_in():
                 self.log_in()
 
+    def random_scroll(self):
+        try:
+            self.logger.info('Scrolling randomly')
+
+            height = self.web_driver.execute_script("return document.body.scrollHeight")
+            scroll_amount = self.web_driver.execute_script("return window.scrolly")
+            lower_limit = 0 - scroll_amount
+            upper_limit = height - scroll_amount
+            scroll_chosen = random.randint(lower_limit, upper_limit)
+
+            self.logger.debug(f'Total document height: {height} Amount Scrolled Right Now: {scroll_amount}')
+            self.logger.debug(f'Lower Limit: {lower_limit} Upper Limit: {upper_limit}')
+            self.logger.debug(f'Scroll Amount Chosen: {scroll_chosen}')
+
+            self.web_driver.execute_script(f"window.scrollBy(0,{scroll_chosen});")
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+
+    def follow_random_follower(self):
+        try:
+            self.logger.info('Following a random follower')
+            self.go_to_closet()
+
+            self.sleep(3, 5)
+
+            followers_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/div/div[2]/nav/ul/li[3]/div')
+            followers_button.click()
+
+            self.sleep(3, 5)
+
+            for x in range(random.randint(3, 6)):
+                self.random_scroll()
+                self.sleep(5, 10)
+
+            selected_user = None
+            available_users = self.locate_all(By.CLASS_NAME, 'follow-list__item')
+
+            while not selected_user:
+                selection = random.choice(available_users)
+                follow_button = selection.find_element_by_tag_name('button')
+
+                if follow_button.text.replace(' ', '') == 'Follow':
+                    selected_user = selection.find_element_by_class_name('follow__action__follower ').text
+                    actions = ActionChains(self.web_driver)
+                    actions.move_to_element(follow_button).perform()
+
+                    self.logger.info(f'The following user was selected to be followed: {selected_user}')
+
+                    time.sleep(3, 5)
+
+                    follow_button.click()
+
+                    self.logger.info('Follow button clicked')
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
+
     def check_ip(self, filename=None):
         self.web_driver.get('https://www.whatsmyip.org/')
         host_name = self.locate(By.ID, 'hostname')

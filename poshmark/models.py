@@ -258,12 +258,14 @@ class Campaign(models.Model):
     ADVANCED_SHARING = '1'
     REGISTER = '2'
     LIST_ITEM = '3'
+    AGING = '4'
 
     MODE_CHOICES = [
         (BASIC_SHARING, 'Basic Sharing'),
         (ADVANCED_SHARING, 'Advanced Sharing'),
         (REGISTER, 'Register'),
         (LIST_ITEM, 'List Item'),
+        (AGING, 'Aging'),
     ]
 
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='0')

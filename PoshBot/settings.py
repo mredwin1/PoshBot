@@ -199,6 +199,7 @@ CELERY_TASK_ROUTES = {
     'poshmark.tasks.generate_posh_users': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.assign_posh_users': {'queue': 'concurrency', 'routing_key': 'concurrency'},
     'poshmark.tasks.list_item': {'queue': 'concurrency', 'routing_key': 'concurrency'},
+    'poshmark.tasks.aging': {'queue': 'concurrency', 'routing_key': 'concurrency'},
 }
 
 # Periodic Tasks

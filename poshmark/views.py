@@ -370,7 +370,7 @@ class StartCampaign(View, LoginRequiredMixin):
         if len(campaign_ids) == 1:
             campaign = Campaign.objects.get(id=int(campaign_ids[0]))
             if campaign.posh_user and campaign.status == '2':
-                if campaign.mode == Campaign.BASIC_SHARING:
+                if campaign.mode == Campaign.BASIC_SHARING or campaign.mode == Campaign.AGING:
                     campaign.status = '4'
                     campaign.save()
                     start_campaign.delay(int(campaign_ids[0]), False)

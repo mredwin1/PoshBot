@@ -498,6 +498,11 @@ def start_campaign(campaign_id, registration_ip):
             campaign.status = '1'
             campaign.save()
             list_item.delay(campaign.id, registration_proxy.id)
+        elif campaign.mode == Campaign.AGING:
+            registration_proxy.add_connection(campaign.posh_user)
+            campaign.status = '1'
+            campaign.save()
+            aging.delay(campaign.id)
     else:
         logging.error('This campaign does not have status starting, cannot start.')
 
@@ -553,9 +558,6 @@ def basic_sharing(campaign_id):
                     elif not listing_titles['shareable_listings'] and listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
                         log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"There are only sold listings in this account, stopping the campaign."})
                         update_redis_object(redis_campaign_id, {'status': '3'})
-                    # elif not listing_titles['shareable_listings'] and not listing_titles['sold_listings'] and not listing_titles['reserved_listings']:
-                    #     log_to_redis(str(logger_id), {'level': 'WARNING', 'message': f"Could not find any listings, restarting."})
-                    #     update_redis_object(redis_campaign_id, {'status': '4'})
 
                 if logged_hour_message:
                     logged_hour_message = False
@@ -762,6 +764,67 @@ def advanced_sharing(campaign_id, registration_proxy_id):
         restart_task.delay(get_redis_object_attr(redis_campaign_id, 'id'))
     else:
         update_redis_object(redis_campaign_id, {'status': '2'})
+
+
+@shared_task
+def aging(campaign_id):
+    redis_campaign_id, redis_posh_user_id, logger_id, *other = initialize_campaign(campaign_id)
+    logged_hour_message = False
+    max_deviation = round(int(get_redis_object_attr(redis_campaign_id, 'delay')) / 2)
+    now = datetime.datetime.now(pytz.utc)
+    end_time = now + datetime.timedelta(days=1)
+
+    if get_redis_object_attr(redis_posh_user_id, 'status') != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.RUNNING})
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
+
+    with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as client:
+        posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+        campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+        while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+            now = datetime.datetime.now(pytz.utc)
+            posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+            campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+            campaign_delay = int(get_redis_object_attr(redis_campaign_id, 'delay'))
+            campaign_times = get_redis_object_attr(redis_campaign_id, 'times').split(',')
+            # This inner loop is to run the task for the given hour
+            while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
+                now = datetime.datetime.now(pytz.utc)
+
+                # if random.random() < .35:
+                pre_action_time = time.time()
+                client.follow_random_follower()
+
+                positive_negative = 1 if random.random() < 0.5 else -1
+                deviation = random.randint(0, max_deviation) * positive_negative
+                post_action_time = time.time()
+                elapsed_time = round(post_action_time - pre_action_time, 2)
+                sleep_amount = (campaign_delay - elapsed_time) + deviation
+
+                if elapsed_time < sleep_amount:
+                    client.sleep(sleep_amount)
+
+                if logged_hour_message:
+                    logged_hour_message = False
+
+            if not logged_hour_message and campaign_status == '1' and posh_user_status == PoshUser.RUNNING:
+                log_message = f"This campaign is not set to run at {now.astimezone(pytz.timezone('US/Eastern')).strftime('%I %p')}, sleeping..."
+                log_to_redis(str(logger_id), {'level': 'WARNING', 'message': log_message})
+                logged_hour_message = True
+
+    log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Ended'})
+
+    posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
+    campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
+
+    update_redis_object(redis_campaign_id, {'status': '2'})
+
+    if posh_user_status != PoshUser.INACTIVE:
+        update_redis_object(redis_posh_user_id, {'status': PoshUser.IDLE})
+
+    if campaign_status == '1' or campaign_status == '5':
+        restart_task.delay(campaign_id)
 
 
 @shared_task
