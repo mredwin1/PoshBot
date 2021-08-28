@@ -106,8 +106,7 @@ class PoshUser(models.Model):
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             api_instance.delete_inbox(self.email_id)
 
-    @staticmethod
-    def generate_sign_up_info(password, results=1):
+    def generate_sign_up_info(self, password, results=1):
         months = {
             '01': 'January',
             '02': 'February',
