@@ -191,157 +191,13 @@ def assign_posh_users(user_id):
 
 
 @shared_task
-def generate_posh_users(email, password, quantity, user_id):
+def generate_posh_users(password, quantity, user_id):
     user = User.objects.get(id=user_id)
-    all_user_info = PoshUser.generate_sign_up_info(email, password, quantity)
+    all_user_info = PoshUser.generate_sign_up_info(password, quantity)
     for user_info in all_user_info:
         new_posh_user = PoshUser.create_posh_user(user_info)
         new_posh_user.user = user
         new_posh_user.save()
-
-
-@shared_task
-def posh_user_balancer():
-    available_posh_users = PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)
-    creating_posh_users = PoshUser.objects.filter(status=PoshUser.CREATING, user__isnull=True)
-    needed_users = int(os.environ.get('ACCOUNTS_TO_MAINTAIN', '4')) - len(creating_posh_users) - len(available_posh_users)
-    if needed_users > 0:
-        all_user_info = PoshUser.generate_sign_up_info(needed_users)
-        for user_info in all_user_info:
-            new_user = PoshUser.create_posh_user(user_info)
-            new_user.status = PoshUser.CREATING
-            new_user.save()
-
-            register_gmail.delay(new_user.id)
-
-    users = User.objects.all()
-    available_posh_users_id_list = [posh_user.id for posh_user in PoshUser.objects.filter(status=PoshUser.IDLE, user__isnull=True)]
-    if available_posh_users_id_list:
-        for user in users:
-            not_registered_posh_users = PoshUser.objects.filter(is_registered=False, user=user, status__in=(PoshUser.IDLE, PoshUser.FORWARDING))
-            desired_level = user.accounts_to_maintain - len(not_registered_posh_users)
-            needed_posh_users = desired_level if desired_level > 0 else 0
-            selection_size = len(available_posh_users_id_list) if needed_posh_users > len(available_posh_users_id_list) else needed_posh_users
-            selected_ids_list = random.sample(available_posh_users_id_list, selection_size)
-
-            selected_posh_users = PoshUser.objects.filter(id__in=selected_ids_list)
-
-            for selected_posh_user in selected_posh_users:
-                if selected_posh_user.status != PoshUser.FORWARDING:
-                    try:
-                        log = Log.objects.get(description=selected_posh_user.username)
-                        log.user = user
-                        log.save()
-                    except Log.DoesNotExist:
-                        pass
-                    selected_posh_user.user = user
-                    selected_posh_user.status = PoshUser.FORWARDING
-                    selected_posh_user.save()
-                    enable_email_forwarding.delay(selected_posh_user.id)
-
-
-@shared_task
-def gmail_proxy_reset():
-    proxies = PoshProxy.objects.filter(registration_proxy=False)
-    for proxy in proxies:
-        proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
-
-        if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:
-            proxy.reset_ip()
-        else:
-            for proxy_connection in proxy_connections:
-                now = timezone.now()
-                elapsed_time = (now - proxy_connection.datetime).seconds
-                if elapsed_time > 900:
-                    proxy_connection.delete()
-
-
-@shared_task
-def register_gmail(posh_user_id):
-    posh_user = PoshUser.objects.get(id=posh_user_id)
-    selected_proxy = None
-    while not selected_proxy:
-        proxies = PoshProxy.objects.filter(registration_proxy=False)
-        for proxy in proxies:
-            proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
-
-            if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
-                selected_proxy = proxy
-                selected_proxy.add_connection(posh_user)
-        if not selected_proxy:
-            time.sleep(30)
-    log = Log(description=posh_user.username)
-    log.save()
-    log.info('Registering email')
-    
-    registration_attempts = 0
-    less_secure_apps_attempts = 0
-
-    while not posh_user.email_registered and registration_attempts <= 3:
-        with GmailClient(posh_user.to_dict(), log.id, log_to_redis, selected_proxy.ip, selected_proxy.port) as client:
-            email = client.register()
-            registration_attempts += 1
-            if email:
-                posh_user.email = email
-                posh_user.email_registered = True
-                posh_user.save()
-
-                log.description = email
-                log.save()
-
-            while not posh_user.email_less_secure_apps_allowed and posh_user.email_registered and less_secure_apps_attempts <= 3:
-                less_secure_apps_attempts += 1
-                posh_user.email_less_secure_apps_allowed = client.allow_less_secure_apps()
-                posh_user.save()
-
-    if posh_user.email_registered and posh_user.email_less_secure_apps_allowed:
-        posh_user.status = PoshUser.IDLE
-        posh_user.save()
-        log.info('Successfully registered email. Status changed to idle')
-    else:
-        posh_user.delete()
-        log.error('Something is not right, could not change status to idle. Deleting the user.')
-
-    selected_proxy.remove_connection(posh_user)
-    selected_proxy.registered_accounts += 1
-    selected_proxy.save()
-
-
-@shared_task
-def enable_email_forwarding(posh_user_id):
-    posh_user = PoshUser.objects.get(id=posh_user_id)
-
-    selected_proxy = None
-    while not selected_proxy:
-        proxies = PoshProxy.objects.filter(registration_proxy=False)
-        for proxy in proxies:
-            proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
-
-            if len(proxy_connections) < proxy.max_connections and proxy.registered_accounts < proxy.max_accounts:
-                selected_proxy = proxy
-        if not selected_proxy:
-            time.sleep(30)
-
-    other_logs = Log.objects.filter(description=posh_user.email)
-    if other_logs:
-        other_logs.update(user=posh_user.user)
-
-    log = Log(description=posh_user.email, user=posh_user.user)
-    log.save()
-    email_forwarding_attempts = 0
-
-    log.info('Enabling email forwarding')
-
-    while not posh_user.email_forwarding_enabled and posh_user.email_registered and email_forwarding_attempts <= 3:
-        with GmailClient(posh_user.to_dict(), log.id, log_to_redis, selected_proxy.ip, selected_proxy.port) as client:
-            email_forwarding_attempts += 1
-            posh_user.email_forwarding_enabled = client.turn_on_email_forwarding(posh_user.user.master_email, posh_user.user.email_password)
-            posh_user.save()
-
-    if posh_user.email_forwarding_enabled:
-        log.info('Email forwarding success')
-        posh_user.status = PoshUser.IDLE
-        posh_user.save()
 
 
 @shared_task
@@ -452,7 +308,7 @@ def start_campaign(campaign_id, registration_ip):
 
     if registration_ip:
         while not registration_proxy:
-            registration_proxies = PoshProxy.objects.filter(registration_proxy=True)
+            registration_proxies = PoshProxy.objects.filter(enabled=True)
             for proxy in registration_proxies:
                 proxy_connections = ProxyConnection.objects.filter(posh_proxy=proxy)
                 if proxy.registered_accounts >= proxy.max_accounts and len(proxy_connections) == 0:

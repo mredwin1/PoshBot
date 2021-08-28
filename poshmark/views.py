@@ -66,7 +66,7 @@ class AssignPoshUsers(View, LoginRequiredMixin):
 
 class CreatePoshUsers(View, LoginRequiredMixin):
     def post(self, *args, **kwargs):
-        generate_posh_users.delay(self.request.POST['email'], self.request.POST['password'], int(self.request.POST['quantity']), self.request.user.id)
+        generate_posh_users.delay(self.request.POST['password'], int(self.request.POST['quantity']), self.request.user.id)
 
         return JsonResponse(data={'success': f'Please wait, Generating {self.request.POST["quantity"]} users'}, status=200)
 

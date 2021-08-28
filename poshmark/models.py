@@ -1,4 +1,5 @@
 import logging
+import mailslurp_client
 import os
 import random
 import re
@@ -37,9 +38,6 @@ class PoshUser(models.Model):
     date_added = models.DateField(auto_now_add=True, null=True)
 
     is_registered = models.BooleanField(default=False)
-    email_registered = models.BooleanField(default=False, null=True)
-    email_less_secure_apps_allowed = models.BooleanField(default=False, null=True)
-    email_forwarding_enabled = models.BooleanField(default=False, null=True)
     profile_updated = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
@@ -53,6 +51,7 @@ class PoshUser(models.Model):
     profile_picture_id = models.CharField(max_length=40, default='')
 
     email = models.EmailField(blank=True)
+    email_id = models.CharField(max_length=30, default='')
     username = models.CharField(max_length=15, unique=True)
     password = models.CharField(max_length=20,
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
@@ -82,15 +81,33 @@ class PoshUser(models.Model):
                     data[field.name] = field.value_from_object(self)
         return data
 
-    @staticmethod
-    def get_last_email(user):
-        posh_users = PoshUser.objects.filter(user=user, email__icontains='+')
-        selected_user = max(posh_users, key=lambda posh_user: int(posh_user.email[posh_user.email.index('+') + 1:posh_user.email.index('@')]))
+    def check_email_availability(self, email):
+        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+            inbox_controller = mailslurp_client.InboxControllerApi(api_client)
+            inboxes = inbox_controller.get_all_inboxes(page=0)
 
-        return selected_user.email, selected_user.password
+            all_emails = [content.email_address for content in inboxes.content]
+
+            return email not in all_emails
+
+    def create_email(self, first_name, last_name):
+        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+            api_instance = mailslurp_client.InboxControllerApi(api_client)
+            email = f'{first_name}_{last_name}@{os.environ["DOMAIN"]}'
+
+            while not self.check_email_availability(email):
+                email = f'{first_name}_{last_name}{random.randint(100, 999)}@{os.environ["DOMAIN"]}'
+            inbox = api_instance.create_inbox(name=f'{first_name} {last_name}', email_address=email)
+
+            return inbox.id, inbox.email_address
+
+    def delete_email(self):
+        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+            api_instance = mailslurp_client.InboxControllerApi(api_client)
+            api_instance.delete_inbox(self.email_id)
 
     @staticmethod
-    def generate_sign_up_info(email, password, results=1):
+    def generate_sign_up_info(password, results=1):
         months = {
             '01': 'January',
             '02': 'February',
@@ -118,17 +135,6 @@ class PoshUser(models.Model):
         user_url = 'https://randomuser.me/api/'
         header_image_url = 'https://picsum.photos/1920/300'
         results = []
-        email_at_index = email.index('@')
-
-        try:
-            email_plus_index = email.index('+')
-            email_domain = email[email_at_index:]
-            email_base = email[:email_plus_index]
-            email_start = int(email[email_plus_index + 1:email_at_index]) + 1
-        except ValueError:
-            email_domain = email[email_at_index:]
-            email_base = email[:email_at_index]
-            email_start = 1
 
         try:
             user_response = requests.get(user_url, params=user_payload, timeout=10, headers=headers)
@@ -146,11 +152,14 @@ class PoshUser(models.Model):
                     retries += 1
                 profile_picture_ids.append(PoshUser.get_image_id(profile_image_response.url))
 
+                email_id, email = self.create_email(response_dict['name']['first'], response_dict['name']['last'])
+
                 user_info = {
                     'first_name': response_dict['name']['first'],
                     'last_name': response_dict['name']['last'],
                     'gender': response_dict['gender'].capitalize(),
-                    'email': f'{email_base}+{email_start}{email_domain}',
+                    'email': email,
+                    'email_id': email_id,
                     'username': username if len(username) <= 12 else username[:12],
                     'password': password,
                     'dob_month': months[response_dict['dob']['date'][5:7]],
@@ -174,11 +183,17 @@ class PoshUser(models.Model):
                     username_test = requests.get(f'https://poshmark.com/closet/{user_info["username"]}', timeout=10)
 
                 results.append(user_info)
-                email_start += 1
         except requests.exceptions.RequestException as e:
             logging.error('Error occurred while trying to get profiles')
 
         return results
+
+    @staticmethod
+    def get_mail_slurp_config():
+        configuration = mailslurp_client.Configuration()
+        configuration.api_key['x-api-key'] = os.environ['MAIL_SLURP_API_KEY']
+
+        return configuration
 
     @staticmethod
     def get_image_id(url):
@@ -193,6 +208,7 @@ class PoshUser(models.Model):
             password=signup_info['password'],
             gender=signup_info['gender'],
             email=signup_info['email'],
+            email_id=signup_info['email_id'],
             dob_month=signup_info['dob_month'],
             dob_day=signup_info['dob_day'],
             dob_year=signup_info['dob_year'],
@@ -454,7 +470,7 @@ class LogEntry(models.Model):
 
 
 class PoshProxy(models.Model):
-    registration_proxy = models.BooleanField(default=False)
+    enabled = models.BooleanField(default=False)
 
     ip_reset_url = models.CharField(max_length=200, default='', blank=True)
 
@@ -511,7 +527,7 @@ class PoshProxy(models.Model):
             connection.delete()
 
     def __str__(self):
-        return f'Registration Proxy #{self.id}' if self.registration_proxy else f'Gmail Proxy #{self.id}'
+        return f'Registration Proxy #{self.id}'
 
 
 class ProxyConnection(models.Model):

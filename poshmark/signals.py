@@ -16,6 +16,7 @@ def campaign_saved(sender, instance, *args, **kwargs):
 
 @receiver(post_delete, sender=PoshUser)
 def posh_user_deleted(sender, instance, *args, **kwargs):
+    instance.delete_email()
     try:
         os.remove(f'/shared_volume/cookies/{instance.username}.pkl')
     except OSError:
