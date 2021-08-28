@@ -83,7 +83,7 @@ class PoshUser(models.Model):
 
     @staticmethod
     def check_email_availability(email):
-        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             inbox_controller = mailslurp_client.InboxControllerApi(api_client)
             inboxes = inbox_controller.get_all_inboxes(page=0)
 
@@ -93,7 +93,7 @@ class PoshUser(models.Model):
 
     @staticmethod
     def create_email(first_name, last_name):
-        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             email = f'{first_name}_{last_name}@{os.environ["DOMAIN"]}'
 
@@ -105,7 +105,7 @@ class PoshUser(models.Model):
 
     @staticmethod
     def delete_email():
-        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config) as api_client:
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             api_instance.delete_inbox(self.email_id)
 
