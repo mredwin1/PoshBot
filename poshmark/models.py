@@ -51,7 +51,7 @@ class PoshUser(models.Model):
     profile_picture_id = models.CharField(max_length=40, default='')
 
     email = models.EmailField(blank=True)
-    email_id = models.CharField(max_length=30, default='')
+    email_id = models.CharField(max_length=150, default='')
     username = models.CharField(max_length=15, unique=True)
     password = models.CharField(max_length=20,
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')
