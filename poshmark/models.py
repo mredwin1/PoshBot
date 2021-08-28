@@ -95,10 +95,10 @@ class PoshUser(models.Model):
     def create_email(first_name, last_name):
         with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
-            email = f'{first_name}_{last_name}@{os.environ["DOMAIN"]}'
+            email = f'{first_name.lower()}_{last_name.lower()}@{os.environ["DOMAIN"]}'
 
             while not PoshUser.check_email_availability(email):
-                email = f'{first_name}_{last_name}{random.randint(100, 999)}@{os.environ["DOMAIN"]}'
+                email = f'{first_name.lower()}_{last_name.lower()}{random.randint(100, 999)}@{os.environ["DOMAIN"]}'
             inbox = api_instance.create_inbox(name=f'{first_name} {last_name}', email_address=email)
 
             return inbox.id, inbox.email_address
