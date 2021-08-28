@@ -81,7 +81,8 @@ class PoshUser(models.Model):
                     data[field.name] = field.value_from_object(self)
         return data
 
-    def check_email_availability(self, email):
+    @staticmethod
+    def check_email_availability(email):
         with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
             inbox_controller = mailslurp_client.InboxControllerApi(api_client)
             inboxes = inbox_controller.get_all_inboxes(page=0)
@@ -90,19 +91,21 @@ class PoshUser(models.Model):
 
             return email not in all_emails
 
-    def create_email(self, first_name, last_name):
+    @staticmethod
+    def create_email(first_name, last_name):
         with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             email = f'{first_name}_{last_name}@{os.environ["DOMAIN"]}'
 
-            while not self.check_email_availability(email):
+            while not PoshUser.check_email_availability(email):
                 email = f'{first_name}_{last_name}{random.randint(100, 999)}@{os.environ["DOMAIN"]}'
             inbox = api_instance.create_inbox(name=f'{first_name} {last_name}', email_address=email)
 
             return inbox.id, inbox.email_address
 
-    def delete_email(self):
-        with mailslurp_client.ApiClient(self.get_mail_slurp_config) as api_client:
+    @staticmethod
+    def delete_email():
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             api_instance.delete_inbox(self.email_id)
 
