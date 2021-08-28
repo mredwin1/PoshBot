@@ -106,7 +106,8 @@ class PoshUser(models.Model):
             api_instance = mailslurp_client.InboxControllerApi(api_client)
             api_instance.delete_inbox(self.email_id)
 
-    def generate_sign_up_info(self, password, results=1):
+    @staticmethod
+    def generate_sign_up_info(password, results=1):
         months = {
             '01': 'January',
             '02': 'February',
@@ -151,7 +152,7 @@ class PoshUser(models.Model):
                     retries += 1
                 profile_picture_ids.append(PoshUser.get_image_id(profile_image_response.url))
 
-                email_id, email = self.create_email(response_dict['name']['first'], response_dict['name']['last'])
+                email_id, email = PoshUser.create_email(response_dict['name']['first'], response_dict['name']['last'])
 
                 user_info = {
                     'first_name': response_dict['name']['first'],
