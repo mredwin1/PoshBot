@@ -1609,10 +1609,6 @@ class PoshMarkClient(BaseClient):
                 description_field = self.locate(
                     By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[2]/div[2]/div[2]/textarea'
                 )
-                # brand_field = self.locate(
-                #     By.XPATH,
-                #     '/html/body/div[1]/main/div[2]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
-                # )
 
                 input_fields = self.locate_all(By.TAG_NAME, 'input')
                 for input_field in input_fields:
@@ -1634,8 +1630,6 @@ class PoshMarkClient(BaseClient):
                 original_price_field.send_keys(original_prize)
                 listing_price = str(listing_listing_price)
                 listing_price_field.send_keys(listing_price)
-                # brand = listing_brand
-                # brand_field.send_keys(brand)
 
                 if listing_tags:
                     tags_button = self.locate(
@@ -1671,7 +1665,7 @@ class PoshMarkClient(BaseClient):
                     email_verification_code = None
                     email_verification_code_attempts = 0
                     while not email_verification_code and email_verification_code_attempts < 4:
-                        email_verification_code = self.get_verification_code(self.get_redis_object_attr(self.redis_posh_user_id, 'email'), self.get_redis_object_attr(self.redis_posh_user_id, 'password'), self.get_redis_object_attr(self.redis_posh_user_id, 'first_name'))
+                        email_verification_code = PoshUser.get_email_verification_code(self.get_redis_object_attr(self.redis_posh_user_id, 'inbox_id'))
                         if not email_verification_code:
                             self.sleep(60)
                             email_verification_code_attempts += 1
@@ -2579,45 +2573,3 @@ class PoshMarkClient(BaseClient):
         host_name = self.locate(By.ID, 'hostname')
 
         self.logger.debug(f'Hostname: {host_name.text}')
-
-    def get_verification_code(self, forwarding_address, password, first_name):
-        """Gets the email forwarding verification code using imap"""
-        try:
-            attempts = 0
-            imap = imaplib.IMAP4_SSL('imap.gmail.com')
-            imap.login(forwarding_address, password)
-
-            imap.select('inbox')
-            data = imap.search(None, f'(SUBJECT "Poshmark verification code")')  # (SUBJECT "Receive Mail from")
-
-            mail_ids = data[1]
-            id_list = mail_ids[0].split(b' ')
-            id_list = [email_id.decode('utf-8') for email_id in id_list]
-            id_list.reverse()
-
-            for email_id in id_list:
-                data = imap.fetch(email_id, '(RFC822)')
-                for response_part in data:
-                    arr = response_part[0]
-                    if isinstance(arr, tuple):
-                        msg = email.message_from_string(str(arr[1], 'utf-8'))
-                        msg_str = msg.as_string()
-                        if first_name in msg_str:
-                            verification_index = msg_str.find('Your verification code is ') + 26
-                            end_verification_index = msg_str.find('</p><p>For your security')
-                            verification_code = msg_str[verification_index:end_verification_index]
-
-                            self.logger.info(f'Verification code retrieved successfully: {verification_code}')
-                            self.logger.info('Marking email for deletion')
-                            imap.store(email_id, "+FLAGS", "\\Deleted")
-
-                            return verification_code
-                self.logger.warning('Verification code not ready')
-                time.sleep(60)
-                attempts += 1
-
-            self.logger.error('Could not get verification code from email')
-            return None
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            return None

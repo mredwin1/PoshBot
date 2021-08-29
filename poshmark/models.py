@@ -104,6 +104,28 @@ class PoshUser(models.Model):
             return inbox.id, inbox.email_address
 
     @staticmethod
+    def get_email_verification_code(inbox_id):
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
+            inbox_api_instance = mailslurp_client.InboxControllerApi(api_client)
+            email_api_instance = mailslurp_client.EmailControllerApi(api_client)
+            emails = inbox_api_instance.get_emails(inbox_id=inbox_id)
+            emails = [email for email in emails if email.subject == 'Poshmark verification code']
+            verification_code = None
+
+            if emails:
+                email_id = emails[-1].id
+
+                email = email_api_instance.get_email(email_id)
+                email_body = email.body
+
+                verification_index = email_body.find('Your verification code is ') + 26
+                end_verification_index = email_body.find('</p><p>For your security')
+                verification_code = email_body[verification_index:end_verification_index]
+                email_api_instance.delete_email(email_id)
+
+            return verification_code
+
+    @staticmethod
     def delete_email():
         with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
