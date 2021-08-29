@@ -81,6 +81,11 @@ class PoshUser(models.Model):
                     data[field.name] = field.value_from_object(self)
         return data
 
+    def delete_email(self):
+        with mailslurp_client.ApiClient(self.get_mail_slurp_config()) as api_client:
+            api_instance = mailslurp_client.InboxControllerApi(api_client)
+            api_instance.delete_inbox(self.email_id)
+
     @staticmethod
     def check_email_availability(email):
         with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
@@ -124,12 +129,6 @@ class PoshUser(models.Model):
                 email_api_instance.delete_email(email_id)
 
             return verification_code
-
-    @staticmethod
-    def delete_email():
-        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
-            api_instance = mailslurp_client.InboxControllerApi(api_client)
-            api_instance.delete_inbox(self.email_id)
 
     @staticmethod
     def generate_sign_up_info(password, results=1):
