@@ -2486,8 +2486,8 @@ class PoshMarkClient(BaseClient):
 
             height = self.web_driver.execute_script("return document.body.scrollHeight")
             scroll_amount = self.web_driver.execute_script("return window.pageYOffset;")
-            lower_limit = 0 - scroll_amount
-            upper_limit = height - scroll_amount if scroll_up else 0
+            lower_limit = 0 - scroll_amount if scroll_up else 0
+            upper_limit = height - scroll_amount 
             scroll_chosen = random.randint(lower_limit, upper_limit)
 
             self.logger.debug(f'Total document height: {height} Amount Scrolled Right Now: {scroll_amount}')
