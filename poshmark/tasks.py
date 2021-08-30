@@ -648,13 +648,14 @@ def aging(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
                 pre_action_time = time.time()
 
-                # if random.random() < .30:
-                #     client.follow_random_follower()
-                #
-                # if random.random() < .10:
-                #     client.check_news()
+                if random.random() < .30:
+                    client.follow_random_follower()
 
-                client.go_through_feed()
+                if random.random() < .10:
+                    client.check_news()
+
+                if random.random() < .60:
+                    client.go_through_feed()
 
                 positive_negative = 1 if random.random() < 0.5 else -1
                 deviation = random.randint(0, max_deviation) * positive_negative
