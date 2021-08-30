@@ -2211,7 +2211,7 @@ class PoshMarkClient(BaseClient):
 
             self.web_driver.get('https://poshmark.com/feed')
 
-            badge = self.locate(By.CLASS_NAME, 'badge badge--red badge--right')
+            badge = self.is_present(By.CLASS_NAME, 'badge badge--red badge--right')
             if badge:
                 news_nav = self.locate(By.XPATH, '//a[@href="/news"]')
                 news_nav.click()
@@ -2567,11 +2567,17 @@ class PoshMarkClient(BaseClient):
                             self.sleep(2, 3)
 
                             if random.random() < .30:
+                                actions = ActionChains(self.web_driver)
+                                actions.move_to_element(like_icon).perform()
+
                                 like_icon.click()
 
                                 self.logger.info(f'Just liked {listing_title} posted by {username}')
 
                             if random.random() < .30:
+                                actions = ActionChains(self.web_driver)
+                                actions.move_to_element(share_icon).perform()
+
                                 share_icon.click()
 
                                 self.sleep(1)
