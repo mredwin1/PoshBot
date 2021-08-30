@@ -2551,7 +2551,7 @@ class PoshMarkClient(BaseClient):
 
                 self.sleep(4, 8)
 
-                selected_post = self.locate(By.CLASS_NAME, 'card--medium', 'visibility')
+                selected_post = self.locate(By.CLASS_NAME, 'card', 'visibility')
                 if selected_post:
                     try:
                         like_icon = selected_post.find_element_by_class_name('heart-gray-empty')
