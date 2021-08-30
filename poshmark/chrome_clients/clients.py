@@ -1102,6 +1102,7 @@ class PoshMarkClient(BaseClient):
                 f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
 
             # Next Section - Profile
+            self.logger.info('Uploading profile picture')
             # This while is to ensure that the profile picture path exists and tries 5 times
             attempts = 1
             profile_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'profile_picture')
