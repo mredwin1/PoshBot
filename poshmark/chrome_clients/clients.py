@@ -2221,6 +2221,11 @@ class PoshMarkClient(BaseClient):
                 for x in range(random.randint(2, 4)):
                     self.random_scroll()
                     self.sleep(5, 10)
+            else:
+                self.logger.info('No news to check, skipping.')
+
+            self.logger.info('Successfully checked news')
+
         except:
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
