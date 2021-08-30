@@ -2549,9 +2549,9 @@ class PoshMarkClient(BaseClient):
             for x in range(random.randint(20, 50)):
                 self.random_scroll(scroll_up=False)
 
-                self.sleep(4, 8)
+                self.sleep(5, 12)
 
-                selected_post = self.locate(By.CLASS_NAME, 'card', 'visibility')
+                selected_post = self.locate_all(By.CLASS_NAME, 'card', 'visibility')[1]
                 if selected_post:
                     try:
                         like_icon = selected_post.find_element_by_class_name('heart-gray-empty')
