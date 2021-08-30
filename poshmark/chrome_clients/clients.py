@@ -2551,10 +2551,8 @@ class PoshMarkClient(BaseClient):
 
                 self.sleep(4, 8)
 
-                posts = self.locate_all(By.CLASS_NAME, 'card--medium', 'visibility')
-                if posts:
-                    selected_post = random.choice(posts)
-
+                selected_post = self.locate(By.CLASS_NAME, 'card--medium', 'visibility')
+                if selected_post:
                     try:
                         like_icon = selected_post.find_element_by_class_name('heart-gray-empty')
                         share_icon = selected_post.find_element_by_class_name('share-gray-large')
