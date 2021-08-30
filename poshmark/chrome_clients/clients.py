@@ -2566,20 +2566,22 @@ class PoshMarkClient(BaseClient):
 
                             self.sleep(2, 3)
 
-                            # if random.random() < .30:
-                            like_icon.click()
+                            if random.random() < .30:
+                                like_icon.click()
 
-                            self.logger.info(f'Just liked {listing_title} posted by {username}')
+                                self.logger.info(f'Just liked {listing_title} posted by {username}')
 
-                            # if random.random() < .30:
-                            share_icon.click()
+                            if random.random() < .30:
+                                share_icon.click()
+    
+                                self.sleep(1)
 
-                            self.sleep(1)
+                                to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
+                                to_my_followers.click()
 
-                            to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
-                            to_my_followers.click()
+                                self.logger.info(f'Just shared {listing_title} posted by {username}')
 
-                            self.logger.info(f'Just shared {listing_title} posted by {username}')
+                            break
                         except (NoSuchElementException, TimeoutException):
                             self.logger.debug('Not the right listing')
 
