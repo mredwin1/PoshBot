@@ -2551,36 +2551,37 @@ class PoshMarkClient(BaseClient):
 
                 self.sleep(5, 12)
 
-                selected_post = self.locate(By.CLASS_NAME, 'main__column')
-                self.logger.info(selected_post)
-                if selected_post:
-                    try:
-                        like_icon = selected_post.find_element_by_class_name('heart-gray-empty')
-                        share_icon = selected_post.find_element_by_class_name('share-gray-large')
-                        post_title = selected_post.find_element_by_class_name('feed__unit__header__title--medium').text
-                        listing_title = selected_post.find_element_by_class_name('feed__summary__title-block').text
+                posts = self.locate_all(By.CLASS_NAME, 'feed__unit')
+                self.logger.info(len(posts))
+                for post in posts:
+                    if post.is_displayed():
+                        try:
+                            like_icon = post.find_element_by_class_name('heart-gray-empty')
+                            share_icon = post.find_element_by_class_name('share-gray-large')
+                            post_title = post.find_element_by_class_name('feed__unit__header__title--medium').text
+                            listing_title = post.find_element_by_class_name('feed__summary__title-block').text
 
-                        index = post_title.find(' ')
-                        username = post_title[:index]
+                            index = post_title.find(' ')
+                            username = post_title[:index]
 
-                        self.sleep(2, 3)
+                            self.sleep(2, 3)
 
-                        # if random.random() < .30:
-                        like_icon.click()
+                            # if random.random() < .30:
+                            like_icon.click()
 
-                        self.logger.info(f'Just liked {listing_title} posted by {username}')
+                            self.logger.info(f'Just liked {listing_title} posted by {username}')
 
-                        # if random.random() < .30:
-                        share_icon.click()
+                            # if random.random() < .30:
+                            share_icon.click()
 
-                        self.sleep(1)
+                            self.sleep(1)
 
-                        to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
-                        to_my_followers.click()
+                            to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
+                            to_my_followers.click()
 
-                        self.logger.info(f'Just shared {listing_title} posted by {username}')
-                    except (NoSuchElementException, TimeoutException):
-                        self.logger.debug('Not the right listing')
+                            self.logger.info(f'Just shared {listing_title} posted by {username}')
+                        except (NoSuchElementException, TimeoutException):
+                            self.logger.debug('Not the right listing')
 
                 self.sleep(5, 10)
 
