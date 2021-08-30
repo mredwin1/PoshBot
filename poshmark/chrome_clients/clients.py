@@ -2205,14 +2205,26 @@ class PoshMarkClient(BaseClient):
                 self.log_in()
 
     def check_news(self):
-        """If the PoshUser is logged in it will check their new else it will log them in then check their news"""
-        if not self.check_logged_in():
-            self.log_in()
-        else:
+        """Checks PoshUser's news"""
+        try:
+            self.logger.info('Checking news')
+
+            self.web_driver.get('https://poshmark.com/feed')
+
             badge = self.locate(By.CLASS_NAME, 'badge badge--red badge--right')
             if badge:
                 news_nav = self.locate(By.XPATH, '//a[@href="/news"]')
                 news_nav.click()
+
+                self.sleep(3, 10)
+
+                for x in range(random.randint(2, 4)):
+                    self.random_scroll()
+                    self.sleep(5, 10)
+        except:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
 
     def check_offers(self, redis_listing_id=None, listing_title=None):
         try:
@@ -2468,14 +2480,14 @@ class PoshMarkClient(BaseClient):
             if not self.check_logged_in():
                 self.log_in()
 
-    def random_scroll(self):
+    def random_scroll(self, scroll_up=True):
         try:
             self.logger.info('Scrolling randomly')
 
             height = self.web_driver.execute_script("return document.body.scrollHeight")
             scroll_amount = self.web_driver.execute_script("return window.pageYOffset;")
             lower_limit = 0 - scroll_amount
-            upper_limit = height - scroll_amount
+            upper_limit = height - scroll_amount if scroll_up else 0
             scroll_chosen = random.randint(lower_limit, upper_limit)
 
             self.logger.debug(f'Total document height: {height} Amount Scrolled Right Now: {scroll_amount}')
@@ -2523,6 +2535,55 @@ class PoshMarkClient(BaseClient):
                     self.logger.info('Follow button clicked')
 
         except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
+
+    def go_through_feed(self):
+        """Will scroll randomly through the users feed"""
+        try:
+            self.logger.info('Going through the users feed')
+
+            self.web_driver.get('https://poshmark.com/feed')
+
+            for x in range(random.randint(20, 50)):
+                self.random_scroll(scroll_up=False)
+
+                posts = self.locate_all(By.CLASS_NAME, 'feed__unit', 'visibility')
+                if posts:
+                    selected_post = random.choice(posts)
+
+                    try:
+                        like_icon = selected_post.find_element_by_class_name('heart-gray-empty')
+                        share_icon = selected_post.find_element_by_class_name('share-gray-large')
+                        post_title = selected_post.find_element_by_class_name('feed__unit__header__title--medium').text
+                        listing_title = selected_post.find_element_by_class_name('feed__summary__title-block').text
+
+                        index = post_title.find(' ')
+                        username = post_title[:index]
+
+                        self.sleep(2, 3)
+
+                        # if random.random() < .30:
+                        like_icon.click()
+
+                        self.logger.info(f'Just liked {listing_title} posted by {username}')
+
+                        # if random.random() < .30:
+                        share_icon.click()
+
+                        self.sleep(1)
+
+                        to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
+                        to_my_followers.click()
+
+                        self.logger.info(f'Just shared {listing_title} posted by {username}')
+                    except (NoSuchElementException, TimeoutException):
+                        self.logger.debug('Not the right listing')
+
+                self.sleep(5, 10)
+
+        except:
             self.logger.error(f'{traceback.format_exc()}')
             if not self.check_logged_in():
                 self.log_in()

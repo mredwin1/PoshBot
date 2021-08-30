@@ -646,10 +646,15 @@ def aging(campaign_id):
             # This inner loop is to run the task for the given hour
             while now.strftime('%I %p') in campaign_times and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
                 now = datetime.datetime.now(pytz.utc)
-
-                # if random.random() < .35:
                 pre_action_time = time.time()
-                client.follow_random_follower()
+
+                # if random.random() < .30:
+                #     client.follow_random_follower()
+                #
+                # if random.random() < .10:
+                #     client.check_news()
+
+                client.go_through_feed()
 
                 positive_negative = 1 if random.random() < 0.5 else -1
                 deviation = random.randint(0, max_deviation) * positive_negative
