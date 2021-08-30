@@ -2573,7 +2573,7 @@ class PoshMarkClient(BaseClient):
 
                             if random.random() < .30:
                                 share_icon.click()
-    
+
                                 self.sleep(1)
 
                                 to_my_followers = self.locate(By.CLASS_NAME, 'share-wrapper__icon-container')
@@ -2583,7 +2583,7 @@ class PoshMarkClient(BaseClient):
 
                             break
                         except (NoSuchElementException, TimeoutException):
-                            self.logger.debug('Not the right listing')
+                            pass
 
                 self.sleep(5, 10)
 
