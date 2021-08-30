@@ -1085,6 +1085,83 @@ class PoshMarkClient(BaseClient):
 
         return result
 
+    def finish_registration(self):
+        # Check if Posh User is now registered
+        attempts = 0
+        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
+        while attempts < 5 and response.status_code != requests.codes.ok:
+            response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
+            self.logger.warning(
+                f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
+            attempts += 1
+            self.sleep(5)
+
+        if response.status_code == requests.codes.ok:
+            self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
+            self.logger.info(
+                f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
+
+            # Next Section - Profile
+            # This while is to ensure that the profile picture path exists and tries 5 times
+            attempts = 1
+            profile_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'profile_picture')
+            profile_picture_exists = Path(profile_picture_path).is_file()
+            while not profile_picture_exists and attempts < 6:
+                self.logger.info(str(profile_picture_path))
+                self.logger.warning(f'Could not find profile picture file. Attempt # {attempts}')
+                self.sleep(2)
+                profile_picture_exists = Path(profile_picture_path).is_file()
+                attempts += 1
+            else:
+                if not profile_picture_exists:
+                    self.logger.error('Could not upload profile picture - Picture not found.')
+                else:
+                    profile_picture = self.locate(By.XPATH,
+                                                  '//*[@id="content"]/div/div[2]/div[1]/label/input')
+                    profile_picture.send_keys(profile_picture_path)
+
+                    self.sleep(1)
+
+                    apply_button = self.locate(
+                        By.XPATH, '//*[@id="content"]/div/div[2]/div[1]/div/div[2]/div[2]/div/button[2]')
+                    apply_button.click()
+
+                    self.logger.info('Profile picture uploaded')
+
+                    self.sleep(1)
+
+            next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+            next_button.click()
+
+            # Next Section - Select Brands (will not select brands)
+            self.sleep(1, 3)  # Sleep for realism
+            self.logger.info('Selecting random brands')
+            brands = self.web_driver.find_elements_by_class_name('content-grid-item')
+            next_button = self.locate(By.XPATH, '//button[@type="submit"]')
+
+            # Select random brands then click next
+            for x in range(random.randint(3, 5)):
+                try:
+                    brand = random.choice(brands)
+                    brand.click()
+                except IndexError:
+                    pass
+            next_button.click()
+
+            # Next Section - All Done Page
+            self.sleep(1, 3)  # Sleep for realism
+            start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
+            start_shopping_button.click()
+
+            self.save_cookies()
+            self.cookies_saved = True
+            self.cookied_loaded = True
+
+            self.logger.info('Registration Complete')
+        else:
+            self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
+            self.logger.info('Registration was not successful')
+
     def register(self):
         """Will register a given user to poshmark"""
         if int(self.get_redis_object_attr(self.redis_posh_user_id, 'is_registered')):
@@ -1131,103 +1208,12 @@ class PoshMarkClient(BaseClient):
                     done_button.click()
                     self.logger.info('Resubmitted form after entering captcha')
 
-                    # Check if Posh User is now registered
-                    attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
-                    while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
-                        self.logger.warning(
-                            f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
-                        attempts += 1
-                        self.sleep(5)
+                    self.finish_registration()
 
-                    if response.status_code == requests.codes.ok:
-                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
-                        self.logger.info(
-                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
-
-                        # Next Section - Profile
-                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                        next_button.click()
-
-                        # Next Section - Select Brands (will not select brands)
-                        self.sleep(1, 3)  # Sleep for realism
-                        self.logger.info('Selecting random brands')
-                        brands = self.web_driver.find_elements_by_class_name('content-grid-item')
-                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-
-                        # Select random brands then click next
-                        for x in range(random.randint(3, 5)):
-                            try:
-                                brand = random.choice(brands)
-                                brand.click()
-                            except IndexError:
-                                pass
-                        next_button.click()
-
-                        # Next Section - All Done Page
-                        self.sleep(1, 3)  # Sleep for realism
-                        start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                        start_shopping_button.click()
-                        
-                        self.save_cookies()
-                        self.cookies_saved = True
-                        self.cookied_loaded = True
-                        
-                        self.logger.info('Registration Complete')
-                    else:
-                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
-                        self.logger.info('Registration was not successful')
                 elif error_code == 'ERROR_FORM_ERROR':
                     self.update_redis_object(self.redis_posh_user_id, {'status': PoshUser.INACTIVE})
                 elif error_code is None:
-                    # Check if Posh User is now registered
-                    attempts = 0
-                    response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
-                    while attempts < 5 and response.status_code != requests.codes.ok:
-                        response = requests.get(f'https://poshmark.com/closet/{self.get_redis_object_attr(self.redis_posh_user_id, "username")}', proxies=self.requests_proxy, timeout=30)
-                        self.logger.warning(
-                            f'Closet for {self.get_redis_object_attr(self.redis_posh_user_id, "username")} is still not available - Trying again')
-                        attempts += 1
-                        self.sleep(5)
-
-                    if response.status_code == requests.codes.ok:
-                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 1})
-                        self.logger.info(
-                            f'Successfully registered {self.get_redis_object_attr(self.redis_posh_user_id, "username")}')
-
-                        # Next Section - Profile
-                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                        next_button.click()
-
-                        # Next Section - Select Brands (will not select brands)
-                        self.sleep(1, 3)  # Sleep for realism
-                        self.logger.info('Selecting random brands')
-                        brands = self.web_driver.find_elements_by_class_name('content-grid-item')
-                        next_button = self.locate(By.XPATH, '//button[@type="submit"]')
-
-                        # Select random brands then click next
-                        for x in range(random.randint(3, 5)):
-                            try:
-                                brand = random.choice(brands)
-                                brand.click()
-                            except IndexError:
-                                pass
-                        next_button.click()
-
-                        # Next Section - All Done Page
-                        self.sleep(1, 3)  # Sleep for realism
-                        start_shopping_button = self.locate(By.XPATH, '//button[@type="submit"]')
-                        start_shopping_button.click()
-                        
-                        self.save_cookies()
-                        self.cookies_saved = True
-                        self.cookies_loaded = True
-                        
-                        self.logger.info('Registration Complete')
-                    else:
-                        self.update_redis_object(self.redis_posh_user_id, {'is_registered': 0})
-                        self.logger.info('Registration was not successful')
+                    self.finish_registration()
 
             except Exception as e:
                 self.logger.error(f'{traceback.format_exc()}')
@@ -1387,34 +1373,6 @@ class PoshMarkClient(BaseClient):
             self.logger.info('Clicked on edit profile button')
 
             self.sleep(2)
-
-            # This while is to ensure that the profile picture path exists and tries 5 times
-            attempts = 1
-            profile_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'profile_picture')
-            profile_picture_exists = Path(profile_picture_path).is_file()
-            while not profile_picture_exists and attempts < 6:
-                self.logger.info(str(profile_picture_path))
-                self.logger.warning(f'Could not find profile picture file. Attempt # {attempts}')
-                self.sleep(2)
-                profile_picture_exists = Path(profile_picture_path).is_file()
-                attempts += 1
-            else:
-                if not profile_picture_exists:
-                    self.logger.error('Could not upload profile picture - Picture not found.')
-                else:
-                    profile_picture = self.locate(By.XPATH,
-                                                  '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/label/input')
-                    profile_picture.send_keys(profile_picture_path)
-
-                    self.sleep(2)
-
-                    apply_button = self.locate(
-                        By.XPATH, '//*[@id="content"]/div/div[2]/div/div[1]/div[3]/div/div[2]/div[2]/div/button[2]')
-                    apply_button.click()
-
-                    self.logger.info('Profile picture uploaded')
-
-                    self.sleep(2)
 
             attempts = 1
             header_picture_path = self.get_redis_object_attr(self.redis_posh_user_id, 'header_picture')
