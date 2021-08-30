@@ -15,7 +15,7 @@ from celery import shared_task
 
 from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
 from users.models import User
-from poshmark.chrome_clients.clients import PoshMarkClient, GmailClient
+from poshmark.chrome_clients.clients import PoshMarkClient
 
 
 def get_new_id(instance_type):
