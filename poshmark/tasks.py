@@ -635,6 +635,7 @@ def aging(campaign_id):
     log_to_redis(str(logger_id), {'level': 'INFO', 'message': 'Campaign Started'})
 
     with PoshMarkClient(redis_posh_user_id, redis_campaign_id, logger_id, log_to_redis, get_redis_object_attr, update_redis_object) as client:
+        client.log_in()
         posh_user_status = get_redis_object_attr(redis_posh_user_id, 'status')
         campaign_status = get_redis_object_attr(redis_campaign_id, 'status')
         while now < end_time and posh_user_status != PoshUser.INACTIVE and campaign_status == '1':
