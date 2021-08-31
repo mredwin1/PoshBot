@@ -2096,9 +2096,7 @@ class PoshMarkClient(BaseClient):
             upper_limit = height - scroll_amount
             scroll_chosen = random.randint(lower_limit, upper_limit)
 
-            # self.logger.debug(f'Total document height: {height} Amount Scrolled Right Now: {scroll_amount}')
-            # self.logger.debug(f'Lower Limit: {lower_limit} Upper Limit: {upper_limit}')
-            self.logger.debug(f'Scroll Amount Chosen: {scroll_chosen}')
+            self.logger.debug(f'Amount Scrolled Right Now: {scroll_amount} Scroll Amount Chosen: {scroll_chosen}')
 
             self.web_driver.execute_script(f"window.scrollBy(0,{scroll_chosen});")
         except Exception as e:
