@@ -2156,7 +2156,7 @@ class PoshMarkClient(BaseClient):
             self.sleep(8, 15)
 
             sample_size = random.randint(1, 5)
-            available_users = self.locate_all(By.CLASS_NAME, 'follow__action')
+            available_users = self.locate_all(By.CLASS_NAME, 'feed-page')
             selected_users = random.sample(available_users, sample_size) if available_users else []
 
             for selected_user in selected_users:
