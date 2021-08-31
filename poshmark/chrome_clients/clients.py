@@ -2105,6 +2105,7 @@ class PoshMarkClient(BaseClient):
             self.logger.error(f'{traceback.format_exc()}')
 
     def follow_random_follower(self):
+        """Goes through the user's followers and follows someone randomly back"""
         try:
             self.logger.info('Following a random follower')
             self.go_to_closet()
@@ -2138,7 +2139,42 @@ class PoshMarkClient(BaseClient):
 
                     follow_button.click()
 
-                    self.logger.info('Follow button clicked')
+                    self.logger.info(f'Followed {selected_user}')
+
+        except Exception as e:
+            self.logger.error(f'{traceback.format_exc()}')
+            if not self.check_logged_in():
+                self.log_in()
+
+    def follow_random_user(self):
+        """Goes to poshmark find people and follows a random person"""
+        try:
+            self.logger.info('Following a random user')
+
+            self.web_driver.get('https://www.poshmark.com/find-people')
+
+            self.sleep(8, 15)
+
+            sample_size = random.randint(1, 5)
+            available_users = self.locate_all(By.CLASS_NAME, 'follow__action')
+            selected_users = random.sample(available_users, sample_size) if available_users else []
+
+            for selected_user in selected_users:
+                username = selected_user.find_element_by_class_name('follow__action__follower').text
+                follow_button = selected_user.find_element_by_class_name('follow__action__button')
+
+                self.logger.info(f'The following user was selected to be followed: {username}')
+
+                actions = ActionChains(self.web_driver)
+                actions.move_to_element(follow_button).perform()
+
+                self.sleep(5, 8)
+
+                follow_button.click()
+
+                self.logger.info(f'Followed {username}')
+
+                self.sleep(4, 12)
 
         except Exception as e:
             self.logger.error(f'{traceback.format_exc()}')
