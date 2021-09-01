@@ -649,7 +649,7 @@ def aging(campaign_id):
                 now = datetime.datetime.now(pytz.utc)
                 pre_action_time = time.time()
 
-                if random.random() < .50:
+                if random.random() < .80:
                     client.follow_random_follower()
 
                 if random.random() < .30:
