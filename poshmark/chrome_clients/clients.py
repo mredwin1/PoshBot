@@ -2188,7 +2188,7 @@ class PoshMarkClient(BaseClient):
 
             self.web_driver.get('https://poshmark.com/feed')
 
-            for x in range(random.randint(20, 50)):
+            for x in range(random.randint(15, 35)):
                 self.random_scroll(scroll_up=False)
 
                 self.sleep(5, 12)
