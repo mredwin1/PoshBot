@@ -845,7 +845,7 @@ def restart_task(campaign_id):
         else:
             campaign.status = '2'
             campaign.save()
-    elif campaign.mode == Campaign.REGISTER or campaign.mode == Campaign.LIST_ITEM:
+    elif campaign.mode == Campaign.REGISTER or campaign.mode == Campaign.LIST_ITEM or campaign.mode == Campaign.AGING:
         campaign.status = '4'
         campaign.save()
         start_campaign.delay(campaign_id, True)
