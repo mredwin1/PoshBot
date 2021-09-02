@@ -96,7 +96,7 @@ services:
     image: ghcr.io/mredwin1/poshbot:latest
     container_name: celery_concurrency_poshbot
     restart: always
-    entrypoint: celery -A PoshBot worker --autoscale=500,15 -Q concurrency -l INFO
+    entrypoint: celery -A PoshBot worker --autoscale=500,1 -Q concurrency -l INFO
     depends_on:
       - redis
       - db
@@ -115,22 +115,6 @@ services:
     container_name: celery_noconcurrency_poshbot
     restart: always
     entrypoint: celery -A PoshBot worker --concurrency=1 -Q no_concurrency -l INFO
-    depends_on:
-      - redis
-      - db
-    env_file:
-      - .env
-    networks:
-      - internal
-    volumes:
-      - ./PoshBot/:/PoshBot/
-      - ./poshmark/:/poshmark/
-      - /dev/shm:/dev/shm
-  celery_gmail_registration:
-    image: ghcr.io/mredwin1/poshbot:latest
-    container_name: celery_gmail_registration_poshbot
-    restart: always
-    entrypoint: celery -A PoshBot worker --concurrency=1 -Q gmail_registration -l INFO
     depends_on:
       - redis
       - db
