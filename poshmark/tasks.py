@@ -513,9 +513,10 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             listing_category = get_redis_object_attr(redis_listing_id, 'category')
                             listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
                             listing_size = get_redis_object_attr(redis_listing_id, 'size')
+                            listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
                             redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
                             listing_photos = get_redis_object_attr(redis_listing_photos_id)
-                            other_fields = proxy_client.update_listing(
+                            item_updated = proxy_client.update_listing(
                                 item_listed_title,
                                 photos=listing_photos,
                                 description=listing_description,
@@ -523,16 +524,12 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                 cover_photo=listing_cover_photo,
                                 original_price=listing_original_price,
                                 listing_price=listing_listing_price,
-                                listing_category=listing_category,
-                                listing_subcategory=listing_subcategory,
-                                listing_size=listing_size
+                                category=listing_category,
+                                subcategory=listing_subcategory,
+                                size=listing_size,
+                                brand=listing_brand
                             )
 
-                            if other_fields:
-                                listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
-                                brand_updated = proxy_client.update_listing(get_redis_object_attr(redis_listing_id, 'title'), brand=listing_brand)
-                                
-                            item_updated = other_fields and brand_updated
                             update_attempts += 1
 
                             log_to_redis(str(logger_id), {'level': 'ERROR',
