@@ -241,7 +241,8 @@ class PhoneNumber:
                     self.logger.error(phone_number_response_json['msg'])
                     if phone_number_response_json['error_code'] == 'UNDER_MAINTENANCE':
                         self.logger.info('Sleeping for 10 minutes')
-                        time.sleep(600)
+                        time.sleep(
+                            0)
                     else:
                         self.logger.info('Sleeping for 30 seconds')
                         time.sleep(30)
@@ -1418,6 +1419,7 @@ class PoshMarkClient(BaseClient):
                         self.logger.info('Size updated')
 
                     if listing_cover_photo:
+                        self.logger.info('Updating Cover Photo')
                         cover_photo = self.locate(By.XPATH,
                                                   '//*[@id="imagePlaceholder"]/div/div/label/div[1]/div/div')
                         cover_photo.click()
@@ -1435,7 +1437,9 @@ class PoshMarkClient(BaseClient):
                             '//*[@id="imagePlaceholder"]/div[2]/div[2]/div[2]/div/button[2]'
                         )
                         apply_button.click()
-
+                        
+                        self.logger.info('Cover photo updated')
+                        
                         self.sleep(1)
 
                     if listing_photos:
@@ -1504,6 +1508,7 @@ class PoshMarkClient(BaseClient):
                         self.web_driver.execute_script("arguments[0].click();", tags_button)
 
                     if listing_brand:
+                        self.logger.info('Updating Brand')
                         brand_field = self.locate(
                             By.XPATH,
                             '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
@@ -1514,7 +1519,7 @@ class PoshMarkClient(BaseClient):
 
                     update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                     update_button.click()
-
+                    self.logger.info('Brand Updated')
                     self.sleep(1)
 
                     list_item_button = self.locate(
