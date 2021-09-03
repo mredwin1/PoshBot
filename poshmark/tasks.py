@@ -532,9 +532,6 @@ def advanced_sharing(campaign_id, registration_proxy_id):
 
                             update_attempts += 1
 
-                            log_to_redis(str(logger_id), {'level': 'ERROR',
-                                                          'message': f'Category Updated: {categories_size_updated} Prices Updated: {prices_updated} Other Updated: {other_updated} Photos Updated: {photos_updated} Brand Updated: {brand_updated} Item Updated: {item_updated}'})
-
                     if update_attempts >= 4:
                         update_redis_object(redis_campaign_id, {'status': '5'})
                         log_to_redis(str(logger_id), {'level': 'ERROR',
