@@ -510,7 +510,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                 listing_photos = get_redis_object_attr(redis_listing_photos_id)
                                 photos_updated = proxy_client.update_listing(item_listed_title, photos=listing_photos)
 
-                            if photos_updated and brand_updated and not categories_size_updated:
+                            if photos_updated and not categories_size_updated:
                                 listing_category = get_redis_object_attr(redis_listing_id, 'category')
                                 listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
                                 listing_size = get_redis_object_attr(redis_listing_id, 'size')
@@ -522,7 +522,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                 listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
                                 prices_updated = proxy_client.update_listing(item_listed_title, original_price=listing_original_price, listing_price=listing_listing_price)
 
-                            if photos_updated  and categories_size_updated and prices_updated and not other_updated:
+                            if photos_updated and categories_size_updated and prices_updated and not other_updated:
                                 listing_description = get_redis_object_attr(redis_listing_id, 'description')
                                 listing_title = get_redis_object_attr(redis_listing_id, 'title')
                                 listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
