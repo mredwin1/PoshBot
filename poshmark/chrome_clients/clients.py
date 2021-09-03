@@ -1539,6 +1539,7 @@ class PoshMarkClient(BaseClient):
                         if attempts > 10:
                             self.logger.error(
                                 f'Attempted to locate the sell button {attempts} times but could not find it.')
+                            return False
                         else:
                             self.logger.info('Updated successfully')
 
