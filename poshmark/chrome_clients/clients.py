@@ -1142,6 +1142,15 @@ class PoshMarkClient(BaseClient):
 
                 self.logger.info('Size set')
 
+                self.logger.info('Updating Brand')
+                brand_field = self.locate(
+                    By.XPATH,
+                    '//*[@id="content"]/div/div[1]/div/section[6]/div/div[2]/div[1]/div[1]/div/input'
+                )
+
+                brand_field.clear()
+                brand_field.send_keys(listing_brand)
+
                 # Upload listing photos, you have to upload the first picture then click apply before moving on to upload
                 # the rest, otherwise errors come up.
                 self.logger.info('Uploading photos')
