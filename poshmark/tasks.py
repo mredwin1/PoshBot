@@ -325,10 +325,13 @@ def start_campaign(campaign_id, registration_ip):
                             now = timezone.now()
                             elapsed_time = (now - proxy_connection.datetime).seconds
                             if elapsed_time > 900:
-                                broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
-                                if broken_campaign.redis_id:
-                                    update_redis_object(broken_campaign.redis_id, {'status': '5'})
-                                    update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
+                                try:
+                                    broken_campaign = Campaign.objects.get(posh_user=proxy_connection.posh_user)
+                                    if broken_campaign.redis_id:
+                                        update_redis_object(broken_campaign.redis_id, {'status': '5'})
+                                        update_redis_object(proxy_connection.posh_user.redis_id, {'status': '1'})
+                                except Campaign.DoesNotExist:
+                                    pass
                                 proxy_connection.delete()
             if not registration_proxy:
                 time.sleep(30)
