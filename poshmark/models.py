@@ -48,10 +48,10 @@ class PoshUser(models.Model):
     dob_day = models.CharField(max_length=20, default='')
     dob_year = models.CharField(max_length=20, default='')
     phone_number = models.CharField(max_length=20, default='')
-    profile_picture_id = models.CharField(max_length=40, default='')
+    profile_picture_id = models.CharField(max_length=200, default='')
 
     email = models.EmailField(blank=True)
-    email_id = models.CharField(max_length=150, default='')
+    email_id = models.CharField(max_length=200, default='')
     username = models.CharField(max_length=15, unique=True)
     password = models.CharField(max_length=20,
                                 help_text='Must be at least 6 characters and must contain a number or symbol.')

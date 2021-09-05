@@ -18,7 +18,7 @@ class PoshUserAdmin(admin.ModelAdmin):
                 ('profile_picture', 'header_picture'),
                 ('first_name', 'last_name'),
                 ('username', 'password'),
-                ('email', 'profile_picture_id'),
+                ('email', 'email_id', 'profile_picture_id'),
                 ('user', 'status', 'gender'),
             )
         }),
