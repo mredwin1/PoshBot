@@ -1540,10 +1540,13 @@ class PoshMarkClient(BaseClient):
 
                     attempts = 0
 
+                    screenshot_saved = False
                     while not sell_button and attempts <= 10:
                         self.logger.error('Not done updating listing. Checking again...')
                         sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
                         attempts += 1
+                        self.web_driver.save_screenshot(f'updating_error.png')
+                        screenshot_saved = True
                     else:
                         if attempts > 10:
                             self.logger.error(
