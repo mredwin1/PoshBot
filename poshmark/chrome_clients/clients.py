@@ -1536,21 +1536,22 @@ class PoshMarkClient(BaseClient):
                     )
                     list_item_button.click()
 
-                    if self.is_present(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]'):
-                        self.logger.info('Certify Listing pop up came up')
-
-                        certify_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]')
-                        certify_listing_button.click()
-
-                        self.logger.info('Clicked Certify Listing button')
-
-                        self.sleep(1)
-
-                        certify_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]')
-                        certify_button.click()
-
-                        self.logger.info('Clicked certify button')
-
+                    # if self.is_present(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]'):
+                    #     self.logger.warning('Certify Listing pop up came up')
+                    #
+                    #     certify_listing_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]')
+                    #     certify_listing_button.click()
+                    #
+                    #     self.logger.info('Clicked Certify Listing button')
+                    #
+                    #     self.sleep(1)
+                    #
+                    #     certify_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[7]/div[1]/div[2]/div[3]/div/button[2]')
+                    #     certify_button.click()
+                    #
+                    #     self.logger.info('Clicked certify button')
+                    # else:
+                    #     self.logger.info('Certify listing did not come up')
 
                     sell_button = self.is_present(By.XPATH, '//*[@id="app"]/header/nav[2]/div[1]/ul[2]/li[2]/a')
 
