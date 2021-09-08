@@ -1525,10 +1525,11 @@ class PoshMarkClient(BaseClient):
 
                         brand_field.clear()
                         brand_field.send_keys(listing_brand)
+                        self.logger.info('Brand Updated')
 
                     update_button = self.locate(By.XPATH, '//*[@id="content"]/div/div[1]/div/div[2]/button')
                     update_button.click()
-                    self.logger.info('Brand Updated')
+
                     self.sleep(1)
 
                     list_item_button = self.locate(
