@@ -508,6 +508,17 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             item_listed_title = proxy_client.list_item()
 
                         if item_listed_title:
+                            redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
+                            listing_photos = get_redis_object_attr(redis_listing_photos_id)
+                            listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
+                            listing_description = get_redis_object_attr(redis_listing_id, 'description')
+                            listing_category = get_redis_object_attr(redis_listing_id, 'category')
+                            listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
+                            listing_size = get_redis_object_attr(redis_listing_id, 'size')
+                            listing_title = get_redis_object_attr(redis_listing_id, 'title')
+                            listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
+                            listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
+                            listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
                             item_updated = proxy_client.update_listing(item_listed_title,
                                                                        description=listing_description,
                                                                        title=listing_title,
