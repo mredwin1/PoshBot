@@ -508,70 +508,70 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             item_listed_title = proxy_client.list_item()
 
                         if item_listed_title:
-                            redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
-                            listing_photos = get_redis_object_attr(redis_listing_photos_id)
-                            listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
-                            listing_description = get_redis_object_attr(redis_listing_id, 'description')
-                            listing_category = get_redis_object_attr(redis_listing_id, 'category')
-                            listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
-                            listing_size = get_redis_object_attr(redis_listing_id, 'size')
-                            listing_title = get_redis_object_attr(redis_listing_id, 'title')
-                            listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
-                            listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
-                            listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
-                            item_updated = proxy_client.update_listing(item_listed_title,
-                                                                       description=listing_description,
-                                                                       title=listing_title,
-                                                                       cover_photo=listing_cover_photo,
-                                                                       photos=listing_photos,
-                                                                       brand=listing_brand,
-                                                                       category=listing_category,
-                                                                       subcategory=listing_subcategory,
-                                                                       size=listing_size,
-                                                                       original_price = listing_original_price,
-                                                                       listing_price=listing_listing_price
-                                                                       )
-                            update_attempts += 1
-                            # if not photos_updated:
-                            #     redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
-                            #     listing_photos = get_redis_object_attr(redis_listing_photos_id)
-                            #     photos_updated = proxy_client.update_listing(item_listed_title, photos=listing_photos)
-                            #
-                            # if photos_updated and not brand_updated:
-                            #     listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
-                            #     brand_updated = proxy_client.update_listing(item_listed_title, brand=listing_brand)
-                            #
-                            # if photos_updated and brand_updated and not categories_size_updated:
-                            #     listing_category = get_redis_object_attr(redis_listing_id, 'category')
-                            #     listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
-                            #     listing_size = get_redis_object_attr(redis_listing_id, 'size')
-                            #     categories_size_updated = proxy_client.update_listing(item_listed_title,
-                            #                                                           category=listing_category,
-                            #                                                           subcategory=listing_subcategory,
-                            #                                                           size=listing_size)
-                            #
-                            # if photos_updated and brand_updated and categories_size_updated and not prices_updated:
-                            #     listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
-                            #     listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
-                            #     listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
-                            #     prices_updated = proxy_client.update_listing(item_listed_title,
-                            #                                                  original_price=listing_original_price,
-                            #                                                  listing_price=listing_listing_price)
-                            #
-                            # if photos_updated and brand_updated and categories_size_updated and prices_updated and not other_updated:
-                            #     listing_description = get_redis_object_attr(redis_listing_id, 'description')
-                            #     listing_title = get_redis_object_attr(redis_listing_id, 'title')
-                            #     listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
-                            #     other_updated = proxy_client.update_listing(item_listed_title,
-                            #                                                 description=listing_description,
-                            #                                                 title=listing_title,
-                            #                                                 cover_photo=listing_cover_photo)
-                            #
-                            # item_updated = categories_size_updated and prices_updated and other_updated and photos_updated and brand_updated
+                            # redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
+                            # listing_photos = get_redis_object_attr(redis_listing_photos_id)
+                            # listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
+                            # listing_description = get_redis_object_attr(redis_listing_id, 'description')
+                            # listing_category = get_redis_object_attr(redis_listing_id, 'category')
+                            # listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
+                            # listing_size = get_redis_object_attr(redis_listing_id, 'size')
+                            # listing_title = get_redis_object_attr(redis_listing_id, 'title')
+                            # listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
+                            # listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
+                            # listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
+                            # item_updated = proxy_client.update_listing(item_listed_title,
+                            #                                            description=listing_description,
+                            #                                            title=listing_title,
+                            #                                            cover_photo=listing_cover_photo,
+                            #                                            photos=listing_photos,
+                            #                                            brand=listing_brand,
+                            #                                            category=listing_category,
+                            #                                            subcategory=listing_subcategory,
+                            #                                            size=listing_size,
+                            #                                            original_price = listing_original_price,
+                            #                                            listing_price=listing_listing_price
+                            #                                            )
                             # update_attempts += 1
-                            #
-                            # log_to_redis(str(logger_id), {'level': 'ERROR',
-                            #                               'message': f'Category Updated: {categories_size_updated} Prices Updated: {prices_updated} Other Updated: {other_updated} Photos Updated: {photos_updated} Brand Updated: {brand_updated} Item Updated: {item_updated}'})
+                            if not photos_updated:
+                                redis_listing_photos_id = get_redis_object_attr(redis_listing_id, 'photos')
+                                listing_photos = get_redis_object_attr(redis_listing_photos_id)
+                                photos_updated = proxy_client.update_listing(item_listed_title, photos=listing_photos)
+
+                            if photos_updated and not brand_updated:
+                                listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
+                                brand_updated = proxy_client.update_listing(item_listed_title, brand=listing_brand)
+
+                            if photos_updated and brand_updated and not categories_size_updated:
+                                listing_category = get_redis_object_attr(redis_listing_id, 'category')
+                                listing_subcategory = get_redis_object_attr(redis_listing_id, 'subcategory')
+                                listing_size = get_redis_object_attr(redis_listing_id, 'size')
+                                categories_size_updated = proxy_client.update_listing(item_listed_title,
+                                                                                      category=listing_category,
+                                                                                      subcategory=listing_subcategory,
+                                                                                      size=listing_size)
+
+                            if photos_updated and brand_updated and categories_size_updated and not prices_updated:
+                                listing_original_price = get_redis_object_attr(redis_listing_id, 'original_price')
+                                listing_listing_price = get_redis_object_attr(redis_listing_id, 'listing_price')
+                                listing_brand = get_redis_object_attr(redis_listing_id, 'brand')
+                                prices_updated = proxy_client.update_listing(item_listed_title,
+                                                                             original_price=listing_original_price,
+                                                                             listing_price=listing_listing_price)
+
+                            if photos_updated and brand_updated and categories_size_updated and prices_updated and not other_updated:
+                                listing_description = get_redis_object_attr(redis_listing_id, 'description')
+                                listing_title = get_redis_object_attr(redis_listing_id, 'title')
+                                listing_cover_photo = get_redis_object_attr(redis_listing_id, 'cover_photo')
+                                other_updated = proxy_client.update_listing(item_listed_title,
+                                                                            description=listing_description,
+                                                                            title=listing_title,
+                                                                            cover_photo=listing_cover_photo)
+
+                            item_updated = categories_size_updated and prices_updated and other_updated and photos_updated and brand_updated
+                            update_attempts += 1
+
+                            log_to_redis(str(logger_id), {'level': 'ERROR',
+                                                          'message': f'Category Updated: {categories_size_updated} Prices Updated: {prices_updated} Other Updated: {other_updated} Photos Updated: {photos_updated} Brand Updated: {brand_updated} Item Updated: {item_updated}'})
 
                     if update_attempts >= 4:
                         update_redis_object(redis_campaign_id, {'status': '5'})
