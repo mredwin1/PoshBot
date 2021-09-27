@@ -569,7 +569,7 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                             item_updated = categories_size_updated and prices_updated and other_updated and photos_updated and brand_updated
                             update_attempts += 1
 
-                            log_to_redis(str(logger_id), {'level': 'ERROR',
+                            log_to_redis(str(logger_id), {'level': 'DEBUG',
                                                           'message': f'Category Updated: {categories_size_updated} Prices Updated: {prices_updated} Other Updated: {other_updated} Photos Updated: {photos_updated} Brand Updated: {brand_updated} Item Updated: {item_updated}'})
 
                     if update_attempts >= 4:
