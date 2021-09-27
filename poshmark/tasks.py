@@ -1,21 +1,20 @@
 import datetime
 import logging
-import os
-import pytz
 import random
-import redis
-import requests
 import time
 import traceback
 
+import pytz
+import redis
+import requests
+from celery import shared_task
 from django import db
 from django.conf import settings
 from django.utils import timezone
-from celery import shared_task
 
-from .models import PoshUser, Log, Campaign, Listing, PoshProxy, ProxyConnection
-from users.models import User
 from poshmark.chrome_clients.clients import PoshMarkClient
+from users.models import User
+from .models import Campaign, Listing, Log, PoshProxy, PoshUser, ProxyConnection
 
 
 def get_new_id(instance_type):
@@ -623,13 +622,17 @@ def advanced_sharing(campaign_id, registration_proxy_id):
                                     no_proxy_client.check_offers(redis_listing_id=redis_listing_id)
                                     no_proxy_client.check_comments(listing_title=listing_title)
                                     if not sent_offer and now > end_time.replace(hour=11, minute=0, second=0):
-                                        sent_offer = no_proxy_client.send_offer_to_likers(redis_listing_id=redis_listing_id)
+                                        sent_offer = no_proxy_client.send_offer_to_likers(
+                                            redis_listing_id=redis_listing_id)
 
                                     positive_negative = 1 if random.random() < 0.5 else -1
                                     deviation = random.randint(0, max_deviation) * positive_negative
                                     post_share_time = time.time()
                                     elapsed_time = round(post_share_time - pre_share_time, 2)
                                     sleep_amount = (campaign_delay - elapsed_time) + deviation
+
+                                    log_to_redis(str(logger_id), {'level': 'DEBUG',
+                                                                  'message': f"Delay: {campaign_delay} Elapsed Time: {elapsed_time} Sleep Amount: {sleep_amount} Deviation: {deviation}"})
 
                                     if elapsed_time < sleep_amount:
                                         no_proxy_client.sleep(sleep_amount)
