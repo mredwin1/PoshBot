@@ -1,26 +1,23 @@
 import datetime
-import email
-import imaplib
-import logging
 import os
 import pickle
 import random
 import re
-import requests
 import string
 import time
 import traceback
-
 from pathlib import Path
+
+import requests
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.proxy import Proxy, ProxyType
-from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from poshmark.models import PoshUser
 
@@ -409,9 +406,8 @@ class BaseClient:
             duration = seconds
             word = 'second' if seconds == 1 else 'seconds'
 
-
         self.logger.info(f'Sleeping for about {round(duration, 2)} {word}')
-        time.sleep(duration)
+        time.sleep(seconds)
 
     def save_cookies(self):
         self.logger.info('Saving cookies')
