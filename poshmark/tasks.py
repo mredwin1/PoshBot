@@ -277,7 +277,8 @@ def log_cleanup():
     logs = Log.objects.filter(created_date__lte=timezone.now()-datetime.timedelta(days=2))
 
     for log in logs:
-        log.delete()
+        if log.campaign.status == '2':
+            log.delete()
 
 
 @shared_task
