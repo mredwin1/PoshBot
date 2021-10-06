@@ -1,18 +1,19 @@
 import logging
-import mailslurp_client
 import os
 import random
-import re
-import requests
 import time
 import traceback
-import urllib3
 
+import mailslurp_client
+import requests
+import urllib3
 from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill, Transpose
+from mailslurp_client.rest import ApiException
+
 from users.models import User
 
 
@@ -97,6 +98,19 @@ class PoshUser(models.Model):
             return email not in all_emails
 
     @staticmethod
+    def create_email_forwarder(inbox_id):
+        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
+            api_instance = mailslurp_client.InboxForwarderControllerApi(api_client)
+            create_inbox_forwarder_options = mailslurp_client.CreateInboxForwarderOptions()
+            create_inbox_forwarder_options.forward_to_recipients = ['antonylionr@gmail.com']
+
+            try:
+                api_response = api_instance.create_new_inbox_forwarder(create_inbox_forwarder_options,
+                                                                       inbox_id=inbox_id)
+            except ApiException as e:
+                print(f"Exception when calling InboxForwarderControllerApi->create_new_inbox_forwarder: {e}")
+
+    @staticmethod
     def create_email(first_name, last_name):
         with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
             api_instance = mailslurp_client.InboxControllerApi(api_client)
@@ -105,6 +119,8 @@ class PoshUser(models.Model):
             while not PoshUser.check_email_availability(email):
                 email = f'{first_name.lower()}_{last_name.lower()}{random.randint(100, 999)}@{os.environ["DOMAIN"]}'
             inbox = api_instance.create_inbox(name=f'{first_name} {last_name}', email_address=email)
+
+            PoshUser.create_email_forwarder(inbox.id)
 
             return inbox.id, inbox.email_address
 
