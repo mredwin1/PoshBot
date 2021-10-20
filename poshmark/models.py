@@ -279,7 +279,7 @@ class PoshUser(models.Model):
             number = int(email[plus_index + 1:at_index]) + current_number
         else:
             root = email[:at_index]
-
+            number = current_number
 
         return '', f'{root}+{number}{domain}'
 
