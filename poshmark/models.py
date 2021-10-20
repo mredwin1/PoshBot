@@ -83,9 +83,10 @@ class PoshUser(models.Model):
         return data
 
     def delete_email(self):
-        with mailslurp_client.ApiClient(self.get_mail_slurp_config()) as api_client:
-            api_instance = mailslurp_client.InboxControllerApi(api_client)
-            api_instance.delete_inbox(self.email_id)
+        if self.email_id:
+            with mailslurp_client.ApiClient(self.get_mail_slurp_config()) as api_client:
+                api_instance = mailslurp_client.InboxControllerApi(api_client)
+                api_instance.delete_inbox(self.email_id)
 
     @staticmethod
     def check_email_availability(email):
@@ -125,29 +126,64 @@ class PoshUser(models.Model):
             return inbox.id, inbox.email_address
 
     @staticmethod
-    def get_email_verification_code(inbox_id):
-        with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
-            inbox_api_instance = mailslurp_client.InboxControllerApi(api_client)
-            email_api_instance = mailslurp_client.EmailControllerApi(api_client)
-            emails = inbox_api_instance.get_emails(inbox_id=inbox_id)
-            emails = [email for email in emails if email.subject == 'Poshmark verification code']
-            verification_code = None
+    def get_email_verification_code(username):
+        posh_user = PoshUser.objects.get(username=username)
 
-            if emails:
-                email_id = emails[-1].id
+        if posh_user.inbox_id:
+            with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
+                inbox_api_instance = mailslurp_client.InboxControllerApi(api_client)
+                email_api_instance = mailslurp_client.EmailControllerApi(api_client)
+                emails = inbox_api_instance.get_emails(inbox_id=inbox_id)
+                emails = [email for email in emails if email.subject == 'Poshmark verification code']
+                verification_code = None
 
-                email = email_api_instance.get_email(email_id)
-                email_body = email.body
+                if emails:
+                    email_id = emails[-1].id
 
-                verification_index = email_body.find('Your verification code is ') + 26
-                end_verification_index = email_body.find('</p><p>For your security')
-                verification_code = email_body[verification_index:end_verification_index]
-                email_api_instance.delete_email(email_id)
+                    email = email_api_instance.get_email(email_id)
+                    email_body = email.body
 
-            return verification_code
+                    verification_index = email_body.find('Your verification code is ') + 26
+                    end_verification_index = email_body.find('</p><p>For your security')
+                    verification_code = email_body[verification_index:end_verification_index]
+                    email_api_instance.delete_email(email_id)
+        else:
+            try:
+                attempts = 0
+                imap = imaplib.IMAP4_SSL('imap.gmail.com')
+                imap.login(posh_user.email, posh_user.password)
+
+                imap.select('inbox')
+                data = imap.search(None, f'(SUBJECT "Poshmark verification code")')  # (SUBJECT "Receive Mail from")
+
+                mail_ids = data[1]
+                id_list = mail_ids[0].split(b' ')
+                id_list = [email_id.decode('utf-8') for email_id in id_list]
+                id_list.reverse()
+
+                for email_id in id_list:
+                    data = imap.fetch(email_id, '(RFC822)')
+                    for response_part in data:
+                        arr = response_part[0]
+                        if isinstance(arr, tuple):
+                            msg = email.message_from_string(str(arr[1], 'utf-8'))
+                            msg_str = msg.as_string()
+                            if first_name in msg_str:
+                                verification_index = msg_str.find('Your verification code is ') + 26
+                                end_verification_index = msg_str.find('</p><p>For your security')
+                                verification_code = msg_str[verification_index:end_verification_index]
+
+                                imap.store(email_id, "+FLAGS", "\\Deleted")
+
+                                return verification_code
+                return None
+            except Exception as e:
+                return None
+
+        return verification_code
 
     @staticmethod
-    def generate_sign_up_info(password, results=1):
+    def generate_sign_up_info(password, results=1, email=None):
         months = {
             '01': 'January',
             '02': 'February',
@@ -174,6 +210,7 @@ class PoshUser(models.Model):
         }
         user_url = 'https://randomuser.me/api/'
         header_image_url = 'https://picsum.photos/1920/300'
+        current_email = results
         results = []
 
         try:
@@ -192,7 +229,10 @@ class PoshUser(models.Model):
                     retries += 1
                 profile_picture_ids.append(PoshUser.get_image_id(profile_image_response.url))
 
-                email_id, email = PoshUser.create_email(response_dict['name']['first'], response_dict['name']['last'])
+                if email:
+                    email_id, email = PoshUser.get_next_email(email, current_email)
+                else:
+                    email_id, email = PoshUser.create_email(response_dict['name']['first'], response_dict['name']['last'])
 
                 user_info = {
                     'first_name': response_dict['name']['first'],
@@ -227,6 +267,21 @@ class PoshUser(models.Model):
             logging.error('Error occurred while trying to get profiles')
 
         return results
+
+    @staticmethod
+    def get_next_email(email, current_number):
+        plus_index = email.find('+')
+        at_index = email.find('@')
+        domain = email[at_index:]
+
+        if plus_index > 0:
+            root = email[:plus_index]
+            number = int(email[plus_index + 1:at_index]) + current_number
+        else:
+            root = email[:at_index]
+
+
+        return '', f'{root}+{number}{domain}'
 
     @staticmethod
     def get_mail_slurp_config():

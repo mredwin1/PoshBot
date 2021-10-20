@@ -190,9 +190,9 @@ def assign_posh_users(user_id):
 
 
 @shared_task
-def generate_posh_users(password, quantity, user_id):
+def generate_posh_users(password, quantity, user_id, email=None):
     user = User.objects.get(id=user_id)
-    all_user_info = PoshUser.generate_sign_up_info(password, quantity)
+    all_user_info = PoshUser.generate_sign_up_info(password, quantity, email)
     for user_info in all_user_info:
         new_posh_user = PoshUser.create_posh_user(user_info)
         new_posh_user.user = user
