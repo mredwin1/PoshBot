@@ -276,7 +276,7 @@ class PoshUser(models.Model):
 
         if plus_index > 0:
             root = email[:plus_index]
-            number = int(email[plus_index + 1:at_index]) + current_number
+            number = int(email[plus_index + 1:at_index]) + 1
         else:
             root = email[:at_index]
             number = current_number
