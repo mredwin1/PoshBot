@@ -129,11 +129,11 @@ class PoshUser(models.Model):
     def get_email_verification_code(username):
         posh_user = PoshUser.objects.get(username=username)
 
-        if posh_user.inbox_id:
+        if posh_user.email_id:
             with mailslurp_client.ApiClient(PoshUser.get_mail_slurp_config()) as api_client:
                 inbox_api_instance = mailslurp_client.InboxControllerApi(api_client)
                 email_api_instance = mailslurp_client.EmailControllerApi(api_client)
-                emails = inbox_api_instance.get_emails(inbox_id=inbox_id)
+                emails = inbox_api_instance.get_emails(inbox_id=posh_user.email_id)
                 emails = [email for email in emails if email.subject == 'Poshmark verification code']
                 verification_code = None
 
