@@ -148,8 +148,9 @@ class PoshUser(models.Model):
                     verification_code = email_body[verification_index:end_verification_index]
                     email_api_instance.delete_email(email_id)
         else:
+            logging.info('Using imap')
+
             try:
-                attempts = 0
                 imap = imaplib.IMAP4_SSL('imap.gmail.com')
                 imap.login(posh_user.email, posh_user.password)
 
@@ -178,6 +179,7 @@ class PoshUser(models.Model):
                                 return verification_code
                 return None
             except Exception as e:
+                logging.error(traceback.format_exc())
                 return None
 
         return verification_code
