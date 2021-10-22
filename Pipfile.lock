@@ -49,10 +49,10 @@
         },
         "certifi": {
             "hashes": [
-                "sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee",
-                "sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8"
+                "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872",
+                "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"
             ],
-            "version": "==2021.5.30"
+            "version": "==2021.10.8"
         },
         "chardet": {
             "hashes": [
@@ -166,11 +166,11 @@
         },
         "mailslurp-client": {
             "hashes": [
-                "sha256:12fb1eb7cfb741c938686ab981fb142a199785a437ebed2aa07e61bd2d85f941",
-                "sha256:c7585223976815531bab18cc098bc0588c3a6a6e578f28ae52694a2b2996ee5c"
+                "sha256:9e920dc0558503407e0372b9c36abab3040983215d274666637cb5507332776e",
+                "sha256:e96ad5bd2a0b359beaec9a64d5ea93c065f86976515daa32304f9ef2f797ab33"
             ],
             "index": "pypi",
-            "version": "==14.0.5"
+            "version": "==14.0.6"
         },
         "names": {
             "hashes": [
@@ -226,11 +226,11 @@
         },
         "prompt-toolkit": {
             "hashes": [
-                "sha256:6076e46efae19b1e0ca1ec003ed37a933dc94b4d20f486235d436e64771dcd5c",
-                "sha256:eb71d5a6b72ce6db177af4a7d4d7085b99756bf656d98ffcc4fecd36850eea6c"
+                "sha256:27f13ff4e4850fe8f860b77414c7880f67c6158076a7b099062cc8570f1562e5",
+                "sha256:62b3d3ea5a3ccee94dc1aac018279cf64866a76837156ebe159b981c42dd20a8"
             ],
             "markers": "python_full_version >= '3.6.2'",
-            "version": "==3.0.20"
+            "version": "==3.0.21"
         },
         "psycopg2-binary": {
             "hashes": [

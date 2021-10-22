@@ -3,7 +3,8 @@ import os
 import random
 import time
 import traceback
-
+import email
+import imaplib
 import mailslurp_client
 import requests
 import urllib3
