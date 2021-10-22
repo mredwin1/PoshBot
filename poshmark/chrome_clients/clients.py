@@ -1399,7 +1399,7 @@ class PoshMarkClient(BaseClient):
                     if listing_size:
                         self.logger.info('Updating size')
                         size_dropdown = self.locate(
-                            By.XPATH, '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+                            By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div/div[2]/div[1]/div'
                         )
                         size_dropdown.click()
                         size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
@@ -1412,11 +1412,11 @@ class PoshMarkClient(BaseClient):
                         custom_size_input = self.locate(By.ID, 'customSizeInput0')
                         save_button = self.locate(
                             By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[1]/ul/li/div/div/button'
+                            '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div/div[2]/div[2]/div/div/div[1]/ul/li/div/div/button'
                         )
                         done_button = self.locate(
                             By.XPATH,
-                            '//*[@id="content"]/div/div[1]/div/section[4]/div[2]/div[2]/div[1]/div[2]/div/div/div[2]/button'
+                            '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div/div[2]/div[2]/div/div/div[2]/button'
                         )
                         size = listing_size
                         custom_size_input.send_keys(size)
