@@ -1,4 +1,4 @@
-import email
+import email as email_module
 import imaplib
 import logging
 import os
@@ -169,7 +169,7 @@ class PoshUser(models.Model):
                     for response_part in data:
                         arr = response_part[0]
                         if isinstance(arr, tuple):
-                            msg = email.message_from_string(str(arr[1], 'utf-8'))
+                            msg = email_module.message_from_string(str(arr[1], 'utf-8'))
                             msg_str = msg.as_string()
                             if first_name in msg_str:
                                 verification_index = msg_str.find('Your verification code is ') + 26
