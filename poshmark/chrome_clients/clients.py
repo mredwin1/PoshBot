@@ -1112,7 +1112,7 @@ class PoshMarkClient(BaseClient):
                 # Set size (This must be done after the category has been selected)
                 self.logger.info('Setting size')
                 size_dropdown = self.locate(
-                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[1]/div'
+                    By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div/div[2]/div[1]/div'
                 )
                 actions = ActionChains(self.web_driver)
                 actions.move_to_element(size_dropdown).perform()
