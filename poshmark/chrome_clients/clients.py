@@ -1114,6 +1114,8 @@ class PoshMarkClient(BaseClient):
                 size_dropdown = self.locate(
                     By.XPATH, '//*[@id="content"]/div/div[1]/div[2]/section[4]/div[2]/div[2]/div[1]/div[1]/div'
                 )
+                actions = ActionChains(self.web_driver)
+                actions.move_to_element(size_dropdown).perform()
                 size_dropdown.click()
                 size_buttons = self.locate_all(By.CLASS_NAME, 'navigation--horizontal__tab')
 
