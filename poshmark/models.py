@@ -1,13 +1,14 @@
+import email
+import imaplib
 import logging
 import os
 import random
 import time
 import traceback
-import email
-import imaplib
 import mailslurp_client
 import requests
 import urllib3
+
 from django.core.files.base import ContentFile
 from django.db import models
 from django.utils import timezone
