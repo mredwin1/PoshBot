@@ -171,7 +171,7 @@ class PoshUser(models.Model):
                         if isinstance(arr, tuple):
                             msg = email_module.message_from_string(str(arr[1], 'utf-8'))
                             msg_str = msg.as_string()
-                            if first_name in msg_str:
+                            if posh_user.first_name in msg_str:
                                 verification_index = msg_str.find('Your verification code is ') + 26
                                 end_verification_index = msg_str.find('</p><p>For your security')
                                 verification_code = msg_str[verification_index:end_verification_index]
